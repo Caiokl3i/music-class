@@ -1,7 +1,8 @@
 import { createError } from '@adonisjs/core/exceptions'
 import db from '@adonisjs/lucid/services/db'
 import Lesson from '#models/lesson'
-import { assertCanConsumeCredit } from '#services/plan_credits'
+import { assertCanConsumeCredit, lessonConsumesCredit } from '#services/plan_credits'
+import { assertSlotFree } from '#services/lesson_schedule'
 import type User from '#models/user'
 import type { DateTime } from 'luxon'
 import type { LessonStatus } from '#validators/lesson'
@@ -32,6 +33,7 @@ export async function createBookedLesson(user: User, payload: LessonPayload) {
 
     plan.useTransaction(trx)
     await assertCanConsumeCredit(plan, payload.status)
+    await assertOccupancy(user, payload.scheduledAt, payload.status, trx)
 
     const lesson = await Lesson.create(
       {
@@ -65,19 +67,19 @@ export async function updateBookedLesson(
     const studentId = payload.studentId ?? lesson.studentId
     const planId = payload.planId ?? lesson.planId
     const status = (payload.status ?? lesson.status) as LessonStatus
+    const scheduledAt = payload.scheduledAt ?? lesson.scheduledAt
+    const previousStatus = lesson.status
 
     const { plan } = await loadOwnedStudentAndPlan(user, studentId, planId, trx)
     plan.useTransaction(trx)
-    await assertCanConsumeCredit(plan, status, lesson.id)
+    await assertCanConsumeCredit(plan, status, lesson.id, previousStatus)
+    await assertOccupancy(user, scheduledAt, status, trx, lesson.id)
 
     lesson.useTransaction(trx)
     lesson.studentId = studentId
     lesson.planId = planId
     lesson.status = status
-
-    if (payload.scheduledAt !== undefined) {
-      lesson.scheduledAt = payload.scheduledAt
-    }
+    lesson.scheduledAt = scheduledAt
 
     if (payload.description !== undefined) {
       lesson.description = payload.description
@@ -95,6 +97,20 @@ export function lessonsQuery(user: User) {
 
 export function loadLesson(user: User, id: number | string) {
   return lessonsQuery(user).where('id', id).firstOrFail()
+}
+
+async function assertOccupancy(
+  user: User,
+  scheduledAt: DateTime,
+  status: string,
+  trx: TransactionClientContract,
+  exceptLessonId?: number
+) {
+  if (!lessonConsumesCredit(status)) {
+    return
+  }
+
+  await assertSlotFree(user, scheduledAt, { exceptLessonId, trx })
 }
 
 async function loadOwnedStudentAndPlan(

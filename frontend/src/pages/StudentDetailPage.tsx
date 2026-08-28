@@ -18,6 +18,7 @@ import { TextArea } from '@/components/TextArea'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { LessonRow } from '@/components/LessonRow'
 import { PlanStatusBadge } from '@/components/StatusBadges'
+import { GenerateLessonsModal } from '@/components/GenerateLessonsModal'
 import { CreditBar } from '@/components/CreditBar'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
@@ -28,7 +29,7 @@ import {
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
 } from '@/utils/format'
-import { bookablePlans } from '@/domain/status'
+import { bookablePlans, canGenerateLessons, isLowCredit, planIsExpired } from '@/domain/status'
 
 const lessonSchema = z.object({
   planId: z.string().min(1, 'Selecione o pacote'),
@@ -59,7 +60,7 @@ export function StudentDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  const { packages, labelFor, optionFor } = useCatalog()
+  const { packages, labelFor, optionFor, lowCreditThreshold } = useCatalog()
   const [student, setStudent] = useState<Student | null>(null)
   const [plans, setPlans] = useState<Plan[]>([])
   const [lessons, setLessons] = useState<Lesson[]>([])
@@ -73,6 +74,7 @@ export function StudentDetailPage() {
   const [savingStudent, setSavingStudent] = useState(false)
   const [deletingLesson, setDeletingLesson] = useState<Lesson | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [generatingPlan, setGeneratingPlan] = useState<Plan | null>(null)
 
   const lessonForm = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
@@ -332,6 +334,14 @@ export function StudentDetailPage() {
         }
       />
 
+      {isLowCredit(student.creditsRemaining, lowCreditThreshold) ? (
+        <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {student.creditsRemaining === 0
+            ? 'Sem créditos usáveis. Venda um novo pacote para continuar agendando.'
+            : 'Resta 1 crédito. Hora de vender o próximo pacote.'}
+        </p>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <SectionHeader
@@ -372,14 +382,27 @@ export function StudentDetailPage() {
             <p className="text-sm text-ink-muted">Nenhum pacote ainda. Crie um para agendar aulas.</p>
           ) : (
             <ul className="space-y-4">
-              {plans.map((plan) => (
+              {plans.map((plan) => {
+                const expired = planIsExpired(plan)
+                return (
                 <li key={plan.id}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-medium text-ink">{labelFor(plan.package)}</p>
                       <p className="text-xs text-ink-muted">
                         {plan.lessonsRemaining}/{plan.lessonsTotal} créditos · {formatCurrency(Number(plan.price))}
+                        {plan.expiresAt
+                          ? ` · válido até ${formatDate(plan.expiresAt)}`
+                          : ''}
                       </p>
+                      {expired && plan.lessonsRemaining > 0 ? (
+                        <p className="mt-1 text-xs text-amber-800">Pacote vencido. Esses créditos não agendam mais.</p>
+                      ) : null}
+                      {!expired && isLowCredit(plan.lessonsRemaining, lowCreditThreshold) && plan.status === 'paid' ? (
+                        <p className="mt-1 text-xs text-amber-800">
+                          {plan.lessonsRemaining === 0 ? 'Créditos acabaram.' : 'Resta 1 crédito neste pacote.'}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-2">
                       <PlanStatusBadge status={plan.status} />
@@ -388,13 +411,19 @@ export function StudentDetailPage() {
                           Marcar pago
                         </Button>
                       ) : null}
+                      {canGenerateLessons(plan) ? (
+                        <Button size="sm" variant="secondary" onClick={() => setGeneratingPlan(plan)}>
+                          Gerar aulas
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                   <div className="mt-2">
                     <CreditBar remaining={plan.lessonsRemaining} total={plan.lessonsTotal} />
                   </div>
                 </li>
-              ))}
+                )
+              })}
             </ul>
           )}
         </Card>
@@ -587,6 +616,13 @@ export function StudentDetailPage() {
           />
         </form>
       </Modal>
+
+      <GenerateLessonsModal
+        plan={generatingPlan}
+        studentName={student.name}
+        onClose={() => setGeneratingPlan(null)}
+        onGenerated={load}
+      />
 
       <ConfirmDialog
         open={Boolean(deletingLesson)}

@@ -17,11 +17,13 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { PlanStatusBadge } from '@/components/StatusBadges'
+import { GenerateLessonsModal } from '@/components/GenerateLessonsModal'
 import { CreditBar } from '@/components/CreditBar'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
-import { formatCurrency, formatDateTime } from '@/utils/format'
+import { formatCurrency, formatDate, formatDateTime } from '@/utils/format'
+import { canGenerateLessons, isLowCredit, planIsExpired } from '@/domain/status'
 
 const schema = z.object({
   studentId: z.string().min(1, 'Selecione o aluno'),
@@ -46,6 +48,7 @@ export function PlansPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<Plan | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [generating, setGenerating] = useState<Plan | null>(null)
 
   const {
     register,
@@ -237,6 +240,17 @@ export function PlansPage() {
                       <span className="font-medium text-brand-700">{plan.lessonsRemaining}</span>
                       <span className="text-ink-muted"> / {plan.lessonsTotal} créditos restantes</span>
                     </p>
+                    {plan.expiresAt ? (
+                      <p className="mt-1 text-xs text-ink-muted">
+                        Válido até {formatDate(plan.expiresAt)}
+                        {planIsExpired(plan) ? ' · vencido' : ''}
+                      </p>
+                    ) : null}
+                    {plan.status === 'paid' && isLowCredit(plan.lessonsRemaining) ? (
+                      <p className="mt-1 text-xs text-amber-800">
+                        {plan.lessonsRemaining === 0 ? 'Créditos acabaram.' : 'Resta 1 crédito.'}
+                      </p>
+                    ) : null}
                     {plan.paidAt ? (
                       <p className="mt-1 text-xs text-ink-muted">Pago em {formatDateTime(plan.paidAt)}</p>
                     ) : null}
@@ -246,6 +260,11 @@ export function PlansPage() {
                     {plan.status === 'pending' ? (
                       <Button size="sm" variant="secondary" onClick={() => markPaid(plan)}>
                         Marcar pago
+                      </Button>
+                    ) : null}
+                    {canGenerateLessons(plan) ? (
+                      <Button size="sm" variant="secondary" onClick={() => setGenerating(plan)}>
+                        Gerar aulas
                       </Button>
                     ) : null}
                     <Button size="sm" variant="secondary" onClick={() => openEdit(plan)}>
@@ -313,6 +332,13 @@ export function PlansPage() {
           <TextArea label="Observações" error={errors.notes?.message} {...register('notes')} />
         </form>
       </Modal>
+
+      <GenerateLessonsModal
+        plan={generating}
+        studentName={studentsMap.get(generating?.studentId ?? 0)?.name ?? 'aluno'}
+        onClose={() => setGenerating(null)}
+        onGenerated={load}
+      />
 
       <ConfirmDialog
         open={Boolean(deleting)}

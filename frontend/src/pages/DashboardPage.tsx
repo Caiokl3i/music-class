@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Users, Package, CalendarDays, Wallet, ArrowRight } from 'lucide-react'
+import { Users, Package, CalendarDays, Wallet, ArrowRight, TriangleAlert } from 'lucide-react'
 import * as dashboardService from '@/services/dashboard.service'
 import * as lessonsService from '@/services/lessons.service'
-import type { Dashboard, Lesson, LessonStatus } from '@/types/api'
+import type { Dashboard, Lesson, LessonStatus, PlanAlert } from '@/types/api'
 import { PageHeader, Card, SectionHeader } from '@/components/Card'
 import { CardSkeleton } from '@/components/Skeleton'
 import { LessonRow } from '@/components/LessonRow'
@@ -85,16 +85,54 @@ export function DashboardPage() {
             />
             <StatCard
               icon={<Wallet className="size-4" />}
-              label="Receita acumulada"
-              value={formatCurrency(data.revenue)}
+              label="Receita do mês"
+              value={formatCurrency(data.revenueThisMonth ?? data.revenue)}
               hint={
                 data.pendingAmount
-                  ? `${formatCurrency(data.pendingAmount)} a receber`
-                  : undefined
+                  ? `${formatCurrency(data.pendingAmount)} a receber · ${formatCurrency(data.revenue)} acumulado`
+                  : `${formatCurrency(data.revenue)} acumulado`
               }
               delay={0.12}
             />
           </div>
+
+          {((data.lowCredits?.length ?? 0) +
+            (data.expiringSoon?.length ?? 0) +
+            (data.expiredPlans?.length ?? 0)) > 0 ? (
+            <Card className="mt-6 border-amber-200 bg-amber-50/60">
+              <SectionHeader
+                title="Pacotes que pedem atenção"
+                description="Crédito acabando, validade próxima ou já vencida."
+              />
+              <ul className="space-y-2">
+                {(data.lowCredits ?? []).map((item) => (
+                  <AlertRow
+                    key={`low-${item.planId}`}
+                    item={item}
+                    note={
+                      item.lessonsRemaining === 0
+                        ? 'Sem créditos. Venda o próximo pacote.'
+                        : 'Resta 1 crédito.'
+                    }
+                  />
+                ))}
+                {(data.expiringSoon ?? []).map((item) => (
+                  <AlertRow
+                    key={`soon-${item.planId}`}
+                    item={item}
+                    note={`Vence em ${formatDateTime(item.expiresAt)}`}
+                  />
+                ))}
+                {(data.expiredPlans ?? []).map((item) => (
+                  <AlertRow
+                    key={`expired-${item.planId}`}
+                    item={item}
+                    note={`${item.lessonsRemaining} crédito(s) vencidos.`}
+                  />
+                ))}
+              </ul>
+            </Card>
+          ) : null}
 
           {data.overdue.length > 0 ? (
             <Card className="mt-6 border-amber-200 bg-amber-50/60">
@@ -213,6 +251,25 @@ export function DashboardPage() {
         </>
       )}
     </div>
+  )
+}
+
+function AlertRow({ item, note }: { item: PlanAlert; note: string }) {
+  return (
+    <li className="flex items-start justify-between gap-3 rounded-lg bg-white/70 px-3 py-2">
+      <div className="flex items-start gap-2">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600" />
+        <div>
+          <Link to={`/students/${item.studentId}`} className="text-sm font-medium text-brand-700 hover:underline">
+            {item.studentName ?? `Aluno #${item.studentId}`}
+          </Link>
+          <p className="text-xs text-ink-muted">{note}</p>
+        </div>
+      </div>
+      <p className="text-xs text-ink-muted">
+        {item.lessonsRemaining}/{item.lessonsTotal}
+      </p>
+    </li>
   )
 }
 

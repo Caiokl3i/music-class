@@ -14,7 +14,7 @@ test.group('Plan credits', () => {
     assert.equal(remainingCreditsFromCount(1, 1), 0)
   })
 
-  test('blocks consumption on cancelled and unpaid plans', ({ assert }) => {
+  test('blocks consumption on cancelled, unpaid and expired plans', ({ assert }) => {
     assert.equal(creditBlockReason('cancelled', 'scheduled'), 'cancelled')
     assert.equal(creditBlockReason('pending', 'scheduled'), 'not_paid')
     assert.isNull(creditBlockReason('paid', 'scheduled'))

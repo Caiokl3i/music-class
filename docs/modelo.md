@@ -71,6 +71,7 @@ erDiagram
         decimal price
         enum status
         datetime paid_at
+        datetime expires_at
         text notes
         datetime created_at
         datetime updated_at
@@ -170,6 +171,7 @@ Compra do pacote pelo aluno.
 | price | decimal(8,2) | sim | 35 / 130 / 240 |
 | status | enum | sim | `pending` \| `paid` \| `cancelled` |
 | paid_at | datetime | não | `null` = ainda não pagou |
+| expires_at | datetime | não | `paid_at` + 60 dias; `null` = sem validade (pendente ou plano antigo) |
 | notes | text | não | |
 | created_at | datetime | sim | |
 | updated_at | datetime | não | |
@@ -210,6 +212,9 @@ restantes = lessons_total - quantidade de aulas com status != cancelled
 - Cancelar aula (`cancelled`) **devolve** crédito.
 - Falta (`no_show`) **consome** crédito (pode ser tratado como `done` se preferir outra política).
 - Pagamento fica no próprio `plan` (`price` + `status` + `paid_at`). Sem tabela `payments` na v1.
+- Cada aula ocupa **60 minutos**. Duas aulas do mesmo professor não podem se sobrepor; encostar (14h e 15h) pode. Aula cancelada não ocupa horário.
+- Créditos valem **60 dias** a partir de `paid_at` (`expires_at`). Pacote vencido não agenda aula nova; concluir uma já agendada continua permitido.
+- Dá para gerar as aulas restantes do pacote em lote (mesmo dia da semana, de hora em hora semanal), parando na validade. Se algum horário já estiver ocupado, não cria nenhuma.
 
 ## Fora do escopo (v1)
 

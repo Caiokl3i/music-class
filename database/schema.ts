@@ -56,10 +56,12 @@ export class LessonSchema extends BaseModel {
 }
 
 export class PlanSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'lessonsTotal', 'notes', 'package', 'paidAt', 'price', 'status', 'studentId', 'updatedAt', 'userId'] as const
+  static $columns = ['createdAt', 'expiresAt', 'id', 'lessonsTotal', 'notes', 'package', 'paidAt', 'price', 'status', 'studentId', 'updatedAt', 'userId'] as const
   $columns = PlanSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime | null
   @column({ isPrimary: true })
   declare id: number
   @column()

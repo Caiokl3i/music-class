@@ -406,6 +406,90 @@ test.group('Lessons', (group) => {
       },
     })
   })
+
+  test('rejects two lessons in the same hour', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const first = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+    first.assertStatus(201)
+
+    const conflict = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: '2026-09-01T14:30:00.000Z',
+    })
+    conflict.assertStatus(422)
+    conflict.assertBodyContains({ code: 'E_LESSON_SCHEDULE_CONFLICT' })
+  })
+
+  test('allows back-to-back lessons and ignores cancelled ones', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const first = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+    first.assertStatus(201)
+
+    const nextHour = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: '2026-09-01T15:00:00.000Z',
+    })
+    nextHour.assertStatus(201)
+
+    await client.put(`/api/v1/lessons/${first.body().data.id}`).loginAs(teacher).json({
+      status: 'cancelled',
+    })
+
+    const reused = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+    reused.assertStatus(201)
+  })
+
+  test('does not consume new credits after the plan expires', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+    plan.expiresAt = DateTime.now().minus({ days: 1 })
+    await plan.save()
+
+    const response = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+
+    response.assertStatus(422)
+    response.assertBodyContains({ code: 'E_PLAN_EXPIRED' })
+  })
+
+  test('can complete a scheduled lesson after the plan expires', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const created = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+    created.assertStatus(201)
+
+    plan.expiresAt = DateTime.now().minus({ days: 1 })
+    await plan.save()
+
+    const done = await client
+      .put(`/api/v1/lessons/${created.body().data.id}`)
+      .loginAs(teacher)
+      .json({ status: 'done' })
+    done.assertStatus(200)
+    done.assertBodyContains({ data: { status: 'done' } })
+  })
 })
 
 function createTeacher(overrides: { email?: string; fullName?: string } = {}) {

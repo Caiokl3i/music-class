@@ -1,5 +1,5 @@
 import { api } from '@/services/api'
-import type { ApiData, CreatePlanInput, Plan, UpdatePlanInput } from '@/types/api'
+import type { ApiData, CreatePlanInput, Lesson, Plan, UpdatePlanInput } from '@/types/api'
 
 export async function listPlans(studentId?: number) {
   const { data } = await api.get<ApiData<Plan[]>>('/plans', {
@@ -25,4 +25,11 @@ export async function updatePlan(id: number, input: UpdatePlanInput) {
 
 export async function deletePlan(id: number) {
   await api.delete(`/plans/${id}`)
+}
+
+export async function generatePlanLessons(planId: number, firstScheduledAt: string) {
+  const { data } = await api.post<ApiData<Lesson[]>>(`/plans/${planId}/lessons/generate`, {
+    firstScheduledAt,
+  })
+  return data.data
 }

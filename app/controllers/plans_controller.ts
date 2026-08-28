@@ -4,9 +4,12 @@ import {
   PACKAGES,
   createPlanValidator,
   updatePlanValidator,
+  generatePlanLessonsValidator,
   type PlanStatus,
 } from '#validators/plan'
-import { assertLessonsTotalNotBelowActive } from '#services/plan_credits'
+import { assertLessonsTotalNotBelowActive, expiresAtFromPaidAt } from '#services/plan_credits'
+import { generatePlanLessons } from '#services/lesson_generate'
+import LessonTransformer from '#transformers/lesson_transformer'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 
@@ -29,6 +32,7 @@ export default class PlansController {
     const student = await this.findOwnedStudent(user, payload.studentId)
     const catalog = PACKAGES[payload.package]
     const status: PlanStatus = payload.status ?? 'pending'
+    const paidAt = this.resolvePaidAt(status, payload.paidAt)
 
     const plan = await user.related('plans').create({
       studentId: student.id,
@@ -36,7 +40,8 @@ export default class PlansController {
       lessonsTotal: catalog.lessons,
       price: catalog.price,
       status,
-      paidAt: this.resolvePaidAt(status, payload.paidAt),
+      paidAt,
+      expiresAt: expiresAtFromPaidAt(status, paidAt),
       notes: payload.notes ?? null,
     })
 
@@ -52,6 +57,8 @@ export default class PlansController {
   async update({ auth, params, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
     const plan = await this.findOwnedPlan(user, params.id)
+    const previousStatus = plan.status
+    const previousExpiresAt = plan.expiresAt
     const payload = await request.validateUsing(updatePlanValidator)
 
     if (payload.studentId !== undefined) {
@@ -72,10 +79,13 @@ export default class PlansController {
     }
 
     if (payload.status !== undefined || payload.paidAt !== undefined) {
-      plan.paidAt = this.resolvePaidAt(
-        (payload.status ?? plan.status) as PlanStatus,
-        payload.paidAt,
-        plan.paidAt
+      const nextStatus = (payload.status ?? plan.status) as PlanStatus
+      plan.paidAt = this.resolvePaidAt(nextStatus, payload.paidAt, plan.paidAt)
+      plan.expiresAt = expiresAtFromPaidAt(
+        nextStatus,
+        plan.paidAt,
+        previousExpiresAt,
+        previousStatus
       )
     }
 
@@ -85,6 +95,18 @@ export default class PlansController {
 
     await plan.save()
     return serialize(PlanTransformer.transform(await this.findOwnedPlan(user, plan.id)))
+  }
+
+  async generateLessons({ auth, params, request, response, serialize }: HttpContext) {
+    const payload = await request.validateUsing(generatePlanLessonsValidator)
+    const lessons = await generatePlanLessons(
+      auth.getUserOrFail(),
+      Number(params.id),
+      payload.firstScheduledAt
+    )
+
+    response.status(201)
+    return serialize(LessonTransformer.transform(lessons))
   }
 
   async destroy({ auth, params, response }: HttpContext) {

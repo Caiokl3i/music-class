@@ -1,5 +1,6 @@
+import { DateTime } from 'luxon'
 import User from '#models/user'
-import { PACKAGES, type PlanPackage } from '#services/package_catalog'
+import { PACKAGES, CREDIT_VALIDITY_DAYS, type PlanPackage } from '#services/package_catalog'
 
 export function createTeacher(overrides: { email?: string; fullName?: string } = {}) {
   return User.create({
@@ -14,6 +15,7 @@ export async function createTeacherWithPlan(
     email?: string
     package?: PlanPackage
     planStatus?: 'pending' | 'paid' | 'cancelled'
+    paidAt?: DateTime | null
   } = {}
 ) {
   const teacher = await createTeacher({ email: overrides.email })
@@ -23,12 +25,22 @@ export async function createTeacherWithPlan(
   })
   const pack = overrides.package ?? 'pack_4'
   const catalog = PACKAGES[pack]
+  const status = overrides.planStatus ?? 'paid'
+  const paidAt =
+    overrides.paidAt !== undefined
+      ? overrides.paidAt
+      : status === 'paid'
+        ? DateTime.now()
+        : null
+
   const plan = await teacher.related('plans').create({
     studentId: student.id,
     package: pack,
     lessonsTotal: catalog.lessons,
     price: catalog.price,
-    status: overrides.planStatus ?? 'paid',
+    status,
+    paidAt,
+    expiresAt: paidAt ? paidAt.plus({ days: CREDIT_VALIDITY_DAYS }) : null,
   })
 
   return { teacher, student, plan }

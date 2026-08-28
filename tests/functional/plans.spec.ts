@@ -46,6 +46,8 @@ test.group('Plans', (group) => {
     assert.equal(Number(plan.price), 130)
     assert.equal(Number(response.body().data.price), 130)
     assert.isNotNull(plan.paidAt)
+    assert.isNotNull(response.body().data.expiresAt)
+    assert.isNotNull(plan.expiresAt)
   })
 
   test('defaults a new plan to pending without paidAt', async ({ assert, client }) => {
@@ -70,6 +72,7 @@ test.group('Plans', (group) => {
     })
     assert.equal(Number(response.body().data.price), 35)
     assert.isNull(response.body().data.paidAt)
+    assert.isNull(response.body().data.expiresAt)
   })
 
   test('rejects creating a plan for a student from another teacher', async ({ client }) => {
@@ -226,6 +229,7 @@ test.group('Plans', (group) => {
     })
     assert.equal(Number(response.body().data.price), 240)
     assert.isNotNull(response.body().data.paidAt)
+    assert.isNotNull(response.body().data.expiresAt)
   })
 
   test('does not reduce plan credits below active lessons', async ({ client }) => {
@@ -311,6 +315,96 @@ test.group('Plans', (group) => {
 
     response.assertStatus(204)
     assert.isNull(await Plan.find(plan.id))
+  })
+
+  test('generates remaining credits as weekly lessons', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+      paidAt: DateTime.now(),
+      expiresAt: DateTime.now().plus({ days: 60 }),
+    })
+
+    const response = await client
+      .post(`/api/v1/plans/${plan.id}/lessons/generate`)
+      .loginAs(teacher)
+      .json({ firstScheduledAt: '2026-09-01T14:00:00.000Z' })
+
+    response.assertStatus(201)
+    assert.lengthOf(response.body().data, 4)
+    assert.equal(
+      DateTime.fromISO(response.body().data[0].scheduledAt).toUTC().toMillis(),
+      DateTime.fromISO('2026-09-01T14:00:00.000Z').toMillis()
+    )
+    assert.equal(
+      DateTime.fromISO(response.body().data[3].scheduledAt).toUTC().toMillis(),
+      DateTime.fromISO('2026-09-22T14:00:00.000Z').toMillis()
+    )
+
+    const remaining = await client.get(`/api/v1/plans/${plan.id}`).loginAs(teacher)
+    remaining.assertBodyContains({ data: { lessonsRemaining: 0 } })
+  })
+
+  test('stops generating lessons after the plan expires', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+      paidAt: DateTime.fromISO('2026-08-01T12:00:00.000Z'),
+      expiresAt: DateTime.fromISO('2026-09-10T00:00:00.000Z'),
+    })
+
+    const response = await client
+      .post(`/api/v1/plans/${plan.id}/lessons/generate`)
+      .loginAs(teacher)
+      .json({ firstScheduledAt: '2026-09-01T14:00:00.000Z' })
+
+    response.assertStatus(201)
+    assert.lengthOf(response.body().data, 2)
+    assert.equal(
+      DateTime.fromISO(response.body().data[1].scheduledAt).toUTC().toMillis(),
+      DateTime.fromISO('2026-09-08T14:00:00.000Z').toMillis()
+    )
+  })
+
+  test('does not generate any lesson when the batch conflicts', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+      paidAt: DateTime.now(),
+      expiresAt: DateTime.now().plus({ days: 60 }),
+    })
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-08T14:00:00.000Z'),
+      status: 'scheduled',
+    })
+
+    const response = await client
+      .post(`/api/v1/plans/${plan.id}/lessons/generate`)
+      .loginAs(teacher)
+      .json({ firstScheduledAt: '2026-09-01T14:00:00.000Z' })
+
+    response.assertStatus(422)
+    response.assertBodyContains({ code: 'E_LESSON_SCHEDULE_CONFLICT' })
+
+    const lessons = await client.get(`/api/v1/lessons?planId=${plan.id}`).loginAs(teacher)
+    assert.lengthOf(lessons.body().data, 1)
   })
 })
 

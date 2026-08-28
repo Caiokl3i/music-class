@@ -8,6 +8,11 @@ export const PLAN_PACKAGES = ['single', 'pack_4', 'pack_8'] as const
 
 export type PlanPackage = (typeof PLAN_PACKAGES)[number]
 
+export const LESSON_DURATION_MINUTES = 60
+export const CREDIT_VALIDITY_DAYS = 60
+export const LOW_CREDIT_THRESHOLD = 1
+export const EXPIRING_SOON_DAYS = 7
+
 export function listPackages() {
   return PLAN_PACKAGES.map((value) => ({
     value,
@@ -15,4 +20,13 @@ export function listPackages() {
     price: PACKAGES[value].price,
     label: PACKAGES[value].label,
   }))
+}
+
+export function catalogPayload() {
+  return {
+    packages: listPackages(),
+    lessonDurationMinutes: LESSON_DURATION_MINUTES,
+    creditValidityDays: CREDIT_VALIDITY_DAYS,
+    lowCreditThreshold: LOW_CREDIT_THRESHOLD,
+  }
 }

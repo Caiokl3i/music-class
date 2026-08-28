@@ -215,8 +215,15 @@ export function StudentsPage() {
                 </div>
                 <p className="text-sm text-ink-muted md:text-ink">{student.instrument}</p>
                 <p className="text-sm text-ink">
-                  <span className="font-medium text-brand-700">{student.creditsRemaining}</span>
+                  <span
+                    className={`font-medium ${student.creditsRemaining <= 1 ? 'text-amber-700' : 'text-brand-700'}`}
+                  >
+                    {student.creditsRemaining}
+                  </span>
                   <span className="text-ink-muted"> crédito(s)</span>
+                  {student.creditsRemaining <= 1 ? (
+                    <span className="ml-1 text-xs text-amber-700">acabando</span>
+                  ) : null}
                 </p>
                 <div className="flex flex-wrap gap-2 md:justify-end">
                   <Button

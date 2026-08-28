@@ -19,6 +19,7 @@ export type ScannedRoutes = {
     'students.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'students.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'students.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plans.generate_lessons': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.index': { paramsTuple?: []; params?: {} }
     'plans.store': { paramsTuple?: []; params?: {} }
     'plans.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -60,6 +61,7 @@ export type ScannedRoutes = {
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'lessons.store_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'students.store': { paramsTuple?: []; params?: {} }
+    'plans.generate_lessons': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.store': { paramsTuple?: []; params?: {} }
     'lessons.store': { paramsTuple?: []; params?: {} }
   }

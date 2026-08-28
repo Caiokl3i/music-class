@@ -34,6 +34,7 @@ router
         router.get('students/:studentId/lessons', [controllers.Lessons, 'indexForStudent'])
         router.post('students/:studentId/lessons', [controllers.Lessons, 'storeForStudent'])
         router.resource('students', controllers.Students).apiOnly()
+        router.post('plans/:id/lessons/generate', [controllers.Plans, 'generateLessons'])
         router.resource('plans', controllers.Plans).apiOnly()
         router.resource('lessons', controllers.Lessons).apiOnly()
       })

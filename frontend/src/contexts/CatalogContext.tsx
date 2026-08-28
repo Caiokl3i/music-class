@@ -9,16 +9,22 @@ import {
 } from 'react'
 import * as catalogService from '@/services/catalog.service'
 import { useAuth } from '@/contexts/AuthContext'
-import type { PackageOption, PlanPackage } from '@/types/api'
+import type { Catalog, PackageOption, PlanPackage } from '@/types/api'
 
-const FALLBACK: PackageOption[] = [
+const FALLBACK_PACKAGES: PackageOption[] = [
   { value: 'single', lessons: 1, price: 35, label: 'Aula avulsa' },
   { value: 'pack_4', lessons: 4, price: 130, label: 'Pacote mensal 1' },
   { value: 'pack_8', lessons: 8, price: 240, label: 'Pacote mensal 2' },
 ]
 
-type CatalogContextValue = {
-  packages: PackageOption[]
+const FALLBACK: Catalog = {
+  packages: FALLBACK_PACKAGES,
+  lessonDurationMinutes: 60,
+  creditValidityDays: 60,
+  lowCreditThreshold: 1,
+}
+
+type CatalogContextValue = Catalog & {
   loading: boolean
   labelFor: (value: PlanPackage | null | undefined) => string
   optionFor: (value: PlanPackage) => PackageOption
@@ -28,19 +34,19 @@ const CatalogContext = createContext<CatalogContextValue | null>(null)
 
 export function CatalogProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth()
-  const [packages, setPackages] = useState<PackageOption[]>(FALLBACK)
+  const [catalog, setCatalog] = useState<Catalog>(FALLBACK)
   const [loading, setLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!isAuthenticated) {
-      setPackages(FALLBACK)
+      setCatalog(FALLBACK)
       return
     }
     setLoading(true)
     try {
-      setPackages(await catalogService.listPackages())
+      setCatalog(await catalogService.getCatalog())
     } catch {
-      setPackages(FALLBACK)
+      setCatalog(FALLBACK)
     } finally {
       setLoading(false)
     }
@@ -51,14 +57,15 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   }, [load])
 
   const value = useMemo<CatalogContextValue>(() => {
-    const map = new Map(packages.map((item) => [item.value, item]))
+    const map = new Map(catalog.packages.map((item) => [item.value, item]))
     return {
-      packages,
+      ...catalog,
       loading,
       labelFor: (value) => (value ? map.get(value)?.label ?? value : 'Pacote'),
-      optionFor: (value) => map.get(value) ?? FALLBACK.find((item) => item.value === value)!,
+      optionFor: (value) =>
+        map.get(value) ?? FALLBACK_PACKAGES.find((item) => item.value === value)!,
     }
-  }, [packages, loading])
+  }, [catalog, loading])
 
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>
 }

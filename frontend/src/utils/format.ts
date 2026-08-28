@@ -12,6 +12,12 @@ export function formatDateTime(value: string | null | undefined) {
   return formatDate(value, "dd/MM/yyyy 'às' HH:mm")
 }
 
+export function formatWeekdayDateTime(value: Date | string) {
+  const date = value instanceof Date ? value : parseISO(value)
+  if (!isValid(date)) return '—'
+  return format(date, "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+}
+
 export function formatTime(value: string | null | undefined) {
   return formatDate(value, 'HH:mm')
 }

@@ -1,7 +1,7 @@
 import type Student from '#models/student'
 import type Plan from '#models/plan'
 import { BaseTransformer } from '@adonisjs/core/transformers'
-import { remainingCreditsFromCount } from '#services/plan_credits'
+import { usableCreditsFromCount } from '#services/plan_credits'
 
 export default class StudentTransformer extends BaseTransformer<Student> {
   toObject() {
@@ -20,12 +20,10 @@ export default class StudentTransformer extends BaseTransformer<Student> {
         'updatedAt',
       ]),
       creditsRemaining: paidPlans.reduce((sum, plan) => {
-        return (
-          sum + remainingCreditsFromCount(plan.lessonsTotal, Number(plan.$extras.lessons_count ?? 0))
-        )
+        return sum + usableCreditsFromCount(plan, Number(plan.$extras.lessons_count ?? 0))
       }, 0),
       activePlansCount: paidPlans.filter((plan) => {
-        return remainingCreditsFromCount(plan.lessonsTotal, Number(plan.$extras.lessons_count ?? 0)) > 0
+        return usableCreditsFromCount(plan, Number(plan.$extras.lessons_count ?? 0)) > 0
       }).length,
     }
   }

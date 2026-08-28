@@ -16,11 +16,16 @@ test.group('Catalog', (group) => {
     const response = await client.get('/api/v1/packages').loginAs(teacher)
     response.assertStatus(200)
     response.assertBodyContains({
-      data: [
-        { value: 'single', lessons: 1, price: 35, label: 'Aula avulsa' },
-        { value: 'pack_4', lessons: 4, price: 130, label: 'Pacote mensal 1' },
-        { value: 'pack_8', lessons: 8, price: 240, label: 'Pacote mensal 2' },
-      ],
+      data: {
+        packages: [
+          { value: 'single', lessons: 1, price: 35, label: 'Aula avulsa' },
+          { value: 'pack_4', lessons: 4, price: 130, label: 'Pacote mensal 1' },
+          { value: 'pack_8', lessons: 8, price: 240, label: 'Pacote mensal 2' },
+        ],
+        lessonDurationMinutes: 60,
+        creditValidityDays: 60,
+        lowCreditThreshold: 1,
+      },
     })
   })
 })

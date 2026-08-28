@@ -43,6 +43,7 @@ export interface ApiDefinition {
     destroy: typeof routes['students.destroy']
   }
   plans: {
+    generateLessons: typeof routes['plans.generate_lessons']
     index: typeof routes['plans.index']
     store: typeof routes['plans.store']
     show: typeof routes['plans.show']

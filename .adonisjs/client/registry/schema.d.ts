@@ -187,6 +187,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/students_controller').default['destroy']>>>
     }
   }
+  'plans.generate_lessons': {
+    methods: ["POST"]
+    pattern: '/api/v1/plans/:id/lessons/generate'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/plan').generatePlanLessonsValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/plan').generatePlanLessonsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['generateLessons']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['generateLessons']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'plans.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/plans'

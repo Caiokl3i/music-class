@@ -33,6 +33,7 @@ export type Plan = {
   price: number
   status: PlanStatus
   paidAt: string | null
+  expiresAt: string | null
   notes: string | null
   createdAt: string
   updatedAt: string | null
@@ -62,14 +63,34 @@ export type PackageOption = {
   label: string
 }
 
+export type Catalog = {
+  packages: PackageOption[]
+  lessonDurationMinutes: number
+  creditValidityDays: number
+  lowCreditThreshold: number
+}
+
+export type PlanAlert = {
+  planId: number
+  studentId: number
+  studentName: string | null
+  lessonsRemaining: number
+  lessonsTotal: number
+  expiresAt: string | null
+}
+
 export type Dashboard = {
   studentCount: number
   activePlans: number
   scheduledCount: number
   doneCount: number
   revenue: number
+  revenueThisMonth: number
   pendingPlans: number
   pendingAmount: number
+  lowCredits: PlanAlert[]
+  expiringSoon: PlanAlert[]
+  expiredPlans: PlanAlert[]
   overdue: Lesson[]
   today: Lesson[]
   upcoming: Lesson[]

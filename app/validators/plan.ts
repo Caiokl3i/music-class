@@ -42,3 +42,7 @@ export const updatePlanValidator = vine.create({
   paidAt: planFields.paidAt.clone(),
   notes: planFields.notes.clone(),
 })
+
+export const generatePlanLessonsValidator = vine.create({
+  firstScheduledAt: vine.date({ formats: ['iso8601'] }),
+})

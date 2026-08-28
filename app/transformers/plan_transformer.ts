@@ -14,6 +14,7 @@ export default class PlanTransformer extends BaseTransformer<Plan> {
         'price',
         'status',
         'paidAt',
+        'expiresAt',
         'notes',
         'createdAt',
         'updatedAt',
