@@ -36,6 +36,7 @@ test.group('Plans', (group) => {
         userId: teacher.id,
         package: 'pack_4',
         lessonsTotal: 4,
+        lessonsRemaining: 4,
         status: 'paid',
         notes: 'Pago no PIX',
       },
@@ -256,6 +257,43 @@ test.group('Plans', (group) => {
     })
 
     response.assertStatus(422)
+  })
+
+  test('exposes lessonsRemaining on list and show', async ({ client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+    })
+
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-01T14:00:00.000Z'),
+      status: 'scheduled',
+    })
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-08T14:00:00.000Z'),
+      status: 'cancelled',
+    })
+
+    const list = await client.get('/api/v1/plans').loginAs(teacher)
+    list.assertStatus(200)
+    list.assertBodyContains({
+      data: [{ id: plan.id, lessonsTotal: 4, lessonsRemaining: 3 }],
+    })
+
+    const show = await client.get(`/api/v1/plans/${plan.id}`).loginAs(teacher)
+    show.assertStatus(200)
+    show.assertBodyContains({
+      data: { id: plan.id, lessonsTotal: 4, lessonsRemaining: 3 },
+    })
   })
 
   test('deletes a plan owned by the teacher', async ({ assert, client }) => {

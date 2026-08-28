@@ -41,7 +41,7 @@ export default class PlansController {
     })
 
     response.status(201)
-    return serialize(PlanTransformer.transform(plan))
+    return serialize(PlanTransformer.transform(await this.findOwnedPlan(user, plan.id)))
   }
 
   async show({ auth, params, serialize }: HttpContext) {
@@ -84,7 +84,7 @@ export default class PlansController {
     }
 
     await plan.save()
-    return serialize(PlanTransformer.transform(plan))
+    return serialize(PlanTransformer.transform(await this.findOwnedPlan(user, plan.id)))
   }
 
   async destroy({ auth, params, response }: HttpContext) {
