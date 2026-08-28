@@ -2,13 +2,15 @@ import vine from '@vinejs/vine'
 
 export const LESSON_STATUSES = ['scheduled', 'done', 'cancelled', 'no_show'] as const
 
+export type LessonStatus = (typeof LESSON_STATUSES)[number]
+
 /**
  * Shared fields for lesson create/update.
  */
 const lessonFields = {
   studentId: vine.number().positive(),
   planId: vine.number().positive(),
-  scheduledAt: vine.date(),
+  scheduledAt: vine.date({ formats: ['iso8601'] }),
   status: vine.enum(LESSON_STATUSES),
   description: vine.string().trim().optional().nullable(),
 }
@@ -16,8 +18,15 @@ const lessonFields = {
 /**
  * Validator used when creating a lesson.
  * `userId` is set from the authenticated user in the controller.
+ * `status` defaults to `scheduled` when omitted.
  */
-export const createLessonValidator = vine.create(lessonFields)
+export const createLessonValidator = vine.create({
+  studentId: lessonFields.studentId,
+  planId: lessonFields.planId,
+  scheduledAt: lessonFields.scheduledAt,
+  status: lessonFields.status.clone().optional(),
+  description: lessonFields.description,
+})
 
 /**
  * Validator used when updating a lesson.

@@ -30,6 +30,8 @@ router
     router
       .group(() => {
         router.resource('students', controllers.Students).apiOnly()
+        router.resource('plans', controllers.Plans).apiOnly()
+        router.resource('lessons', controllers.Lessons).apiOnly()
       })
       .use(middleware.auth())
   })
