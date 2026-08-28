@@ -5,31 +5,15 @@ import {
   updateLessonValidator,
   type LessonStatus,
 } from '#validators/lesson'
+import { assertCanConsumeCredit } from '#services/plan_credits'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
-import type Plan from '#models/plan'
 
-const ERROR_PLAN_NO_CREDITS = createError(
-  'This plan has no remaining lesson credits',
-  'ERROR_PLAN_NO_CREDITS',
-  422
-)
-
-const ERROR_LESSON_STUDENT_MISMATCH = createError(
+const LESSON_STUDENT_MISMATCH = createError(
   'The lesson student must match the plan student',
-  'ERROR_LESSON_STUDENT_MISMATCH',
+  'E_LESSON_STUDENT_MISMATCH',
   422
 )
-
-const ERROR_PLAN_CANCELLED = createError(
-  'Cannot consume lesson credits on a cancelled plan',
-  'ERROR_PLAN_CANCELLED',
-  422
-)
-
-function consumesCredit(status: string) {
-  return status !== 'cancelled'
-}
 
 export default class LessonsController {
   async index({ auth, request, serialize }: HttpContext) {
@@ -55,7 +39,7 @@ export default class LessonsController {
     const status: LessonStatus = payload.status ?? 'scheduled'
     const plan = await this.resolvePlan(user, payload.studentId, payload.planId)
 
-    await this.ensureCanConsume(plan, status)
+    await assertCanConsumeCredit(plan, status)
 
     const lesson = await user.related('lessons').create({
       studentId: payload.studentId,
@@ -83,7 +67,7 @@ export default class LessonsController {
     const status = (payload.status ?? lesson.status) as LessonStatus
     const plan = await this.resolvePlan(user, studentId, planId)
 
-    await this.ensureCanConsume(plan, status, lesson.id)
+    await assertCanConsumeCredit(plan, status, lesson.id)
 
     lesson.studentId = studentId
     lesson.planId = planId
@@ -125,23 +109,9 @@ export default class LessonsController {
     const plan = await this.findOwnedPlan(user, planId)
 
     if (plan.studentId !== student.id) {
-      throw new ERROR_LESSON_STUDENT_MISMATCH()
+      throw new LESSON_STUDENT_MISMATCH()
     }
 
     return plan
-  }
-
-  private async ensureCanConsume(plan: Plan, status: string, exceptLessonId?: number) {
-    if (!consumesCredit(status)) {
-      return
-    }
-
-    if (plan.status === 'cancelled') {
-      throw new ERROR_PLAN_CANCELLED()
-    }
-
-    if ((await plan.remainingCredits(exceptLessonId)) <= 0) {
-      throw new ERROR_PLAN_NO_CREDITS()
-    }
   }
 }

@@ -6,6 +6,7 @@ import {
   updatePlanValidator,
   type PlanStatus,
 } from '#validators/plan'
+import { assertLessonsTotalNotBelowActive } from '#services/plan_credits'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 
@@ -60,6 +61,7 @@ export default class PlansController {
 
     if (payload.package) {
       const catalog = PACKAGES[payload.package]
+      await assertLessonsTotalNotBelowActive(plan, catalog.lessons)
       plan.package = payload.package
       plan.lessonsTotal = catalog.lessons
       plan.price = catalog.price

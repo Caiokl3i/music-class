@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import { DateTime } from 'luxon'
 import testUtils from '@adonisjs/core/services/test_utils'
 import User from '#models/user'
 import Plan from '#models/plan'
@@ -224,6 +225,37 @@ test.group('Plans', (group) => {
     })
     assert.equal(Number(response.body().data.price), 240)
     assert.isNotNull(response.body().data.paidAt)
+  })
+
+  test('does not reduce plan credits below active lessons', async ({ client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+    })
+
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-01T14:00:00.000Z'),
+      status: 'scheduled',
+    })
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-08T14:00:00.000Z'),
+      status: 'done',
+    })
+
+    const response = await client.put(`/api/v1/plans/${plan.id}`).loginAs(teacher).json({
+      package: 'single',
+    })
+
+    response.assertStatus(422)
   })
 
   test('deletes a plan owned by the teacher', async ({ assert, client }) => {

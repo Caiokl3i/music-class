@@ -1,5 +1,6 @@
 import type Plan from '#models/plan'
 import { BaseTransformer } from '@adonisjs/core/transformers'
+import { remainingCreditsFromCount } from '#services/plan_credits'
 
 export default class PlanTransformer extends BaseTransformer<Plan> {
   toObject() {
@@ -22,7 +23,7 @@ export default class PlanTransformer extends BaseTransformer<Plan> {
   }
 
   private lessonsRemaining() {
-    const consumed = Number(this.resource.$extras.lessons_count ?? 0)
-    return this.resource.lessonsTotal - consumed
+    const activeLessons = Number(this.resource.$extras.lessons_count ?? 0)
+    return remainingCreditsFromCount(this.resource.lessonsTotal, activeLessons)
   }
 }
