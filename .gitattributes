@@ -1,0 +1,2 @@
+# Force LF for shell scripts used inside Linux containers (Windows checkouts)
+docker/*.sh text eol=lf

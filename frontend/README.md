@@ -89,3 +89,16 @@ npm run build
 ```
 
 Artefatos em `dist/`. Sirva com qualquer host estático e aponte `VITE_API_URL` para a API pública no build.
+
+## Docker (API + frontend)
+
+Na raiz do monorepo:
+
+```bash
+# PowerShell
+$env:APP_KEY = "substitua-por-uma-chave-secreta-com-pelo-menos-32-chars"
+docker compose up --build
+```
+
+- App: http://localhost:8080
+- API: http://localhost:3333
