@@ -1,0 +1,101 @@
+export type User = {
+  id: number
+  fullName: string | null
+  email: string
+  createdAt: string
+  updatedAt: string | null
+  initials: string
+}
+
+export type Student = {
+  id: number
+  userId: number
+  name: string
+  birthdate: string | null
+  instrument: string
+  phone: string | null
+  description: string | null
+  createdAt: string
+  updatedAt: string | null
+}
+
+export type PlanPackage = 'single' | 'pack_4' | 'pack_8'
+export type PlanStatus = 'pending' | 'paid' | 'cancelled'
+
+export type Plan = {
+  id: number
+  userId: number
+  studentId: number
+  package: PlanPackage
+  lessonsTotal: number
+  price: number
+  status: PlanStatus
+  paidAt: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string | null
+  lessonsRemaining: number
+}
+
+export type LessonStatus = 'scheduled' | 'done' | 'cancelled' | 'no_show'
+
+export type Lesson = {
+  id: number
+  userId: number
+  studentId: number
+  planId: number
+  scheduledAt: string
+  status: LessonStatus
+  description: string | null
+  createdAt: string
+  updatedAt: string | null
+}
+
+export type ApiData<T> = { data: T }
+
+export type VineError = {
+  message: string
+  field?: string
+  rule?: string
+}
+
+export type ApiErrorBody = {
+  message?: string
+  code?: string
+  errors?: VineError[]
+}
+
+export type CreateStudentInput = {
+  name: string
+  instrument: string
+  birthdate?: string | null
+  phone?: string | null
+  description?: string | null
+}
+
+export type UpdateStudentInput = Partial<CreateStudentInput>
+
+export type CreatePlanInput = {
+  studentId: number
+  package: PlanPackage
+  status?: PlanStatus
+  paidAt?: string | null
+  notes?: string | null
+}
+
+export type UpdatePlanInput = Partial<CreatePlanInput>
+
+export type CreateLessonInput = {
+  studentId: number
+  planId: number
+  scheduledAt: string
+  status?: LessonStatus
+  description?: string | null
+}
+
+export type UpdateLessonInput = Partial<CreateLessonInput>
+
+export type AuthResponse = {
+  user: User
+  token: string
+}
