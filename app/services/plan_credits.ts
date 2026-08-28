@@ -13,6 +13,12 @@ export const PLAN_CANCELLED = createError(
   422
 )
 
+export const PLAN_NOT_PAID = createError(
+  'Cannot consume lesson credits on a plan that is not paid',
+  'E_PLAN_NOT_PAID',
+  422
+)
+
 export const PLAN_LESSONS_TOTAL_TOO_LOW = createError(
   'Plan lessons total cannot be lower than active lessons',
   'E_PLAN_LESSONS_TOTAL_TOO_LOW',
@@ -25,6 +31,22 @@ export const PLAN_LESSONS_TOTAL_TOO_LOW = createError(
  */
 export function lessonConsumesCredit(status: string) {
   return status !== 'cancelled'
+}
+
+export function creditBlockReason(planStatus: string, lessonStatus: string) {
+  if (!lessonConsumesCredit(lessonStatus)) {
+    return null
+  }
+
+  if (planStatus === 'cancelled') {
+    return 'cancelled' as const
+  }
+
+  if (planStatus !== 'paid') {
+    return 'not_paid' as const
+  }
+
+  return null
 }
 
 export async function countActiveLessons(plan: Plan, exceptLessonId?: number) {
@@ -52,12 +74,18 @@ export async function assertCanConsumeCredit(
   status: string,
   exceptLessonId?: number
 ) {
-  if (!lessonConsumesCredit(status)) {
-    return
+  const blocked = creditBlockReason(plan.status, status)
+
+  if (blocked === 'cancelled') {
+    throw new PLAN_CANCELLED()
   }
 
-  if (plan.status === 'cancelled') {
-    throw new PLAN_CANCELLED()
+  if (blocked === 'not_paid') {
+    throw new PLAN_NOT_PAID()
+  }
+
+  if (!lessonConsumesCredit(status)) {
+    return
   }
 
   if ((await remainingCredits(plan, exceptLessonId)) <= 0) {

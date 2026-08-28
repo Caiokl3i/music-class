@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'motion/react'
-import { Plus, Search, Users } from 'lucide-react'
+import { ChevronRight, Plus, Search, Users } from 'lucide-react'
 import * as studentsService from '@/services/students.service'
 import type { Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
@@ -17,7 +17,6 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
-import { formatDate } from '@/utils/format'
 
 const schema = z.object({
   name: z.string().min(1, 'Informe o nome'),
@@ -30,6 +29,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function StudentsPage() {
+  const navigate = useNavigate()
   const toast = useToast()
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
@@ -105,18 +105,18 @@ export function StudentsPage() {
       if (editing) {
         await studentsService.updateStudent(editing.id, payload)
         toast.success('Aluno atualizado.')
+        setModalOpen(false)
+        await load()
       } else {
-        await studentsService.createStudent(payload)
+        const created = await studentsService.createStudent(payload)
         toast.success('Aluno cadastrado.')
+        setModalOpen(false)
+        navigate(`/students/${created.id}`)
       }
-      setModalOpen(false)
-      await load()
     } catch (error) {
       const fields = getFieldErrors(error)
       Object.entries(fields).forEach(([field, message]) => {
-        if (field in values) {
-          setError(field as keyof FormValues, { message })
-        }
+        if (field in values) setError(field as keyof FormValues, { message })
       })
       toast.error(getErrorMessage(error, 'Não foi possível salvar o aluno.'))
     } finally {
@@ -143,7 +143,7 @@ export function StudentsPage() {
     <div>
       <PageHeader
         title="Alunos"
-        description="Cadastre e acompanhe seus alunos."
+        description="Abra a ficha para vender pacote e agendar. A lista é só o índice."
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" aria-hidden />
@@ -186,10 +186,10 @@ export function StudentsPage() {
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-white">
-          <div className="hidden grid-cols-[1.4fr_1fr_1fr_auto] gap-4 border-b border-border bg-slate-50/80 px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-muted md:grid">
+          <div className="hidden grid-cols-[1.5fr_1fr_0.8fr_auto] gap-4 border-b border-border bg-slate-50/80 px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-muted md:grid">
             <span>Nome</span>
             <span>Instrumento</span>
-            <span>Contato</span>
+            <span>Créditos</span>
             <span className="text-right">Ações</span>
           </div>
           <ul className="divide-y divide-border">
@@ -199,28 +199,44 @@ export function StudentsPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="grid gap-3 px-4 py-4 md:grid-cols-[1.4fr_1fr_1fr_auto] md:items-center md:gap-4"
+                className="grid cursor-pointer gap-3 px-4 py-4 transition-colors hover:bg-brand-50/40 md:grid-cols-[1.5fr_1fr_0.8fr_auto] md:items-center md:gap-4"
+                onClick={() => navigate(`/students/${student.id}`)}
               >
                 <div>
                   <Link
                     to={`/students/${student.id}`}
-                    className="font-medium text-ink hover:text-brand-700"
+                    className="inline-flex items-center gap-1 font-medium text-brand-700 hover:underline"
+                    onClick={(event) => event.stopPropagation()}
                   >
                     {student.name}
+                    <ChevronRight className="size-4" aria-hidden />
                   </Link>
-                  {student.birthdate ? (
-                    <p className="text-xs text-ink-muted">
-                      Nasc. {formatDate(student.birthdate)}
-                    </p>
-                  ) : null}
+                  <p className="text-xs text-ink-muted">{student.phone || 'Abrir ficha'}</p>
                 </div>
                 <p className="text-sm text-ink-muted md:text-ink">{student.instrument}</p>
-                <p className="text-sm text-ink-muted">{student.phone || '—'}</p>
+                <p className="text-sm text-ink">
+                  <span className="font-medium text-brand-700">{student.creditsRemaining}</span>
+                  <span className="text-ink-muted"> crédito(s)</span>
+                </p>
                 <div className="flex flex-wrap gap-2 md:justify-end">
-                  <Button size="sm" variant="secondary" onClick={() => openEdit(student)}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openEdit(student)
+                    }}
+                  >
                     Editar
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setDeleting(student)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setDeleting(student)
+                    }}
+                  >
                     Excluir
                   </Button>
                 </div>
@@ -237,7 +253,7 @@ export function StudentsPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)} disabled={saving}>
-              Cancelar
+              Fechar
             </Button>
             <Button loading={saving} onClick={handleSubmit(onSubmit)}>
               Salvar
@@ -247,11 +263,7 @@ export function StudentsPage() {
       >
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Input label="Nome" error={errors.name?.message} {...register('name')} />
-          <Input
-            label="Instrumento"
-            error={errors.instrument?.message}
-            {...register('instrument')}
-          />
+          <Input label="Instrumento" error={errors.instrument?.message} {...register('instrument')} />
           <Input label="Telefone" error={errors.phone?.message} {...register('phone')} />
           <Input
             label="Data de nascimento"
@@ -259,11 +271,7 @@ export function StudentsPage() {
             error={errors.birthdate?.message}
             {...register('birthdate')}
           />
-          <TextArea
-            label="Observações"
-            error={errors.description?.message}
-            {...register('description')}
-          />
+          <TextArea label="Observações" error={errors.description?.message} {...register('description')} />
         </form>
       </Modal>
 

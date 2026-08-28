@@ -17,6 +17,8 @@ export type Student = {
   description: string | null
   createdAt: string
   updatedAt: string | null
+  creditsRemaining: number
+  activePlansCount: number
 }
 
 export type PlanPackage = 'single' | 'pack_4' | 'pack_8'
@@ -49,6 +51,29 @@ export type Lesson = {
   description: string | null
   createdAt: string
   updatedAt: string | null
+  studentName: string | null
+  planPackage: PlanPackage | null
+}
+
+export type PackageOption = {
+  value: PlanPackage
+  lessons: number
+  price: number
+  label: string
+}
+
+export type Dashboard = {
+  studentCount: number
+  activePlans: number
+  scheduledCount: number
+  doneCount: number
+  revenue: number
+  pendingPlans: number
+  pendingAmount: number
+  overdue: Lesson[]
+  today: Lesson[]
+  upcoming: Lesson[]
+  recent: Lesson[]
 }
 
 export type ApiData<T> = { data: T }
@@ -92,6 +117,8 @@ export type CreateLessonInput = {
   status?: LessonStatus
   description?: string | null
 }
+
+export type CreateLessonForStudentInput = Omit<CreateLessonInput, 'studentId'>
 
 export type UpdateLessonInput = Partial<CreateLessonInput>
 

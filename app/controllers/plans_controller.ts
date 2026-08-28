@@ -104,7 +104,7 @@ export default class PlansController {
     })
   }
 
-  private findOwnedPlan(user: User, id: string) {
+  private findOwnedPlan(user: User, id: number | string) {
     return this.plansQuery(user).where('id', id).firstOrFail()
   }
 

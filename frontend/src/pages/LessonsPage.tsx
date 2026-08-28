@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,7 +16,6 @@ import {
   startOfWeek,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { motion } from 'motion/react'
 import { CalendarDays, ChevronLeft, ChevronRight, List, Plus } from 'lucide-react'
 import * as lessonsService from '@/services/lessons.service'
 import * as studentsService from '@/services/students.service'
@@ -29,12 +29,13 @@ import { TextArea } from '@/components/TextArea'
 import { Modal } from '@/components/Modal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
-import { Badge } from '@/components/Badge'
 import { Skeleton } from '@/components/Skeleton'
+import { LessonRow } from '@/components/LessonRow'
 import { useToast } from '@/contexts/ToastContext'
+import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
-import { formatDateTime, fromDatetimeLocalValue, toDatetimeLocalValue } from '@/utils/format'
-import { PACKAGES } from '@/utils/packages'
+import { formatTime, fromDatetimeLocalValue, toDatetimeLocalValue } from '@/utils/format'
+import { bookablePlans } from '@/domain/status'
 
 const schema = z.object({
   studentId: z.string().min(1, 'Selecione o aluno'),
@@ -48,7 +49,9 @@ type FormValues = z.infer<typeof schema>
 type ViewMode = 'list' | 'calendar'
 
 export function LessonsPage() {
+  const navigate = useNavigate()
   const toast = useToast()
+  const { labelFor } = useCatalog()
   const [view, setView] = useState<ViewMode>('list')
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
   const [lessons, setLessons] = useState<Lesson[]>([])
@@ -82,18 +85,14 @@ export function LessonsPage() {
   })
 
   const formStudentId = watch('studentId')
-
   const studentsMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students])
-  const plansMap = useMemo(() => new Map(plans.map((p) => [p.id, p])), [plans])
 
   const availablePlans = useMemo(() => {
     const studentId = Number(formStudentId)
     if (!studentId) return []
-    return plans.filter(
-      (plan) =>
-        plan.studentId === studentId &&
-        plan.status !== 'cancelled' &&
-        (editing?.planId === plan.id || plan.lessonsRemaining > 0),
+    return bookablePlans(
+      plans.filter((plan) => plan.studentId === studentId),
+      editing?.planId,
     )
   }, [plans, formStudentId, editing])
 
@@ -124,14 +123,22 @@ export function LessonsPage() {
     void load()
   }, [load])
 
-  function openCreate(day?: Date) {
-    setEditing(null)
-    const base = day ?? new Date()
+  function defaultSchedule(day?: Date) {
+    const base = day ? new Date(day) : new Date()
     base.setHours(14, 0, 0, 0)
+    return toDatetimeLocalValue(base.toISOString())
+  }
+
+  function openCreate(day?: Date) {
+    if (students.length === 0) {
+      navigate('/students')
+      return
+    }
+    setEditing(null)
     reset({
       studentId: filterStudentId || '',
       planId: '',
-      scheduledAt: toDatetimeLocalValue(base.toISOString()),
+      scheduledAt: defaultSchedule(day),
       status: 'scheduled',
       description: '',
     })
@@ -172,9 +179,7 @@ export function LessonsPage() {
     } catch (error) {
       const fields = getFieldErrors(error)
       Object.entries(fields).forEach(([field, message]) => {
-        if (field in values) {
-          setError(field as keyof FormValues, { message })
-        }
+        if (field in values) setError(field as keyof FormValues, { message })
       })
       toast.error(getErrorMessage(error, 'Não foi possível salvar a aula.'))
     } finally {
@@ -217,7 +222,7 @@ export function LessonsPage() {
     <div>
       <PageHeader
         title="Aulas"
-        description="Agende, acompanhe e atualize o status das aulas."
+        description="Agenda de todos os alunos. Clique no dia para marcar."
         actions={
           <>
             <div className="flex rounded-lg border border-border bg-white p-0.5">
@@ -267,74 +272,39 @@ export function LessonsPage() {
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
+      ) : students.length === 0 ? (
+        <EmptyState
+          icon={<CalendarDays className="size-8" />}
+          title="Cadastre um aluno primeiro"
+          description="Depois disso você agenda aulas por aqui ou pela ficha do aluno."
+          actionLabel="Ver alunos"
+          onAction={() => navigate('/students')}
+        />
       ) : filteredLessons.length === 0 && view === 'list' ? (
         <EmptyState
           icon={<CalendarDays className="size-8" />}
           title="Nenhuma aula"
-          description="Agende a primeira aula vinculando um pacote com créditos disponíveis."
+          description="Escolha um aluno no formulário — o filtro acima é só para visualizar."
           actionLabel="Agendar aula"
           onAction={() => openCreate()}
         />
       ) : view === 'list' ? (
-        <ul className="space-y-3">
-          {filteredLessons.map((lesson, index) => {
-            const student = studentsMap.get(lesson.studentId)
-            const plan = plansMap.get(lesson.planId)
-            return (
-              <motion.li
-                key={lesson.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="rounded-2xl border border-border bg-white p-4 sm:p-5"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-ink">{formatDateTime(lesson.scheduledAt)}</h3>
-                      <LessonBadge status={lesson.status} />
-                    </div>
-                    <p className="mt-1 text-sm text-ink-muted">
-                      {student?.name ?? `Aluno #${lesson.studentId}`}
-                      {plan ? ` · ${PACKAGES[plan.package].label}` : ''}
-                    </p>
-                    {lesson.description ? (
-                      <p className="mt-2 text-sm text-ink">{lesson.description}</p>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {lesson.status === 'scheduled' ? (
-                      <>
-                        <Button size="sm" variant="secondary" onClick={() => quickStatus(lesson, 'done')}>
-                          Concluir
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => quickStatus(lesson, 'no_show')}
-                        >
-                          Falta
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => quickStatus(lesson, 'cancelled')}
-                        >
-                          Cancelar
-                        </Button>
-                      </>
-                    ) : null}
-                    <Button size="sm" variant="secondary" onClick={() => openEdit(lesson)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setDeleting(lesson)}>
-                      Excluir
-                    </Button>
-                  </div>
-                </div>
-              </motion.li>
-            )
-          })}
+        <ul className="divide-y divide-border rounded-2xl border border-border bg-white px-4 sm:px-5">
+          {filteredLessons.map((lesson) => (
+            <LessonRow
+              key={lesson.id}
+              lesson={{
+                ...lesson,
+                studentName: lesson.studentName ?? studentsMap.get(lesson.studentId)?.name ?? null,
+              }}
+              planLabel={labelFor(lesson.planPackage)}
+              onComplete={(item) => quickStatus(item, 'done')}
+              onNoShow={(item) => quickStatus(item, 'no_show')}
+              onCancel={(item) => quickStatus(item, 'cancelled')}
+              onEdit={openEdit}
+              onDelete={setDeleting}
+            />
+          ))}
         </ul>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-white">
@@ -371,11 +341,7 @@ export function LessonsPage() {
                     inMonth ? 'bg-white' : 'bg-slate-50/60'
                   }`}
                 >
-                  <span
-                    className={`mb-1 text-xs font-medium ${
-                      inMonth ? 'text-ink' : 'text-slate-400'
-                    }`}
-                  >
+                  <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-slate-400'}`}>
                     {format(day, 'd')}
                   </span>
                   <div className="flex flex-col gap-1 overflow-hidden">
@@ -389,8 +355,8 @@ export function LessonsPage() {
                         }}
                         className="truncate rounded bg-brand-50 px-1 py-0.5 text-[10px] font-medium text-brand-800"
                       >
-                        {format(parseISO(lesson.scheduledAt), 'HH:mm')}{' '}
-                        {studentsMap.get(lesson.studentId)?.name?.split(' ')[0]}
+                        {formatTime(lesson.scheduledAt)}{' '}
+                        {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
                       </span>
                     ))}
                     {dayLessons.length > 3 ? (
@@ -411,7 +377,7 @@ export function LessonsPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)} disabled={saving}>
-              Cancelar
+              Fechar
             </Button>
             <Button loading={saving} onClick={handleSubmit(onSubmit)}>
               Salvar
@@ -431,14 +397,28 @@ export function LessonsPage() {
           />
           <Select
             label="Pacote"
-            placeholder={formStudentId ? 'Selecione um pacote com crédito' : 'Selecione o aluno antes'}
+            placeholder={
+              formStudentId ? 'Pacote pago com crédito' : 'Selecione o aluno antes'
+            }
             error={errors.planId?.message}
             options={availablePlans.map((plan) => ({
               value: plan.id,
-              label: `${PACKAGES[plan.package].label} · ${plan.lessonsRemaining}/${plan.lessonsTotal} créditos`,
+              label: `${labelFor(plan.package)} · ${plan.lessonsRemaining}/${plan.lessonsTotal} créditos`,
             }))}
             {...register('planId')}
           />
+          {formStudentId && availablePlans.length === 0 ? (
+            <p className="text-sm text-ink-muted">
+              Este aluno não tem pacote pago com crédito.{' '}
+              <button
+                type="button"
+                className="font-medium text-brand-700 hover:underline"
+                onClick={() => navigate(`/students/${formStudentId}`)}
+              >
+                Abrir ficha
+              </button>
+            </p>
+          ) : null}
           <Input
             label="Data e hora"
             type="datetime-local"
@@ -456,32 +436,18 @@ export function LessonsPage() {
             ]}
             {...register('status')}
           />
-          <TextArea
-            label="Anotações"
-            error={errors.description?.message}
-            {...register('description')}
-          />
+          <TextArea label="Anotações" error={errors.description?.message} {...register('description')} />
         </form>
       </Modal>
 
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Excluir aula?"
-        description="Esta ação remove a aula permanentemente. Se ela consumia crédito, o crédito volta ao excluir (aulas canceladas já não consomem)."
+        description="A aula sai do histórico. Se ela consumia crédito, o crédito volta ao pacote."
         loading={deleteLoading}
         onCancel={() => setDeleting(null)}
         onConfirm={confirmDelete}
       />
     </div>
   )
-}
-
-function LessonBadge({ status }: { status: LessonStatus }) {
-  const map = {
-    scheduled: { label: 'Agendada', tone: 'brand' as const },
-    done: { label: 'Concluída', tone: 'success' as const },
-    cancelled: { label: 'Cancelada', tone: 'neutral' as const },
-    no_show: { label: 'Falta', tone: 'warning' as const },
-  }
-  return <Badge tone={map[status].tone}>{map[status].label}</Badge>
 }

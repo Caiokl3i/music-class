@@ -5,9 +5,7 @@ import type User from '#models/user'
 
 export default class StudentsController {
   async index({ auth, serialize }: HttpContext) {
-    const user = auth.getUserOrFail()
-    const students = await user.related('students').query().orderBy('name', 'asc')
-
+    const students = await this.studentsQuery(auth.getUserOrFail()).orderBy('name', 'asc')
     return serialize(StudentTransformer.transform(students))
   }
 
@@ -17,7 +15,7 @@ export default class StudentsController {
     const student = await user.related('students').create(payload)
 
     response.status(201)
-    return serialize(StudentTransformer.transform(student))
+    return serialize(StudentTransformer.transform(await this.findOwnedStudent(user, student.id)))
   }
 
   async show({ auth, params, serialize }: HttpContext) {
@@ -26,13 +24,14 @@ export default class StudentsController {
   }
 
   async update({ auth, params, request, serialize }: HttpContext) {
-    const student = await this.findOwnedStudent(auth.getUserOrFail(), params.id)
+    const user = auth.getUserOrFail()
+    const student = await this.findOwnedStudent(user, params.id)
     const payload = await request.validateUsing(updateStudentValidator)
 
     student.merge(payload)
     await student.save()
 
-    return serialize(StudentTransformer.transform(student))
+    return serialize(StudentTransformer.transform(await this.findOwnedStudent(user, student.id)))
   }
 
   async destroy({ auth, params, response }: HttpContext) {
@@ -42,7 +41,15 @@ export default class StudentsController {
     return response.noContent()
   }
 
-  private findOwnedStudent(user: User, id: string) {
-    return user.related('students').query().where('id', id).firstOrFail()
+  private studentsQuery(user: User) {
+    return user.related('students').query().preload('plans', (plans) => {
+      plans.where('status', 'paid').withCount('lessons', (query) => {
+        query.whereNot('status', 'cancelled')
+      })
+    })
+  }
+
+  private findOwnedStudent(user: User, id: number | string) {
+    return this.studentsQuery(user).where('id', id).firstOrFail()
   }
 }

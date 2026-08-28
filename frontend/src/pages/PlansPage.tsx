@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,12 +15,13 @@ import { TextArea } from '@/components/TextArea'
 import { Modal } from '@/components/Modal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
-import { Badge } from '@/components/Badge'
 import { Skeleton } from '@/components/Skeleton'
+import { PlanStatusBadge } from '@/components/StatusBadges'
+import { CreditBar } from '@/components/CreditBar'
 import { useToast } from '@/contexts/ToastContext'
+import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import { formatCurrency, formatDateTime } from '@/utils/format'
-import { PACKAGE_OPTIONS, PACKAGES } from '@/utils/packages'
 
 const schema = z.object({
   studentId: z.string().min(1, 'Selecione o aluno'),
@@ -33,6 +34,7 @@ type FormValues = z.infer<typeof schema>
 
 export function PlansPage() {
   const toast = useToast()
+  const { packages, labelFor, optionFor } = useCatalog()
   const [searchParams, setSearchParams] = useSearchParams()
   const filterStudentId = searchParams.get('studentId') ?? ''
 
@@ -58,7 +60,6 @@ export function PlansPage() {
   })
 
   const selectedPackage = watch('package') as PlanPackage
-
   const studentsMap = useMemo(() => {
     const map = new Map<number, Student>()
     students.forEach((student) => map.set(student.id, student))
@@ -129,9 +130,7 @@ export function PlansPage() {
     } catch (error) {
       const fields = getFieldErrors(error)
       Object.entries(fields).forEach(([field, message]) => {
-        if (field in values) {
-          setError(field as keyof FormValues, { message })
-        }
+        if (field in values) setError(field as keyof FormValues, { message })
       })
       toast.error(getErrorMessage(error, 'Não foi possível salvar o pacote.'))
     } finally {
@@ -168,7 +167,7 @@ export function PlansPage() {
     <div>
       <PageHeader
         title="Pacotes"
-        description="Compras de créditos vinculadas aos alunos."
+        description="Créditos só entram na agenda depois que o pacote está pago."
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
@@ -221,11 +220,17 @@ export function PlansPage() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-ink">{PACKAGES[plan.package].label}</h3>
-                      <StatusBadge status={plan.status} />
+                      <h3 className="font-semibold text-ink">{labelFor(plan.package)}</h3>
+                      <PlanStatusBadge status={plan.status} />
                     </div>
                     <p className="mt-1 text-sm text-ink-muted">
-                      {student?.name ?? `Aluno #${plan.studentId}`} ·{' '}
+                      <Link
+                        to={`/students/${plan.studentId}`}
+                        className="font-medium text-brand-700 hover:underline"
+                      >
+                        {student?.name ?? `Aluno #${plan.studentId}`}
+                      </Link>
+                      {' · '}
                       {formatCurrency(Number(plan.price))}
                     </p>
                     <p className="mt-2 text-sm text-ink">
@@ -233,13 +238,9 @@ export function PlansPage() {
                       <span className="text-ink-muted"> / {plan.lessonsTotal} créditos restantes</span>
                     </p>
                     {plan.paidAt ? (
-                      <p className="mt-1 text-xs text-ink-muted">
-                        Pago em {formatDateTime(plan.paidAt)}
-                      </p>
+                      <p className="mt-1 text-xs text-ink-muted">Pago em {formatDateTime(plan.paidAt)}</p>
                     ) : null}
-                    {plan.notes ? (
-                      <p className="mt-2 text-sm text-ink-muted">{plan.notes}</p>
-                    ) : null}
+                    {plan.notes ? <p className="mt-2 text-sm text-ink-muted">{plan.notes}</p> : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {plan.status === 'pending' ? (
@@ -255,16 +256,8 @@ export function PlansPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className="h-full rounded-full bg-brand-600 transition-all"
-                    style={{
-                      width: `${Math.max(
-                        0,
-                        Math.min(100, ((plan.lessonsTotal - plan.lessonsRemaining) / plan.lessonsTotal) * 100),
-                      )}%`,
-                    }}
-                  />
+                <div className="mt-4">
+                  <CreditBar remaining={plan.lessonsRemaining} total={plan.lessonsTotal} />
                 </div>
               </motion.li>
             )
@@ -279,7 +272,7 @@ export function PlansPage() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setModalOpen(false)} disabled={saving}>
-              Cancelar
+              Fechar
             </Button>
             <Button loading={saving} onClick={handleSubmit(onSubmit)}>
               Salvar
@@ -298,22 +291,21 @@ export function PlansPage() {
           <Select
             label="Pacote"
             error={errors.package?.message}
-            options={PACKAGE_OPTIONS.map((item) => ({
+            options={packages.map((item) => ({
               value: item.value,
               label: `${item.label} — ${item.lessons} aula(s) · ${formatCurrency(item.price)}`,
             }))}
             {...register('package')}
           />
           <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
-            {PACKAGES[selectedPackage].lessons} créditos por{' '}
-            {formatCurrency(PACKAGES[selectedPackage].price)}
+            {optionFor(selectedPackage).lessons} créditos por {formatCurrency(optionFor(selectedPackage).price)}
           </p>
           <Select
-            label="Status"
+            label="Pagamento"
             error={errors.status?.message}
             options={[
-              { value: 'pending', label: 'Pendente' },
-              { value: 'paid', label: 'Pago' },
+              { value: 'paid', label: 'Pago agora' },
+              { value: 'pending', label: 'Pendente (não agenda ainda)' },
               { value: 'cancelled', label: 'Cancelado' },
             ]}
             {...register('status')}
@@ -332,13 +324,4 @@ export function PlansPage() {
       />
     </div>
   )
-}
-
-function StatusBadge({ status }: { status: PlanStatus }) {
-  const map = {
-    pending: { label: 'Pendente', tone: 'warning' as const },
-    paid: { label: 'Pago', tone: 'success' as const },
-    cancelled: { label: 'Cancelado', tone: 'danger' as const },
-  }
-  return <Badge tone={map[status].tone}>{map[status].label}</Badge>
 }

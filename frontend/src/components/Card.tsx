@@ -16,6 +16,26 @@ export function Card({
   )
 }
 
+export function SectionHeader({
+  title,
+  description,
+  actions,
+}: {
+  title: string
+  description?: string
+  actions?: ReactNode
+}) {
+  return (
+    <div className="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        {description ? <p className="mt-0.5 text-xs text-ink-muted">{description}</p> : null}
+      </div>
+      {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
+    </div>
+  )
+}
+
 export function PageHeader({
   title,
   description,

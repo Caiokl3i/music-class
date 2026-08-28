@@ -15,6 +15,65 @@ test.group('Lessons', (group) => {
     response.assertStatus(401)
   })
 
+  test('creates a lesson for a student via nested route', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const response = await client
+      .post(`/api/v1/students/${student.id}/lessons`)
+      .loginAs(teacher)
+      .json({
+        planId: plan.id,
+        scheduledAt,
+        description: 'Escala maior',
+      })
+
+    response.assertStatus(201)
+    response.assertBodyContains({
+      data: {
+        studentId: student.id,
+        planId: plan.id,
+        userId: teacher.id,
+        status: 'scheduled',
+        description: 'Escala maior',
+      },
+    })
+  })
+
+  test('lists lessons for a student via nested route', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO(scheduledAt),
+      status: 'scheduled',
+    })
+
+    const response = await client
+      .get(`/api/v1/students/${student.id}/lessons`)
+      .loginAs(teacher)
+
+    response.assertStatus(200)
+    response.assertBodyContains({
+      data: [{ studentId: student.id, planId: plan.id }],
+    })
+  })
+
+  test('rejects nested lesson creation for another teachers student', async ({ client }) => {
+    const teacher = await createTeacher({ email: 'teacher@example.com' })
+    const { student, plan } = await createTeacherWithPlan({ email: 'other@example.com' })
+
+    const response = await client
+      .post(`/api/v1/students/${student.id}/lessons`)
+      .loginAs(teacher)
+      .json({
+        planId: plan.id,
+        scheduledAt,
+      })
+
+    response.assertStatus(404)
+  })
+
   test('creates a lesson defaulting to scheduled', async ({ client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan()
 
@@ -275,6 +334,45 @@ test.group('Lessons', (group) => {
     reused.assertStatus(201)
   })
 
+  test('does not consume credits on a pending plan', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan({
+      email: 'pending@example.com',
+      planStatus: 'pending',
+    })
+
+    const response = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+
+    response.assertStatus(422)
+    response.assertBodyContains({
+      code: 'E_PLAN_NOT_PAID',
+    })
+  })
+
+  test('exposes studentName and planPackage on the lesson', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan({
+      email: 'named@example.com',
+    })
+
+    const response = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+
+    response.assertStatus(201)
+    response.assertBodyContains({
+      data: {
+        studentId: student.id,
+        studentName: 'Ana',
+        planPackage: 'pack_4',
+      },
+    })
+  })
+
   test('does not consume credits on a cancelled plan', async ({ client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan()
     plan.status = 'cancelled'
@@ -322,6 +420,7 @@ async function createTeacherWithPlan(
   overrides: {
     email?: string
     package?: keyof typeof PACKAGES
+    planStatus?: 'pending' | 'paid' | 'cancelled'
   } = {}
 ) {
   const teacher = await createTeacher({ email: overrides.email })
@@ -329,12 +428,22 @@ async function createTeacherWithPlan(
     name: 'Ana',
     instrument: 'piano',
   })
-  const plan = await createPlan(teacher, student.id, overrides.package ?? 'pack_4')
+  const plan = await createPlan(
+    teacher,
+    student.id,
+    overrides.package ?? 'pack_4',
+    overrides.planStatus ?? 'paid'
+  )
 
   return { teacher, student, plan }
 }
 
-function createPlan(teacher: User, studentId: number, pack: keyof typeof PACKAGES = 'pack_4') {
+function createPlan(
+  teacher: User,
+  studentId: number,
+  pack: keyof typeof PACKAGES = 'pack_4',
+  status: 'pending' | 'paid' | 'cancelled' = 'paid'
+) {
   const catalog = PACKAGES[pack]
 
   return teacher.related('plans').create({
@@ -342,6 +451,6 @@ function createPlan(teacher: User, studentId: number, pack: keyof typeof PACKAGE
     package: pack,
     lessonsTotal: catalog.lessons,
     price: catalog.price,
-    status: 'paid',
+    status,
   })
 }

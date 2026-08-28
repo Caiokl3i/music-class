@@ -29,6 +29,16 @@ export const createLessonValidator = vine.create({
 })
 
 /**
+ * Validator used when creating a lesson for a specific student (studentId from URL).
+ */
+export const createLessonForStudentValidator = vine.create({
+  planId: lessonFields.planId,
+  scheduledAt: lessonFields.scheduledAt,
+  status: lessonFields.status.clone().optional(),
+  description: lessonFields.description,
+})
+
+/**
  * Validator used when updating a lesson.
  */
 export const updateLessonValidator = vine.create({

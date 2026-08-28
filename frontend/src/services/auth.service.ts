@@ -24,3 +24,16 @@ export async function fetchProfile() {
 export async function logout() {
   await api.post<{ message: string }>('/account/logout')
 }
+
+export async function updateProfile(input: { fullName: string | null }) {
+  const { data } = await api.patch<ApiData<User>>('/account/profile', input)
+  return data.data
+}
+
+export async function updatePassword(input: {
+  currentPassword: string
+  password: string
+  passwordConfirmation: string
+}) {
+  await api.put('/account/password', input)
+}

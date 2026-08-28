@@ -1,15 +1,11 @@
+import { PACKAGES, PLAN_PACKAGES } from '#services/package_catalog'
 import vine from '@vinejs/vine'
 
-export const PACKAGES = {
-  single: { lessons: 1, price: 35 },
-  pack_4: { lessons: 4, price: 130 },
-  pack_8: { lessons: 8, price: 240 },
-} as const
+export { PACKAGES, PLAN_PACKAGES }
+export type { PlanPackage } from '#services/package_catalog'
 
-export const PLAN_PACKAGES = ['single', 'pack_4', 'pack_8'] as const
 export const PLAN_STATUSES = ['pending', 'paid', 'cancelled'] as const
 
-export type PlanPackage = (typeof PLAN_PACKAGES)[number]
 export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
 /**

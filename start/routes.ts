@@ -1,5 +1,3 @@
-
-
 import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
 import { controllers } from '#generated/controllers'
@@ -21,6 +19,8 @@ router
     router
       .group(() => {
         router.get('profile', [controllers.Profile, 'show'])
+        router.patch('profile', [controllers.Profile, 'update'])
+        router.put('password', [controllers.Profile, 'updatePassword'])
         router.post('logout', [controllers.AccessTokens, 'destroy'])
       })
       .prefix('account')
@@ -29,6 +29,10 @@ router
 
     router
       .group(() => {
+        router.get('dashboard', [controllers.Dashboard, 'show'])
+        router.get('packages', [controllers.Catalog, 'packages'])
+        router.get('students/:studentId/lessons', [controllers.Lessons, 'indexForStudent'])
+        router.post('students/:studentId/lessons', [controllers.Lessons, 'storeForStudent'])
         router.resource('students', controllers.Students).apiOnly()
         router.resource('plans', controllers.Plans).apiOnly()
         router.resource('lessons', controllers.Lessons).apiOnly()

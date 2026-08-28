@@ -1,5 +1,5 @@
 import { api } from '@/services/api'
-import type { ApiData, CreateLessonInput, Lesson, UpdateLessonInput } from '@/types/api'
+import type { ApiData, CreateLessonForStudentInput, CreateLessonInput, Lesson, UpdateLessonInput } from '@/types/api'
 
 export async function listLessons(filters?: { studentId?: number; planId?: number }) {
   const { data } = await api.get<ApiData<Lesson[]>>('/lessons', {
@@ -15,6 +15,16 @@ export async function getLesson(id: number) {
 
 export async function createLesson(input: CreateLessonInput) {
   const { data } = await api.post<ApiData<Lesson>>('/lessons', input)
+  return data.data
+}
+
+export async function createLessonForStudent(studentId: number, input: CreateLessonForStudentInput) {
+  const { data } = await api.post<ApiData<Lesson>>(`/students/${studentId}/lessons`, input)
+  return data.data
+}
+
+export async function listLessonsForStudent(studentId: number) {
+  const { data } = await api.get<ApiData<Lesson[]>>(`/students/${studentId}/lessons`)
   return data.data
 }
 

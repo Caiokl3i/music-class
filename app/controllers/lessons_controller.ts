@@ -1,26 +1,25 @@
-import { createError } from '@adonisjs/core/exceptions'
 import LessonTransformer from '#transformers/lesson_transformer'
 import {
   createLessonValidator,
+  createLessonForStudentValidator,
   updateLessonValidator,
   type LessonStatus,
 } from '#validators/lesson'
-import { assertCanConsumeCredit } from '#services/plan_credits'
+import {
+  createBookedLesson,
+  lessonsQuery,
+  loadLesson,
+  updateBookedLesson,
+} from '#services/lesson_booking'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
-
-const LESSON_STUDENT_MISMATCH = createError(
-  'The lesson student must match the plan student',
-  'E_LESSON_STUDENT_MISMATCH',
-  422
-)
 
 export default class LessonsController {
   async index({ auth, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
     const studentId = request.input('studentId')
     const planId = request.input('planId')
-    const query = user.related('lessons').query().orderBy('scheduledAt', 'asc')
+    const query = lessonsQuery(user).orderBy('scheduledAt', 'asc')
 
     if (studentId) {
       query.where('studentId', studentId)
@@ -36,16 +35,11 @@ export default class LessonsController {
   async store({ auth, request, response, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(createLessonValidator)
-    const status: LessonStatus = payload.status ?? 'scheduled'
-    const plan = await this.resolvePlan(user, payload.studentId, payload.planId)
-
-    await assertCanConsumeCredit(plan, status)
-
-    const lesson = await user.related('lessons').create({
+    const lesson = await createBookedLesson(user, {
       studentId: payload.studentId,
       planId: payload.planId,
       scheduledAt: payload.scheduledAt,
-      status,
+      status: (payload.status ?? 'scheduled') as LessonStatus,
       description: payload.description ?? null,
     })
 
@@ -53,40 +47,54 @@ export default class LessonsController {
     return serialize(LessonTransformer.transform(lesson))
   }
 
+  async storeForStudent({ auth, params, request, response, serialize }: HttpContext) {
+    const user = auth.getUserOrFail()
+    await this.findOwnedStudent(user, params.studentId)
+    const payload = await request.validateUsing(createLessonForStudentValidator)
+    const lesson = await createBookedLesson(user, {
+      studentId: Number(params.studentId),
+      planId: payload.planId,
+      scheduledAt: payload.scheduledAt,
+      status: (payload.status ?? 'scheduled') as LessonStatus,
+      description: payload.description ?? null,
+    })
+
+    response.status(201)
+    return serialize(LessonTransformer.transform(lesson))
+  }
+
+  async indexForStudent({ auth, params, serialize }: HttpContext) {
+    const user = auth.getUserOrFail()
+    await this.findOwnedStudent(user, params.studentId)
+
+    const lessons = await lessonsQuery(user)
+      .where('studentId', params.studentId)
+      .orderBy('scheduledAt', 'asc')
+
+    return serialize(LessonTransformer.transform(lessons))
+  }
+
   async show({ auth, params, serialize }: HttpContext) {
-    const lesson = await this.findOwnedLesson(auth.getUserOrFail(), params.id)
+    const lesson = await loadLesson(auth.getUserOrFail(), params.id)
     return serialize(LessonTransformer.transform(lesson))
   }
 
   async update({ auth, params, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    const lesson = await this.findOwnedLesson(user, params.id)
     const payload = await request.validateUsing(updateLessonValidator)
-    const studentId = payload.studentId ?? lesson.studentId
-    const planId = payload.planId ?? lesson.planId
-    const status = (payload.status ?? lesson.status) as LessonStatus
-    const plan = await this.resolvePlan(user, studentId, planId)
+    const lesson = await updateBookedLesson(user, Number(params.id), {
+      studentId: payload.studentId,
+      planId: payload.planId,
+      scheduledAt: payload.scheduledAt,
+      status: payload.status as LessonStatus | undefined,
+      description: payload.description,
+    })
 
-    await assertCanConsumeCredit(plan, status, lesson.id)
-
-    lesson.studentId = studentId
-    lesson.planId = planId
-    lesson.status = status
-
-    if (payload.scheduledAt !== undefined) {
-      lesson.scheduledAt = payload.scheduledAt
-    }
-
-    if (payload.description !== undefined) {
-      lesson.description = payload.description
-    }
-
-    await lesson.save()
     return serialize(LessonTransformer.transform(lesson))
   }
 
   async destroy({ auth, params, response }: HttpContext) {
-    const lesson = await this.findOwnedLesson(auth.getUserOrFail(), params.id)
+    const lesson = await loadLesson(auth.getUserOrFail(), params.id)
     await lesson.delete()
 
     return response.noContent()
@@ -94,24 +102,5 @@ export default class LessonsController {
 
   private findOwnedStudent(user: User, id: number | string) {
     return user.related('students').query().where('id', id).firstOrFail()
-  }
-
-  private findOwnedPlan(user: User, id: number | string) {
-    return user.related('plans').query().where('id', id).firstOrFail()
-  }
-
-  private findOwnedLesson(user: User, id: string) {
-    return user.related('lessons').query().where('id', id).firstOrFail()
-  }
-
-  private async resolvePlan(user: User, studentId: number | string, planId: number | string) {
-    const student = await this.findOwnedStudent(user, studentId)
-    const plan = await this.findOwnedPlan(user, planId)
-
-    if (plan.studentId !== student.id) {
-      throw new LESSON_STUDENT_MISMATCH()
-    }
-
-    return plan
   }
 }

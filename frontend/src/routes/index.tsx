@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { CatalogProvider } from '@/contexts/CatalogContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { GuestRoute, ProtectedRoute } from '@/routes/ProtectedRoute'
 import { AuthLayout } from '@/layouts/AuthLayout'
@@ -39,32 +40,34 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ToastProvider>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route element={<GuestRoute />}>
-                <Route element={<AuthLayout />}>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
+        <CatalogProvider>
+          <ToastProvider>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route element={<GuestRoute />}>
+                  <Route element={<AuthLayout />}>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+                  </Route>
                 </Route>
-              </Route>
 
-              <Route element={<ProtectedRoute />}>
-                <Route element={<AppLayout />}>
-                  <Route index element={<DashboardPage />} />
-                  <Route path="students" element={<StudentsPage />} />
-                  <Route path="students/:id" element={<StudentDetailPage />} />
-                  <Route path="plans" element={<PlansPage />} />
-                  <Route path="lessons" element={<LessonsPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<AppLayout />}>
+                    <Route index element={<DashboardPage />} />
+                    <Route path="students" element={<StudentsPage />} />
+                    <Route path="students/:id" element={<StudentDetailPage />} />
+                    <Route path="plans" element={<PlansPage />} />
+                    <Route path="lessons" element={<LessonsPage />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                  </Route>
                 </Route>
-              </Route>
 
-              <Route path="/404" element={<NotFoundPage />} />
-              <Route path="*" element={<Navigate to="/404" replace />} />
-            </Routes>
-          </Suspense>
-        </ToastProvider>
+                <Route path="/404" element={<NotFoundPage />} />
+                <Route path="*" element={<Navigate to="/404" replace />} />
+              </Routes>
+            </Suspense>
+          </ToastProvider>
+        </CatalogProvider>
       </AuthProvider>
     </BrowserRouter>
   )

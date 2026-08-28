@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import { DateTime } from 'luxon'
 import testUtils from '@adonisjs/core/services/test_utils'
 import User from '#models/user'
 import Student from '#models/student'
@@ -130,6 +131,44 @@ test.group('Students', (group) => {
 
     response.assertStatus(204)
     assert.isNull(await Student.find(student.id))
+  })
+
+  test('exposes remaining credits from paid plans', async ({ client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({
+      name: 'Ana',
+      instrument: 'piano',
+    })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+    })
+    await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'single',
+      lessonsTotal: 1,
+      price: 35,
+      status: 'pending',
+    })
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-01T14:00:00.000Z'),
+      status: 'scheduled',
+    })
+
+    const response = await client.get(`/api/v1/students/${student.id}`).loginAs(teacher)
+    response.assertStatus(200)
+    response.assertBodyContains({
+      data: {
+        id: student.id,
+        creditsRemaining: 3,
+        activePlansCount: 1,
+      },
+    })
   })
 })
 

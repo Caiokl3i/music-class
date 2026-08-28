@@ -205,6 +205,7 @@ restantes = lessons_total - quantidade de aulas com status != cancelled
 
 ## Regras de domínio
 
+- Só pacote **pago** (`status: paid`) pode consumir crédito. Pendente não agenda aula que gasta crédito.
 - Não permitir mais aulas ativas em um `plan` do que `lessons_total`.
 - Cancelar aula (`cancelled`) **devolve** crédito.
 - Falta (`no_show`) **consome** crédito (pode ser tratado como `done` se preferir outra política).

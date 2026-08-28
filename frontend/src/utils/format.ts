@@ -12,6 +12,10 @@ export function formatDateTime(value: string | null | undefined) {
   return formatDate(value, "dd/MM/yyyy 'às' HH:mm")
 }
 
+export function formatTime(value: string | null | undefined) {
+  return formatDate(value, 'HH:mm')
+}
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
