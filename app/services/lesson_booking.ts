@@ -1,7 +1,7 @@
 import { createError } from '@adonisjs/core/exceptions'
 import db from '@adonisjs/lucid/services/db'
 import Lesson from '#models/lesson'
-import { assertCanConsumeCredit, lessonConsumesCredit } from '#services/plan_credits'
+import { assertCanConsumeCredit, lessonOccupiesSlot } from '#services/plan_credits'
 import { assertSlotFree } from '#services/lesson_schedule'
 import type User from '#models/user'
 import type { DateTime } from 'luxon'
@@ -106,7 +106,7 @@ async function assertOccupancy(
   trx: TransactionClientContract,
   exceptLessonId?: number
 ) {
-  if (!lessonConsumesCredit(status)) {
+  if (!lessonOccupiesSlot(status)) {
     return
   }
 

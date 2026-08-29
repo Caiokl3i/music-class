@@ -1,9 +1,16 @@
 import type Plan from '#models/plan'
 import { BaseTransformer } from '@adonisjs/core/transformers'
-import { remainingCreditsFromCount } from '#services/plan_credits'
+import {
+  remainingCreditsFromCount,
+  lessonsDoneFromExtras,
+  activeLessonsFromExtras,
+} from '#services/plan_credits'
 
 export default class PlanTransformer extends BaseTransformer<Plan> {
   toObject() {
+    const done = lessonsDoneFromExtras(this.resource)
+    const active = activeLessonsFromExtras(this.resource)
+
     return {
       ...this.pick(this.resource, [
         'id',
@@ -19,12 +26,9 @@ export default class PlanTransformer extends BaseTransformer<Plan> {
         'createdAt',
         'updatedAt',
       ]),
-      lessonsRemaining: this.lessonsRemaining(),
+      lessonsDone: done,
+      lessonsRemaining: remainingCreditsFromCount(this.resource.lessonsTotal, done),
+      lessonsSchedulable: remainingCreditsFromCount(this.resource.lessonsTotal, active),
     }
-  }
-
-  private lessonsRemaining() {
-    const activeLessons = Number(this.resource.$extras.lessons_count ?? 0)
-    return remainingCreditsFromCount(this.resource.lessonsTotal, activeLessons)
   }
 }

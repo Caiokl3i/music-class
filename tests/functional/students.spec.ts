@@ -133,7 +133,7 @@ test.group('Students', (group) => {
     assert.isNull(await Student.find(student.id))
   })
 
-  test('exposes remaining credits from paid plans', async ({ client }) => {
+  test('exposes remaining credits from paid and pending plans', async ({ client }) => {
     const teacher = await createTeacher()
     const student = await teacher.related('students').create({
       name: 'Ana',
@@ -165,8 +165,8 @@ test.group('Students', (group) => {
     response.assertBodyContains({
       data: {
         id: student.id,
-        creditsRemaining: 3,
-        activePlansCount: 1,
+        creditsRemaining: 5,
+        activePlansCount: 2,
       },
     })
   })

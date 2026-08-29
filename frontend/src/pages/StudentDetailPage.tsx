@@ -29,7 +29,13 @@ import {
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
 } from '@/utils/format'
-import { bookablePlans, canGenerateLessons, isLowCredit, planIsExpired } from '@/domain/status'
+import {
+  bookablePlans,
+  canGenerateLessons,
+  isLowCredit,
+  planHoldsCredits,
+  planIsExpired,
+} from '@/domain/status'
 
 const lessonSchema = z.object({
   planId: z.string().min(1, 'Selecione o pacote'),
@@ -143,7 +149,7 @@ export function StudentDetailPage() {
 
   function openCreateLesson() {
     if (availablePlans.length === 0) {
-      toast.error('Crie um pacote pago com créditos para agendar.')
+      toast.error('Crie um pacote com aulas para agendar.')
       openCreatePlan()
       return
     }
@@ -316,7 +322,7 @@ export function StudentDetailPage() {
       </Button>
       <PageHeader
         title={student.name}
-        description={`${student.instrument}${student.phone ? ` · ${student.phone}` : ''} · ${student.creditsRemaining} crédito(s) restante(s)`}
+        description={`${student.instrument}${student.phone ? ` · ${student.phone}` : ''} · ${student.creditsRemaining} aula(s) a fazer`}
         actions={
           <>
             <Button variant="secondary" onClick={openEditStudent}>
@@ -335,10 +341,10 @@ export function StudentDetailPage() {
       />
 
       {isLowCredit(student.creditsRemaining, lowCreditThreshold) ? (
-        <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mb-4 rounded-xl border border-warning-border bg-warning-soft px-4 py-3 text-sm text-warning-on-soft">
           {student.creditsRemaining === 0
-            ? 'Sem créditos usáveis. Venda um novo pacote para continuar agendando.'
-            : 'Resta 1 crédito. Hora de vender o próximo pacote.'}
+            ? 'Todas as aulas deste aluno já foram feitas. Venda um novo pacote.'
+            : 'Resta 1 aula a fazer. Hora de vender o próximo pacote.'}
         </p>
       ) : null}
 
@@ -371,7 +377,7 @@ export function StudentDetailPage() {
         <Card className="lg:col-span-2">
           <SectionHeader
             title="Pacotes"
-            description="Só pacote pago libera crédito para agendar."
+            description="Pode pagar agora ou depois. Dá para abrir outro pacote mesmo com um pendente."
             actions={
               <Button size="sm" variant="ghost" onClick={openCreatePlan}>
                 Novo
@@ -390,17 +396,17 @@ export function StudentDetailPage() {
                     <div>
                       <p className="font-medium text-ink">{labelFor(plan.package)}</p>
                       <p className="text-xs text-ink-muted">
-                        {plan.lessonsRemaining}/{plan.lessonsTotal} créditos · {formatCurrency(Number(plan.price))}
+                        {plan.lessonsDone}/{plan.lessonsTotal} aulas feitas · {formatCurrency(Number(plan.price))}
                         {plan.expiresAt
                           ? ` · válido até ${formatDate(plan.expiresAt)}`
                           : ''}
                       </p>
                       {expired && plan.lessonsRemaining > 0 ? (
-                        <p className="mt-1 text-xs text-amber-800">Pacote vencido. Esses créditos não agendam mais.</p>
+                        <p className="mt-1 text-xs text-warning-on-soft">Pacote vencido. Não agenda mais aulas novas.</p>
                       ) : null}
-                      {!expired && isLowCredit(plan.lessonsRemaining, lowCreditThreshold) && plan.status === 'paid' ? (
-                        <p className="mt-1 text-xs text-amber-800">
-                          {plan.lessonsRemaining === 0 ? 'Créditos acabaram.' : 'Resta 1 crédito neste pacote.'}
+                      {!expired && isLowCredit(plan.lessonsRemaining, lowCreditThreshold) && planHoldsCredits(plan) ? (
+                        <p className="mt-1 text-xs text-warning-on-soft">
+                          {plan.lessonsRemaining === 0 ? 'Todas as aulas já foram feitas.' : 'Resta 1 aula a fazer.'}
                         </p>
                       ) : null}
                     </div>
@@ -433,7 +439,7 @@ export function StudentDetailPage() {
             title="Aulas"
             description={
               availablePlans.length === 0 && plans.length > 0
-                ? 'Sem créditos em pacotes pagos.'
+                ? 'Sem aulas para marcar neste pacote.'
                 : undefined
             }
             actions={
@@ -501,11 +507,11 @@ export function StudentDetailPage() {
         <form className="space-y-4" onSubmit={lessonForm.handleSubmit(onSubmitLesson)}>
           <Select
             label="Pacote"
-            placeholder="Selecione um pacote pago com crédito"
+            placeholder="Selecione um pacote com vaga"
             error={lessonForm.formState.errors.planId?.message}
             options={availablePlans.map((plan) => ({
               value: plan.id,
-              label: `${labelFor(plan.package)} · ${plan.lessonsRemaining}/${plan.lessonsTotal} créditos`,
+              label: `${labelFor(plan.package)} · ${plan.lessonsDone}/${plan.lessonsTotal} feitas`,
             }))}
             {...lessonForm.register('planId')}
           />
@@ -559,15 +565,15 @@ export function StudentDetailPage() {
             }))}
             {...planForm.register('package')}
           />
-          <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
-            {optionFor(selectedPackage).lessons} créditos por {formatCurrency(optionFor(selectedPackage).price)}
+          <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand-on-soft">
+            {optionFor(selectedPackage).lessons} aula(s) por {formatCurrency(optionFor(selectedPackage).price)}
           </p>
           <Select
             label="Pagamento"
             error={planForm.formState.errors.status?.message}
             options={[
               { value: 'paid', label: 'Pago agora' },
-              { value: 'pending', label: 'Pendente (não agenda ainda)' },
+              { value: 'pending', label: 'Pendente (aulas agora, paga depois)' },
               { value: 'cancelled', label: 'Cancelado' },
             ]}
             {...planForm.register('status')}
@@ -627,7 +633,7 @@ export function StudentDetailPage() {
       <ConfirmDialog
         open={Boolean(deletingLesson)}
         title="Excluir aula?"
-        description="A aula sai do histórico. Se ela consumia crédito, o crédito volta ao pacote."
+        description="A aula sai do histórico. Se já estava concluída, deixa de contar no pacote."
         loading={deleteLoading}
         onCancel={() => setDeletingLesson(null)}
         onConfirm={confirmDeleteLesson}

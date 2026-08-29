@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Fraunces', ui-serif, Georgia, serif;
@@ -15,14 +17,70 @@
   --color-brand-800: #115e59;
   --color-brand-900: #134e4a;
 
-  --color-surface: #f7f8f6;
-  --color-surface-raised: #ffffff;
-  --color-ink: #0f172a;
-  --color-ink-muted: #64748b;
-  --color-border: #e2e8f0;
-  --color-danger: #dc2626;
-  --color-warning: #d97706;
-  --color-success: #059669;
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-hover: var(--surface-hover);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-border: var(--border);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-on-soft: var(--brand-on-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-on-soft: var(--warning-on-soft);
+  --color-warning-border: var(--warning-border);
+  --color-overlay: var(--overlay);
+  --color-link: var(--link);
+  --color-skeleton: var(--skeleton);
+}
+
+:root {
+  color-scheme: light;
+  --surface: #f7f8f6;
+  --surface-raised: #ffffff;
+  --surface-muted: #eef2f0;
+  --surface-hover: #e4ebe8;
+  --ink: #0f172a;
+  --ink-muted: #64748b;
+  --border: #e2e8f0;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --success: #059669;
+  --brand-soft: #f0fdfa;
+  --brand-on-soft: #0f5f5a;
+  --warning-soft: #fffbeb;
+  --warning-on-soft: #78350f;
+  --warning-border: #fde68a;
+  --overlay: rgb(15 23 42 / 0.45);
+  --link: #0f5f5a;
+  --skeleton: #e2e8f0;
+  --glow: rgb(15 118 110 / 0.12);
+}
+
+.dark {
+  color-scheme: dark;
+  --surface: #0c1110;
+  --surface-raised: #151b1a;
+  --surface-muted: #1c2422;
+  --surface-hover: #24302d;
+  --ink: #e7eeec;
+  --ink-muted: #94a3a0;
+  --border: #2a3532;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --success: #34d399;
+  --brand-soft: rgb(45 212 191 / 0.12);
+  --brand-on-soft: #5eead4;
+  --warning-soft: rgb(251 191 36 / 0.12);
+  --warning-on-soft: #fde68a;
+  --warning-border: rgb(251 191 36 / 0.28);
+  --overlay: rgb(0 0 0 / 0.62);
+  --link: #5eead4;
+  --skeleton: #2a3532;
+  --glow: rgb(45 212 191 / 0.1);
 }
 
 @layer base {

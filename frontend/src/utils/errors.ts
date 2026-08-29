@@ -2,9 +2,8 @@ import { isAxiosError } from 'axios'
 import type { ApiErrorBody } from '@/types/api'
 
 const DOMAIN_MESSAGES: Record<string, string> = {
-  E_PLAN_NO_CREDITS: 'Este pacote não tem créditos restantes.',
+  E_PLAN_NO_CREDITS: 'Este pacote já tem todas as aulas marcadas.',
   E_PLAN_CANCELLED: 'Não é possível agendar aulas em um pacote cancelado.',
-  E_PLAN_NOT_PAID: 'Pague o pacote antes de agendar aulas.',
   E_LESSON_STUDENT_MISMATCH: 'O aluno da aula precisa ser o mesmo do pacote.',
   E_PLAN_LESSONS_TOTAL_TOO_LOW:
     'Não é possível reduzir o pacote abaixo das aulas já agendadas.',

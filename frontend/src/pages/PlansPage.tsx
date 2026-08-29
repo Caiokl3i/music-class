@@ -23,7 +23,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/format'
-import { canGenerateLessons, isLowCredit, planIsExpired } from '@/domain/status'
+import { canGenerateLessons, isLowCredit, planHoldsCredits, planIsExpired } from '@/domain/status'
 
 const schema = z.object({
   studentId: z.string().min(1, 'Selecione o aluno'),
@@ -170,7 +170,7 @@ export function PlansPage() {
     <div>
       <PageHeader
         title="Pacotes"
-        description="Créditos só entram na agenda depois que o pacote está pago."
+        description="Pague agora ou depois — o pacote organiza as aulas e o que ainda falta receber."
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
@@ -204,7 +204,7 @@ export function PlansPage() {
         <EmptyState
           icon={<Package className="size-8" />}
           title="Nenhum pacote"
-          description="Crie um pacote após cadastrar um aluno para liberar créditos de aulas."
+          description="Crie um pacote após cadastrar um aluno para marcar e concluir aulas."
           actionLabel="Criar pacote"
           onAction={openCreate}
         />
@@ -218,7 +218,7 @@ export function PlansPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="rounded-2xl border border-border bg-white p-4 shadow-sm shadow-slate-900/[0.02] sm:p-5"
+                className="rounded-2xl border border-border bg-surface-raised p-4 shadow-sm shadow-slate-900/[0.02] sm:p-5"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -229,7 +229,7 @@ export function PlansPage() {
                     <p className="mt-1 text-sm text-ink-muted">
                       <Link
                         to={`/students/${plan.studentId}`}
-                        className="font-medium text-brand-700 hover:underline"
+                        className="font-medium text-link hover:underline"
                       >
                         {student?.name ?? `Aluno #${plan.studentId}`}
                       </Link>
@@ -237,8 +237,8 @@ export function PlansPage() {
                       {formatCurrency(Number(plan.price))}
                     </p>
                     <p className="mt-2 text-sm text-ink">
-                      <span className="font-medium text-brand-700">{plan.lessonsRemaining}</span>
-                      <span className="text-ink-muted"> / {plan.lessonsTotal} créditos restantes</span>
+                      <span className="font-medium text-link">{plan.lessonsDone}</span>
+                      <span className="text-ink-muted"> / {plan.lessonsTotal} aulas feitas</span>
                     </p>
                     {plan.expiresAt ? (
                       <p className="mt-1 text-xs text-ink-muted">
@@ -246,9 +246,9 @@ export function PlansPage() {
                         {planIsExpired(plan) ? ' · vencido' : ''}
                       </p>
                     ) : null}
-                    {plan.status === 'paid' && isLowCredit(plan.lessonsRemaining) ? (
-                      <p className="mt-1 text-xs text-amber-800">
-                        {plan.lessonsRemaining === 0 ? 'Créditos acabaram.' : 'Resta 1 crédito.'}
+                    {planHoldsCredits(plan) && isLowCredit(plan.lessonsRemaining) ? (
+                      <p className="mt-1 text-xs text-warning-on-soft">
+                        {plan.lessonsRemaining === 0 ? 'Todas as aulas já foram feitas.' : 'Resta 1 aula a fazer.'}
                       </p>
                     ) : null}
                     {plan.paidAt ? (
@@ -316,15 +316,15 @@ export function PlansPage() {
             }))}
             {...register('package')}
           />
-          <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">
-            {optionFor(selectedPackage).lessons} créditos por {formatCurrency(optionFor(selectedPackage).price)}
+          <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand-on-soft">
+            {optionFor(selectedPackage).lessons} aula(s) por {formatCurrency(optionFor(selectedPackage).price)}
           </p>
           <Select
             label="Pagamento"
             error={errors.status?.message}
             options={[
               { value: 'paid', label: 'Pago agora' },
-              { value: 'pending', label: 'Pendente (não agenda ainda)' },
+              { value: 'pending', label: 'Pendente (aulas agora, paga depois)' },
               { value: 'cancelled', label: 'Cancelado' },
             ]}
             {...register('status')}

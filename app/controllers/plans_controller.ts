@@ -121,9 +121,15 @@ export default class PlansController {
   }
 
   private plansQuery(user: User) {
-    return user.related('plans').query().withCount('lessons', (query) => {
-      query.whereNot('status', 'cancelled')
-    })
+    return user
+      .related('plans')
+      .query()
+      .withCount('lessons', (query) => {
+        query.where('status', 'done').as('done_lessons_count')
+      })
+      .withCount('lessons', (query) => {
+        query.whereNot('status', 'cancelled').as('active_lessons_count')
+      })
   }
 
   private findOwnedPlan(user: User, id: number | string) {

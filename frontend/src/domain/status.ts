@@ -24,17 +24,29 @@ export function isLowCredit(remaining: number, threshold = 1) {
   return remaining <= threshold
 }
 
+export function planHoldsCredits(plan: { status: PlanStatus }) {
+  return plan.status !== 'cancelled'
+}
+
 export function canGenerateLessons(plan: Plan, now = new Date()) {
-  return plan.status === 'paid' && plan.lessonsRemaining > 0 && !planIsExpired(plan, now)
+  return planHoldsCredits(plan) && plan.lessonsSchedulable > 0 && !planIsExpired(plan, now)
 }
 
 export function bookablePlans<
-  T extends { status: PlanStatus; lessonsRemaining: number; id: number; expiresAt?: string | null },
+  T extends {
+    status: PlanStatus
+    lessonsSchedulable?: number
+    lessonsRemaining: number
+    id: number
+    expiresAt?: string | null
+  },
 >(plans: T[], editingPlanId?: number, now = new Date()) {
-  return plans.filter(
-    (plan) =>
-      plan.status === 'paid' &&
+  return plans.filter((plan) => {
+    const openSlots = plan.lessonsSchedulable ?? plan.lessonsRemaining
+    return (
+      planHoldsCredits(plan) &&
       !planIsExpired(plan, now) &&
-      (editingPlanId === plan.id || plan.lessonsRemaining > 0),
-  )
+      (editingPlanId === plan.id || openSlots > 0)
+    )
+  })
 }

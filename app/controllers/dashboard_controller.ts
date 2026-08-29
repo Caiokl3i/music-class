@@ -5,6 +5,7 @@ import {
   remainingCreditsFromCount,
   usableCreditsFromCount,
   planIsExpired,
+  lessonsDoneFromExtras,
 } from '#services/plan_credits'
 import { EXPIRING_SOON_DAYS, LOW_CREDIT_THRESHOLD } from '#services/package_catalog'
 import { dashboardQueryValidator } from '#validators/dashboard'
@@ -35,7 +36,10 @@ export default class DashboardController {
           .query()
           .preload('student')
           .withCount('lessons', (query) => {
-            query.whereNot('status', 'cancelled')
+            query.where('status', 'done').as('done_lessons_count')
+          })
+          .withCount('lessons', (query) => {
+            query.whereNot('status', 'cancelled').as('active_lessons_count')
           }),
         this.count(user.related('lessons').query().where('status', 'scheduled')),
         this.count(user.related('lessons').query().where('status', 'done')),
@@ -48,7 +52,8 @@ export default class DashboardController {
 
     const paidPlans = plans.filter((plan) => plan.status === 'paid')
     const pendingPlans = plans.filter((plan) => plan.status === 'pending')
-    const activePlans = paidPlans.filter((plan) => this.usable(plan) > 0)
+    const openPlans = plans.filter((plan) => plan.status !== 'cancelled')
+    const activePlans = openPlans.filter((plan) => this.usable(plan) > 0)
     const paidThisMonth = paidPlans.filter((plan) =>
       this.inRange(plan.paidAt, startOfMonth, endOfMonth)
     )
@@ -96,11 +101,11 @@ export default class DashboardController {
   }
 
   private remaining(plan: Plan) {
-    return remainingCreditsFromCount(plan.lessonsTotal, Number(plan.$extras.lessons_count ?? 0))
+    return remainingCreditsFromCount(plan.lessonsTotal, lessonsDoneFromExtras(plan))
   }
 
   private usable(plan: Plan) {
-    return usableCreditsFromCount(plan, Number(plan.$extras.lessons_count ?? 0))
+    return usableCreditsFromCount(plan, lessonsDoneFromExtras(plan))
   }
 
   private inRange(value: DateTime | null, start: DateTime, end: DateTime) {

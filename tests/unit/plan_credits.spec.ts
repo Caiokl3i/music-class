@@ -1,5 +1,10 @@
 import { test } from '@japa/runner'
-import { creditBlockReason, lessonConsumesCredit, remainingCreditsFromCount } from '#services/plan_credits'
+import {
+  creditBlockReason,
+  lessonCompletesPackage,
+  lessonConsumesCredit,
+  remainingCreditsFromCount,
+} from '#services/plan_credits'
 
 test.group('Plan credits', () => {
   test('scheduled, done and no_show consume credit', ({ assert }) => {
@@ -7,6 +12,9 @@ test.group('Plan credits', () => {
     assert.isTrue(lessonConsumesCredit('done'))
     assert.isTrue(lessonConsumesCredit('no_show'))
     assert.isFalse(lessonConsumesCredit('cancelled'))
+    assert.isTrue(lessonCompletesPackage('done'))
+    assert.isFalse(lessonCompletesPackage('scheduled'))
+    assert.isFalse(lessonCompletesPackage('no_show'))
   })
 
   test('remaining credits subtract active lessons', ({ assert }) => {
@@ -14,9 +22,9 @@ test.group('Plan credits', () => {
     assert.equal(remainingCreditsFromCount(1, 1), 0)
   })
 
-  test('blocks consumption on cancelled, unpaid and expired plans', ({ assert }) => {
+  test('blocks consumption on cancelled plans and allows pending or paid', ({ assert }) => {
     assert.equal(creditBlockReason('cancelled', 'scheduled'), 'cancelled')
-    assert.equal(creditBlockReason('pending', 'scheduled'), 'not_paid')
+    assert.isNull(creditBlockReason('pending', 'scheduled'))
     assert.isNull(creditBlockReason('paid', 'scheduled'))
     assert.isNull(creditBlockReason('pending', 'cancelled'))
   })

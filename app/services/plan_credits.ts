@@ -15,12 +15,6 @@ export const PLAN_CANCELLED = createError(
   422
 )
 
-export const PLAN_NOT_PAID = createError(
-  'Cannot consume lesson credits on a plan that is not paid',
-  'E_PLAN_NOT_PAID',
-  422
-)
-
 export const PLAN_EXPIRED = createError(
   'This plan has expired and cannot consume new lesson credits',
   'E_PLAN_EXPIRED',
@@ -33,12 +27,18 @@ export const PLAN_LESSONS_TOTAL_TOO_LOW = createError(
   422
 )
 
-/**
- * Active lessons are those whose status is not `cancelled`.
- * `scheduled`, `done` and `no_show` all consume one credit.
- */
-export function lessonConsumesCredit(status: string) {
+/** Occupies a calendar slot and a package seat. Cancelled frees both. */
+export function lessonOccupiesSlot(status: string) {
   return status !== 'cancelled'
+}
+
+/** Only a completed lesson counts toward the package progress. */
+export function lessonCompletesPackage(status: string) {
+  return status === 'done'
+}
+
+export function lessonConsumesCredit(status: string) {
+  return lessonOccupiesSlot(status)
 }
 
 export function isNewCreditConsumption(status: string, previousStatus?: string) {
@@ -83,10 +83,6 @@ export function creditBlockReason(planStatus: string, lessonStatus: string) {
     return 'cancelled' as const
   }
 
-  if (planStatus !== 'paid') {
-    return 'not_paid' as const
-  }
-
   return null
 }
 
@@ -106,19 +102,27 @@ export async function remainingCredits(plan: Plan, exceptLessonId?: number) {
   return plan.lessonsTotal - consumed
 }
 
-export function remainingCreditsFromCount(lessonsTotal: number, activeLessons: number) {
-  return lessonsTotal - activeLessons
+export function remainingCreditsFromCount(lessonsTotal: number, usedLessons: number) {
+  return lessonsTotal - usedLessons
+}
+
+export function lessonsDoneFromExtras(plan: { $extras: Record<string, unknown> }) {
+  return Number(plan.$extras.done_lessons_count ?? 0)
+}
+
+export function activeLessonsFromExtras(plan: { $extras: Record<string, unknown> }) {
+  return Number(plan.$extras.active_lessons_count ?? plan.$extras.lessons_count ?? 0)
 }
 
 export function usableCreditsFromCount(
   plan: { status: string; expiresAt?: DateTime | null; lessonsTotal: number },
-  activeLessons: number
+  doneLessons: number
 ) {
-  if (plan.status !== 'paid' || planIsExpired(plan)) {
+  if (plan.status === 'cancelled' || planIsExpired(plan)) {
     return 0
   }
 
-  return remainingCreditsFromCount(plan.lessonsTotal, activeLessons)
+  return remainingCreditsFromCount(plan.lessonsTotal, doneLessons)
 }
 
 export async function assertCanConsumeCredit(
@@ -131,10 +135,6 @@ export async function assertCanConsumeCredit(
 
   if (blocked === 'cancelled') {
     throw new PLAN_CANCELLED()
-  }
-
-  if (blocked === 'not_paid') {
-    throw new PLAN_NOT_PAID()
   }
 
   if (!lessonConsumesCredit(status)) {

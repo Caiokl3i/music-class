@@ -37,7 +37,9 @@ export type Plan = {
   notes: string | null
   createdAt: string
   updatedAt: string | null
+  lessonsDone: number
   lessonsRemaining: number
+  lessonsSchedulable: number
 }
 
 export type LessonStatus = 'scheduled' | 'done' | 'cancelled' | 'no_show'

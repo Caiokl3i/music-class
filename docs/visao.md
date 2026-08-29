@@ -15,11 +15,11 @@ Regra prática: se a professora usa o sistema toda terça, o item tem que reduzi
 
 ## O que o sistema já faz
 
-Ciclo fechado: **aluno → pacote pago → aula que gasta 1 crédito**.
+Ciclo fechado: **aluno → pacote → aula**. Só a aula concluída conta no pacote. Pagamento é organização, não trava a agenda.
 
 - Isolamento por professor (`user_id`).
 - Catálogo fixo: avulsa, pack 4, pack 8 (preço no servidor).
-- Crédito só em pacote **pago**. Cancelar aula devolve; falta consome.
+- Crédito em pacote **pago ou pendente**. Cancelar aula devolve; falta consome. Vários pendentes no mesmo aluno.
 - Conflito de horário (aula de 1h; encostadas passam).
 - Validade de 60 dias a partir do pagamento; gerar as aulas da semana de uma vez.
 - Aviso de crédito 0–1 e receita do mês no painel.

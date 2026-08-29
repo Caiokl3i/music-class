@@ -22,11 +22,11 @@ Cada aula tem 1 hora.
 |----------|-----------|
 | **Student** | Aluno |
 | **Plan** | Compra de um pacote (créditos + pagamento) |
-| **Lesson** | Aula agendada ou realizada (consome 1 crédito) |
+| **Lesson** | Aula agendada ou realizada (só `done` conta no pacote) |
 | **User** | Professor (dono dos registros; já existe no Adonis) |
 
 `Plan` **não** é cópia de `Lesson`.  
-`Plan` = pacote comprado. `Lesson` = aula que gasta 1 crédito desse pacote.
+`Plan` = pacote comprado. `Lesson` = aula; só a concluída conta no andamento do pacote.
 
 Aula avulsa também cria um `Plan` (`single`, 1 crédito). Mesmo fluxo para todos os casos.
 
@@ -110,8 +110,9 @@ flowchart LR
     A[Cadastrar Student] --> B[Criar Plan<br/>pacote + pagamento]
     B --> C[Agendar Lessons<br/>1 crédito cada]
     C --> D{Status da aula}
-    D -->|done / no_show| E[Consome crédito]
-    D -->|cancelled| F[Devolve crédito]
+    D -->|done| E[Conta no pacote]
+    D -->|scheduled / no_show| G[Não conta ainda]
+    D -->|cancelled| F[Não ocupa vaga]
 ```
 
 ## Catálogo de preços (código, não tabela)
@@ -202,15 +203,18 @@ Aula individual ligada a um pacote.
 5. Créditos restantes:
 
 ```text
-restantes = lessons_total - quantidade de aulas com status != cancelled
+feitas     = aulas com status done
+a fazer    = lessons_total - feitas
+vagas      = lessons_total - aulas com status != cancelled
 ```
 
 ## Regras de domínio
 
-- Só pacote **pago** (`status: paid`) pode consumir crédito. Pendente não agenda aula que gasta crédito.
-- Não permitir mais aulas ativas em um `plan` do que `lessons_total`.
-- Cancelar aula (`cancelled`) **devolve** crédito.
-- Falta (`no_show`) **consome** crédito (pode ser tratado como `done` se preferir outra política).
+- Pacote **pago** ou **pendente** agenda aula. Dá para dar aula agora e receber depois, ou o contrário. Cancelado não agenda.
+- Pode existir mais de um pacote pendente no mesmo aluno (pagamento atrasado não trava o próximo).
+- Só aula **concluída** (`done`) conta no andamento. Agendada e falta ainda não.
+- Não permitir mais aulas ativas (agendada / feita / falta) em um `plan` do que `lessons_total`.
+- Cancelar aula (`cancelled`) **libera a vaga**. Falta (`no_show`) ocupa vaga, mas não conta como feita.
 - Pagamento fica no próprio `plan` (`price` + `status` + `paid_at`). Sem tabela `payments` na v1.
 - Cada aula ocupa **60 minutos**. Duas aulas do mesmo professor não podem se sobrepor; encostar (14h e 15h) pode. Aula cancelada não ocupa horário.
 - Créditos valem **60 dias** a partir de `paid_at` (`expires_at`). Pacote vencido não agenda aula nova; concluir uma já agendada continua permitido.

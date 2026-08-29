@@ -334,7 +334,7 @@ test.group('Lessons', (group) => {
     reused.assertStatus(201)
   })
 
-  test('does not consume credits on a pending plan', async ({ client }) => {
+  test('consumes credits on a pending plan', async ({ client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan({
       email: 'pending@example.com',
       planStatus: 'pending',
@@ -346,9 +346,13 @@ test.group('Lessons', (group) => {
       scheduledAt,
     })
 
-    response.assertStatus(422)
+    response.assertStatus(201)
     response.assertBodyContains({
-      code: 'E_PLAN_NOT_PAID',
+      data: {
+        studentId: student.id,
+        planId: plan.id,
+        status: 'scheduled',
+      },
     })
   })
 
@@ -402,7 +406,9 @@ test.group('Lessons', (group) => {
       data: {
         id: plan.id,
         lessonsTotal: 4,
-        lessonsRemaining: 3,
+        lessonsDone: 0,
+        lessonsRemaining: 4,
+        lessonsSchedulable: 3,
       },
     })
   })

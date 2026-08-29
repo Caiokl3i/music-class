@@ -225,12 +225,12 @@ export function LessonsPage() {
         description="Agenda de todos os alunos. Clique no dia para marcar."
         actions={
           <>
-            <div className="flex rounded-lg border border-border bg-white p-0.5">
+            <div className="flex rounded-lg border border-border bg-surface-raised p-0.5">
               <button
                 type="button"
                 onClick={() => setView('list')}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                  view === 'list' ? 'bg-brand-50 text-brand-700' : 'text-ink-muted'
+                  view === 'list' ? 'bg-brand-soft text-brand-on-soft' : 'text-ink-muted'
                 }`}
               >
                 <List className="size-3.5" />
@@ -240,7 +240,7 @@ export function LessonsPage() {
                 type="button"
                 onClick={() => setView('calendar')}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                  view === 'calendar' ? 'bg-brand-50 text-brand-700' : 'text-ink-muted'
+                  view === 'calendar' ? 'bg-brand-soft text-brand-on-soft' : 'text-ink-muted'
                 }`}
               >
                 <CalendarDays className="size-3.5" />
@@ -289,7 +289,7 @@ export function LessonsPage() {
           onAction={() => openCreate()}
         />
       ) : view === 'list' ? (
-        <ul className="divide-y divide-border rounded-2xl border border-border bg-white px-4 sm:px-5">
+        <ul className="divide-y divide-border rounded-2xl border border-border bg-surface-raised px-4 sm:px-5">
           {filteredLessons.map((lesson) => (
             <LessonRow
               key={lesson.id}
@@ -307,7 +307,7 @@ export function LessonsPage() {
           ))}
         </ul>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-white">
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <Button variant="ghost" size="sm" onClick={() => setMonth((m) => addMonths(m, -1))} aria-label="Mês anterior">
               <ChevronLeft className="size-4" />
@@ -319,7 +319,7 @@ export function LessonsPage() {
               <ChevronRight className="size-4" />
             </Button>
           </div>
-          <div className="grid grid-cols-7 border-b border-border bg-slate-50 text-center text-xs font-medium uppercase tracking-wide text-ink-muted">
+          <div className="grid grid-cols-7 border-b border-border bg-surface-muted text-center text-xs font-medium uppercase tracking-wide text-ink-muted">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
               <div key={day} className="px-1 py-2">
                 {day}
@@ -337,11 +337,11 @@ export function LessonsPage() {
                   key={day.toISOString()}
                   type="button"
                   onClick={() => openCreate(day)}
-                  className={`flex min-h-[88px] flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-brand-50/40 ${
-                    inMonth ? 'bg-white' : 'bg-slate-50/60'
+                  className={`flex min-h-[88px] flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-brand-soft ${
+                    inMonth ? 'bg-surface-raised' : 'bg-surface-muted'
                   }`}
                 >
-                  <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-slate-400'}`}>
+                  <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-ink-muted'}`}>
                     {format(day, 'd')}
                   </span>
                   <div className="flex flex-col gap-1 overflow-hidden">
@@ -353,7 +353,7 @@ export function LessonsPage() {
                           event.stopPropagation()
                           openEdit(lesson)
                         }}
-                        className="truncate rounded bg-brand-50 px-1 py-0.5 text-[10px] font-medium text-brand-800"
+                        className="truncate rounded bg-brand-soft px-1 py-0.5 text-[10px] font-medium text-brand-on-soft"
                       >
                         {formatTime(lesson.scheduledAt)}{' '}
                         {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
@@ -398,21 +398,21 @@ export function LessonsPage() {
           <Select
             label="Pacote"
             placeholder={
-              formStudentId ? 'Pacote pago com crédito' : 'Selecione o aluno antes'
+              formStudentId ? 'Pacote com vaga' : 'Selecione o aluno antes'
             }
             error={errors.planId?.message}
             options={availablePlans.map((plan) => ({
               value: plan.id,
-              label: `${labelFor(plan.package)} · ${plan.lessonsRemaining}/${plan.lessonsTotal} créditos`,
+              label: `${labelFor(plan.package)} · ${plan.lessonsDone}/${plan.lessonsTotal} feitas`,
             }))}
             {...register('planId')}
           />
           {formStudentId && availablePlans.length === 0 ? (
             <p className="text-sm text-ink-muted">
-              Este aluno não tem pacote pago com crédito.{' '}
+              Este aluno não tem vaga em pacote.{' '}
               <button
                 type="button"
-                className="font-medium text-brand-700 hover:underline"
+                className="font-medium text-link hover:underline"
                 onClick={() => navigate(`/students/${formStudentId}`)}
               >
                 Abrir ficha
@@ -443,7 +443,7 @@ export function LessonsPage() {
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Excluir aula?"
-        description="A aula sai do histórico. Se ela consumia crédito, o crédito volta ao pacote."
+        description="A aula sai do histórico. Se já estava concluída, deixa de contar no pacote."
         loading={deleteLoading}
         onCancel={() => setDeleting(null)}
         onConfirm={confirmDelete}

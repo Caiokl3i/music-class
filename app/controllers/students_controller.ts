@@ -43,9 +43,14 @@ export default class StudentsController {
 
   private studentsQuery(user: User) {
     return user.related('students').query().preload('plans', (plans) => {
-      plans.where('status', 'paid').withCount('lessons', (query) => {
-        query.whereNot('status', 'cancelled')
-      })
+      plans
+        .whereNot('status', 'cancelled')
+        .withCount('lessons', (query) => {
+          query.where('status', 'done').as('done_lessons_count')
+        })
+        .withCount('lessons', (query) => {
+          query.whereNot('status', 'cancelled').as('active_lessons_count')
+        })
     })
   }
 

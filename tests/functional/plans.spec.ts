@@ -290,13 +290,27 @@ test.group('Plans', (group) => {
     const list = await client.get('/api/v1/plans').loginAs(teacher)
     list.assertStatus(200)
     list.assertBodyContains({
-      data: [{ id: plan.id, lessonsTotal: 4, lessonsRemaining: 3 }],
+      data: [
+        {
+          id: plan.id,
+          lessonsTotal: 4,
+          lessonsDone: 0,
+          lessonsRemaining: 4,
+          lessonsSchedulable: 3,
+        },
+      ],
     })
 
     const show = await client.get(`/api/v1/plans/${plan.id}`).loginAs(teacher)
     show.assertStatus(200)
     show.assertBodyContains({
-      data: { id: plan.id, lessonsTotal: 4, lessonsRemaining: 3 },
+      data: {
+        id: plan.id,
+        lessonsTotal: 4,
+        lessonsDone: 0,
+        lessonsRemaining: 4,
+        lessonsSchedulable: 3,
+      },
     })
   })
 
@@ -315,6 +329,47 @@ test.group('Plans', (group) => {
 
     response.assertStatus(204)
     assert.isNull(await Plan.find(plan.id))
+  })
+
+  test('allows a second pending plan while another is unpaid', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+
+    const first = await client.post('/api/v1/plans').loginAs(teacher).json({
+      studentId: student.id,
+      package: 'pack_4',
+      status: 'pending',
+    })
+    first.assertStatus(201)
+
+    const second = await client.post('/api/v1/plans').loginAs(teacher).json({
+      studentId: student.id,
+      package: 'pack_8',
+      status: 'pending',
+    })
+    second.assertStatus(201)
+    assert.notEqual(second.body().data.id, first.body().data.id)
+    assert.equal(second.body().data.status, 'pending')
+  })
+
+  test('generates remaining credits on a pending plan', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'pending',
+    })
+
+    const response = await client
+      .post(`/api/v1/plans/${plan.id}/lessons/generate`)
+      .loginAs(teacher)
+      .json({ firstScheduledAt: '2026-09-01T14:00:00.000Z' })
+
+    response.assertStatus(201)
+    assert.lengthOf(response.body().data, 4)
   })
 
   test('generates remaining credits as weekly lessons', async ({ assert, client }) => {
@@ -347,7 +402,9 @@ test.group('Plans', (group) => {
     )
 
     const remaining = await client.get(`/api/v1/plans/${plan.id}`).loginAs(teacher)
-    remaining.assertBodyContains({ data: { lessonsRemaining: 0 } })
+    remaining.assertBodyContains({
+      data: { lessonsDone: 0, lessonsRemaining: 4, lessonsSchedulable: 0 },
+    })
   })
 
   test('stops generating lessons after the plan expires', async ({ assert, client }) => {

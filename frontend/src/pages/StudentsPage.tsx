@@ -160,7 +160,7 @@ export function StudentsPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Buscar por nome, instrumento…"
-            className="h-10 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm"
+            className="h-10 w-full rounded-lg border border-border bg-surface-raised pl-9 pr-3 text-sm text-ink placeholder:text-ink-muted"
             aria-label="Buscar alunos"
           />
         </label>
@@ -185,11 +185,11 @@ export function StudentsPage() {
           onAction={query ? undefined : openCreate}
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-white">
-          <div className="hidden grid-cols-[1.5fr_1fr_0.8fr_auto] gap-4 border-b border-border bg-slate-50/80 px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-muted md:grid">
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
+          <div className="hidden grid-cols-[1.5fr_1fr_0.8fr_auto] gap-4 border-b border-border bg-surface-muted px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-muted md:grid">
             <span>Nome</span>
             <span>Instrumento</span>
-            <span>Créditos</span>
+            <span>Aulas</span>
             <span className="text-right">Ações</span>
           </div>
           <ul className="divide-y divide-border">
@@ -199,13 +199,13 @@ export function StudentsPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="grid cursor-pointer gap-3 px-4 py-4 transition-colors hover:bg-brand-50/40 md:grid-cols-[1.5fr_1fr_0.8fr_auto] md:items-center md:gap-4"
+                className="grid cursor-pointer gap-3 px-4 py-4 transition-colors hover:bg-brand-soft md:grid-cols-[1.5fr_1fr_0.8fr_auto] md:items-center md:gap-4"
                 onClick={() => navigate(`/students/${student.id}`)}
               >
                 <div>
                   <Link
                     to={`/students/${student.id}`}
-                    className="inline-flex items-center gap-1 font-medium text-brand-700 hover:underline"
+                    className="inline-flex items-center gap-1 font-medium text-link hover:underline"
                     onClick={(event) => event.stopPropagation()}
                   >
                     {student.name}
@@ -216,13 +216,13 @@ export function StudentsPage() {
                 <p className="text-sm text-ink-muted md:text-ink">{student.instrument}</p>
                 <p className="text-sm text-ink">
                   <span
-                    className={`font-medium ${student.creditsRemaining <= 1 ? 'text-amber-700' : 'text-brand-700'}`}
+                    className={`font-medium ${student.creditsRemaining <= 1 ? 'text-warning-on-soft' : 'text-link'}`}
                   >
                     {student.creditsRemaining}
                   </span>
-                  <span className="text-ink-muted"> crédito(s)</span>
+                  <span className="text-ink-muted"> a fazer</span>
                   {student.creditsRemaining <= 1 ? (
-                    <span className="ml-1 text-xs text-amber-700">acabando</span>
+                    <span className="ml-1 text-xs text-warning-on-soft">acabando</span>
                   ) : null}
                 </p>
                 <div className="flex flex-wrap gap-2 md:justify-end">

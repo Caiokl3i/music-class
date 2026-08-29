@@ -42,7 +42,7 @@ export function GenerateLessonsModal({
     const first = new Date(firstAt)
     if (Number.isNaN(first.getTime())) return []
     const until = plan.expiresAt ? new Date(plan.expiresAt) : null
-    return weeklySlots(first, plan.lessonsRemaining, until)
+    return weeklySlots(first, plan.lessonsSchedulable, until)
   }, [firstAt, plan])
 
   async function submit() {
@@ -50,7 +50,7 @@ export function GenerateLessonsModal({
     setSaving(true)
     try {
       const created = await plansService.generatePlanLessons(plan.id, fromDatetimeLocalValue(firstAt))
-      const skipped = plan.lessonsRemaining - created.length
+      const skipped = plan.lessonsSchedulable - created.length
       toast.success(
         skipped > 0
           ? `${created.length} aula(s) criadas. ${skipped} ficaram fora da validade.`
@@ -83,7 +83,7 @@ export function GenerateLessonsModal({
     >
       <div className="space-y-4">
         <p className="text-sm text-ink-muted">
-          Usa os {plan?.lessonsRemaining ?? 0} crédito(s) restantes, toda semana no mesmo horário.
+          Cria as {plan?.lessonsSchedulable ?? 0} aula(s) que ainda faltam marcar, toda semana no mesmo horário.
         </p>
         <Input
           label="Primeira aula"
@@ -92,7 +92,7 @@ export function GenerateLessonsModal({
           onChange={(event) => setFirstAt(event.target.value)}
         />
         {preview.length === 0 ? (
-          <p className="text-sm text-amber-800">Nenhuma data cabe na validade deste pacote.</p>
+          <p className="text-sm text-warning-on-soft">Nenhuma data cabe na validade deste pacote.</p>
         ) : (
           <ul className="max-h-48 space-y-1 overflow-auto text-sm text-ink">
             {preview.map((slot) => (
@@ -100,9 +100,9 @@ export function GenerateLessonsModal({
             ))}
           </ul>
         )}
-        {plan && preview.length < plan.lessonsRemaining ? (
+        {plan && preview.length < plan.lessonsSchedulable ? (
           <p className="text-xs text-ink-muted">
-            {plan.lessonsRemaining - preview.length} crédito(s) ficam de fora porque a data cai depois da
+            {plan.lessonsSchedulable - preview.length} aula(s) ficam de fora porque a data cai depois da
             validade.
           </p>
         ) : null}
