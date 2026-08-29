@@ -67,10 +67,11 @@ export default class DashboardController {
       revenueThisMonth: paidThisMonth.reduce((sum, plan) => sum + Number(plan.price), 0),
       pendingPlans: pendingPlans.length,
       pendingAmount: pendingPlans.reduce((sum, plan) => sum + Number(plan.price), 0),
+      unpaidPlans: this.alerts(pendingPlans),
       lowCredits: this.alerts(
         paidPlans.filter((plan) => {
           const remaining = this.remaining(plan)
-          return remaining >= 0 && remaining <= LOW_CREDIT_THRESHOLD
+          return remaining > 0 && remaining <= LOW_CREDIT_THRESHOLD
         })
       ),
       expiringSoon: this.alerts(
@@ -119,6 +120,9 @@ export default class DashboardController {
         planId: plan.id,
         studentId: plan.studentId,
         studentName: student?.name ?? null,
+        package: plan.package,
+        price: Number(plan.price),
+        status: plan.status,
         lessonsRemaining: this.remaining(plan),
         lessonsTotal: plan.lessonsTotal,
         expiresAt: plan.expiresAt,

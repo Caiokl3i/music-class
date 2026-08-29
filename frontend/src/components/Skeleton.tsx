@@ -1,5 +1,5 @@
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg bg-slate-200/80 ${className}`} aria-hidden />
+  return <div className={`animate-pulse rounded-lg bg-skeleton ${className}`} aria-hidden />
 }
 
 export function PageLoader() {
@@ -15,7 +15,7 @@ export function PageLoader() {
 
 export function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-white p-5">
+    <div className="rounded-2xl bg-surface-muted/50 p-5">
       <Skeleton className="mb-3 h-4 w-24" />
       <Skeleton className="h-8 w-16" />
       <Skeleton className="mt-4 h-3 w-full" />

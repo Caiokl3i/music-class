@@ -76,6 +76,9 @@ export type PlanAlert = {
   planId: number
   studentId: number
   studentName: string | null
+  package: PlanPackage
+  price: number
+  status: PlanStatus
   lessonsRemaining: number
   lessonsTotal: number
   expiresAt: string | null
@@ -90,6 +93,7 @@ export type Dashboard = {
   revenueThisMonth: number
   pendingPlans: number
   pendingAmount: number
+  unpaidPlans: PlanAlert[]
   lowCredits: PlanAlert[]
   expiringSoon: PlanAlert[]
   expiredPlans: PlanAlert[]

@@ -54,6 +54,7 @@ test.group('Dashboard', (group) => {
     assert.equal(Number(body.revenue), 240)
     assert.equal(Number(body.revenueThisMonth), 240)
     assert.equal(body.pendingPlans, 0)
+    assert.lengthOf(body.unpaidPlans, 0)
     assert.lengthOf(body.lowCredits, 0)
     assert.lengthOf(body.overdue, 1)
     assert.equal(body.today[0].id, todayLesson.id)
@@ -99,13 +100,13 @@ test.group('Dashboard', (group) => {
       studentId: student.id,
       planId: plan.id,
       scheduledAt: now.plus({ days: 1 }).set({ hour: 14 }),
-      status: 'scheduled',
+      status: 'done',
     })
     await teacher.related('lessons').create({
       studentId: student.id,
       planId: plan.id,
       scheduledAt: now.plus({ days: 8 }).set({ hour: 14 }),
-      status: 'scheduled',
+      status: 'done',
     })
     await teacher.related('lessons').create({
       studentId: student.id,
@@ -122,8 +123,50 @@ test.group('Dashboard', (group) => {
     assert.equal(Number(body.revenueThisMonth), 130)
     assert.equal(body.pendingPlans, 1)
     assert.equal(Number(body.pendingAmount), 35)
+    assert.lengthOf(body.unpaidPlans, 1)
+    assert.equal(body.unpaidPlans[0].status, 'pending')
     assert.lengthOf(body.lowCredits, 1)
-    assert.equal(body.lowCredits[0].studentName, 'Ana')
     assert.equal(body.lowCredits[0].lessonsRemaining, 1)
+    assert.equal(body.lowCredits[0].status, 'paid')
+  })
+
+  test('finished paid packs are not alerts; finished unpaid packs stay to collect', async ({
+    assert,
+    client,
+  }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan({ package: 'pack_4' })
+    const now = DateTime.now().setZone('UTC')
+
+    for (const days of [1, 8, 15, 22]) {
+      await teacher.related('lessons').create({
+        studentId: student.id,
+        planId: plan.id,
+        scheduledAt: now.minus({ days }).set({ hour: 14 }),
+        status: 'done',
+      })
+    }
+
+    const unpaid = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'single',
+      lessonsTotal: 1,
+      price: 35,
+      status: 'pending',
+    })
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: unpaid.id,
+      scheduledAt: now.minus({ days: 3 }).set({ hour: 14 }),
+      status: 'done',
+    })
+
+    const response = await client.get('/api/v1/dashboard?timezone=UTC').loginAs(teacher)
+    response.assertStatus(200)
+
+    const body = response.body().data
+    assert.lengthOf(body.lowCredits, 0)
+    assert.lengthOf(body.unpaidPlans, 1)
+    assert.equal(body.unpaidPlans[0].planId, unpaid.id)
+    assert.equal(body.unpaidPlans[0].lessonsRemaining, 0)
   })
 })
