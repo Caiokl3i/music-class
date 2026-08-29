@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { getErrorMessage } from '@/utils/errors'
 
 const nav = [
@@ -46,8 +47,8 @@ export function AppLayout() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
       isActive
-        ? 'bg-brand-50 text-brand-700'
-        : 'text-ink-muted hover:bg-slate-100 hover:text-ink'
+        ? 'bg-brand-soft text-brand-on-soft'
+        : 'text-ink-muted hover:bg-surface-hover hover:text-ink'
     }`
 
   const sidebar = (
@@ -57,7 +58,7 @@ export function AppLayout() {
           <Music2 className="size-4" aria-hidden />
         </div>
         <div>
-          <p className="font-display text-lg font-semibold leading-none text-brand-800">Music Class</p>
+          <p className="font-display text-lg font-semibold leading-none text-link">Music Class</p>
           <p className="mt-1 text-xs text-ink-muted">Painel do professor</p>
         </div>
       </div>
@@ -76,7 +77,11 @@ export function AppLayout() {
         ))}
       </nav>
       <div className="border-t border-border p-3">
-        <div className="mb-2 rounded-xl bg-slate-50 px-3 py-2.5">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="px-1 text-xs font-medium text-ink-muted">Aparência</span>
+          <ThemeToggle />
+        </div>
+        <div className="mb-2 rounded-xl bg-surface-muted px-3 py-2.5">
           <p className="truncate text-sm font-medium text-ink">
             {user?.fullName || user?.email}
           </p>
@@ -86,7 +91,7 @@ export function AppLayout() {
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors hover:bg-red-50 hover:text-danger disabled:opacity-60"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink-muted transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-60"
         >
           <LogOut className="size-4" aria-hidden />
           Sair
@@ -96,8 +101,8 @@ export function AppLayout() {
   )
 
   return (
-    <div className="min-h-dvh bg-surface lg:flex">
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-surface-raised lg:block">
+    <div className="flex h-dvh overflow-hidden bg-surface">
+      <aside className="hidden h-full w-64 shrink-0 overflow-hidden border-r border-border bg-surface-raised lg:block">
         {sidebar}
       </aside>
 
@@ -107,7 +112,7 @@ export function AppLayout() {
             <motion.button
               type="button"
               aria-label="Fechar menu"
-              className="absolute inset-0 bg-slate-900/40"
+              className="absolute inset-0 bg-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -124,7 +129,7 @@ export function AppLayout() {
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg p-2 text-ink-muted hover:bg-slate-100"
+                  className="rounded-lg p-2 text-ink-muted hover:bg-surface-hover"
                   aria-label="Fechar"
                 >
                   <X className="size-5" />
@@ -136,19 +141,20 @@ export function AppLayout() {
         ) : null}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-2 text-ink hover:bg-white"
+            className="rounded-lg p-2 text-ink hover:bg-surface-raised"
             aria-label="Abrir menu"
           >
             <Menu className="size-5" />
           </button>
-          <p className="font-display text-lg font-semibold text-brand-800">Music Class</p>
+          <p className="font-display text-lg font-semibold text-link">Music Class</p>
+          <ThemeToggle className="ml-auto" />
         </header>
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>
       </div>

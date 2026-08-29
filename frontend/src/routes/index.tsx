@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CatalogProvider } from '@/contexts/CatalogContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { GuestRoute, ProtectedRoute } from '@/routes/ProtectedRoute'
 import { AuthLayout } from '@/layouts/AuthLayout'
@@ -39,9 +40,10 @@ const NotFoundPage = lazy(() =>
 export function AppRouter() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <CatalogProvider>
-          <ToastProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <CatalogProvider>
+            <ToastProvider>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route element={<GuestRoute />}>
@@ -66,9 +68,10 @@ export function AppRouter() {
                 <Route path="*" element={<Navigate to="/404" replace />} />
               </Routes>
             </Suspense>
-          </ToastProvider>
-        </CatalogProvider>
-      </AuthProvider>
+            </ToastProvider>
+          </CatalogProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

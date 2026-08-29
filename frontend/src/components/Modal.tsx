@@ -32,7 +32,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
           <motion.button
             type="button"
             aria-label="Fechar"
-            className="absolute inset-0 bg-slate-900/40"
+            className="absolute inset-0 bg-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -58,7 +58,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg p-2 text-ink-muted hover:bg-slate-100 hover:text-ink"
+                className="rounded-lg p-2 text-ink-muted hover:bg-surface-hover hover:text-ink"
                 aria-label="Fechar modal"
               >
                 <X className="size-4" />

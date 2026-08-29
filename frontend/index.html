@@ -12,6 +12,17 @@
       rel="stylesheet"
     />
     <title>Music Class</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('music-class-theme')
+          var dark =
+            stored === 'dark' ||
+            (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (dark) document.documentElement.classList.add('dark')
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

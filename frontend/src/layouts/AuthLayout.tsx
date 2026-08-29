@@ -1,5 +1,6 @@
 import { Outlet, Link } from 'react-router-dom'
 import { motion } from 'motion/react'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function AuthLayout() {
   return (
@@ -8,9 +9,12 @@ export function AuthLayout() {
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           background:
-            'radial-gradient(ellipse 80% 50% at 10% -10%, rgba(15,118,110,0.12), transparent), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(15,118,110,0.08), transparent)',
+            'radial-gradient(ellipse 80% 50% at 10% -10%, var(--glow), transparent), radial-gradient(ellipse 60% 40% at 90% 100%, var(--glow), transparent)',
         }}
       />
+      <div className="absolute right-4 top-4 z-10 sm:right-6">
+        <ThemeToggle />
+      </div>
       <div className="relative mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -19,7 +23,7 @@ export function AuthLayout() {
           className="mb-10 lg:mb-0 lg:flex-1"
         >
           <Link to="/login" className="inline-block">
-            <p className="font-display text-4xl font-semibold tracking-tight text-brand-700 sm:text-5xl">
+            <p className="font-display text-4xl font-semibold tracking-tight text-link sm:text-5xl">
               Music Class
             </p>
           </Link>

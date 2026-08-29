@@ -37,7 +37,7 @@ export function LessonRow({
         </div>
         <p className="mt-1 text-sm text-ink-muted">
           {showStudent ? (
-            <Link to={`/students/${lesson.studentId}`} className="font-medium text-brand-700 hover:underline">
+            <Link to={`/students/${lesson.studentId}`} className="font-medium text-link hover:underline">
               {name}
             </Link>
           ) : null}

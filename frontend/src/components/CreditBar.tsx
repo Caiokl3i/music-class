@@ -3,7 +3,7 @@ export function CreditBar({ remaining, total }: { remaining: number; total: numb
   const warn = remaining <= 1
 
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+    <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
       <div
         className={`h-full rounded-full transition-all ${warn ? 'bg-amber-500' : 'bg-brand-600'}`}
         style={{ width: `${used}%` }}
