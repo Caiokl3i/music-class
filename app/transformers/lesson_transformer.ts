@@ -21,6 +21,7 @@ export default class LessonTransformer extends BaseTransformer<Lesson> {
         'updatedAt',
       ]),
       studentName: student?.name ?? null,
+      studentInstrument: student?.instrument ?? null,
       planPackage: (plan?.package as Plan['package'] | undefined) ?? null,
     }
   }

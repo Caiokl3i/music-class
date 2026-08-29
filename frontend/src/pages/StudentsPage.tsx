@@ -186,10 +186,10 @@ export function StudentsPage() {
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
-          <div className="hidden grid-cols-[1.5fr_1fr_0.8fr_auto] gap-4 border-b border-border bg-surface-muted px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-muted md:grid">
+          <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_9.5rem] items-center gap-4 border-b border-border bg-surface-muted px-5 py-3 text-xs font-medium uppercase tracking-wide text-ink-muted md:grid">
             <span>Nome</span>
-            <span>Instrumento</span>
-            <span>Aulas</span>
+            <span className="text-center">Instrumento</span>
+            <span className="text-center">Aulas</span>
             <span className="text-right">Ações</span>
           </div>
           <ul className="divide-y divide-border">
@@ -199,32 +199,24 @@ export function StudentsPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="grid cursor-pointer gap-3 px-4 py-4 transition-colors hover:bg-brand-soft md:grid-cols-[1.5fr_1fr_0.8fr_auto] md:items-center md:gap-4"
+                className="grid cursor-pointer grid-cols-1 items-center gap-3 px-5 py-3.5 transition-colors hover:bg-brand-soft md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_9.5rem] md:gap-4"
                 onClick={() => navigate(`/students/${student.id}`)}
               >
-                <div>
+                <div className="min-w-0">
                   <Link
                     to={`/students/${student.id}`}
-                    className="inline-flex items-center gap-1 font-medium text-link hover:underline"
+                    className="inline-flex max-w-full items-center gap-1 font-medium text-link hover:underline"
                     onClick={(event) => event.stopPropagation()}
                   >
-                    {student.name}
-                    <ChevronRight className="size-4" aria-hidden />
+                    <span className="truncate">{student.name}</span>
+                    <ChevronRight className="size-4 shrink-0" aria-hidden />
                   </Link>
-                  <p className="text-xs text-ink-muted">{student.phone || 'Abrir ficha'}</p>
-                </div>
-                <p className="text-sm text-ink-muted md:text-ink">{student.instrument}</p>
-                <p className="text-sm text-ink">
-                  <span
-                    className={`font-medium ${student.creditsRemaining <= 1 ? 'text-warning-on-soft' : 'text-link'}`}
-                  >
-                    {student.creditsRemaining}
-                  </span>
-                  <span className="text-ink-muted"> a fazer</span>
-                  {student.creditsRemaining <= 1 ? (
-                    <span className="ml-1 text-xs text-warning-on-soft">acabando</span>
+                  {student.phone ? (
+                    <p className="truncate text-xs text-ink-muted">{student.phone}</p>
                   ) : null}
-                </p>
+                </div>
+                <p className="text-sm text-ink md:text-center">{student.instrument}</p>
+                <div className="md:text-center">{creditsCell(student.creditsRemaining)}</div>
                 <div className="flex flex-wrap gap-2 md:justify-end">
                   <Button
                     size="sm"
@@ -291,5 +283,26 @@ export function StudentsPage() {
         onConfirm={confirmDelete}
       />
     </div>
+  )
+}
+
+function creditsCell(remaining: number) {
+  if (remaining <= 0) {
+    return <span className="text-sm text-ink-muted">Nenhuma a fazer</span>
+  }
+  if (remaining === 1) {
+    return (
+      <span className="text-sm">
+        <span className="font-medium text-warning-on-soft">1</span>
+        <span className="text-ink-muted"> a fazer</span>
+        <span className="ml-1 text-xs text-warning-on-soft">acabando</span>
+      </span>
+    )
+  }
+  return (
+    <span className="text-sm">
+      <span className="font-medium text-link">{remaining}</span>
+      <span className="text-ink-muted"> a fazer</span>
+    </span>
   )
 }

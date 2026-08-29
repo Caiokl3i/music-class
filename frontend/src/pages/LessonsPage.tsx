@@ -52,7 +52,7 @@ export function LessonsPage() {
   const navigate = useNavigate()
   const toast = useToast()
   const { labelFor } = useCatalog()
-  const [view, setView] = useState<ViewMode>('list')
+  const [view, setView] = useState<ViewMode>('calendar')
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [students, setStudents] = useState<Student[]>([])

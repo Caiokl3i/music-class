@@ -1,29 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'motion/react'
-import { Package, Plus } from 'lucide-react'
+import { BookOpen, Package, Plus } from 'lucide-react'
 import * as plansService from '@/services/plans.service'
 import * as studentsService from '@/services/students.service'
-import type { Plan, PlanPackage, PlanStatus, Student } from '@/types/api'
+import type { PlanPackage, PlanStatus, Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Select } from '@/components/Select'
 import { TextArea } from '@/components/TextArea'
 import { Modal } from '@/components/Modal'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
-import { PlanStatusBadge } from '@/components/StatusBadges'
-import { GenerateLessonsModal } from '@/components/GenerateLessonsModal'
-import { CreditBar } from '@/components/CreditBar'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
-import { formatCurrency, formatDate, formatDateTime } from '@/utils/format'
-import { canGenerateLessons, isLowCredit, planHoldsCredits, planIsExpired } from '@/domain/status'
+import { formatCurrency } from '@/utils/format'
 
 const schema = z.object({
   studentId: z.string().min(1, 'Selecione o aluno'),
@@ -36,19 +29,10 @@ type FormValues = z.infer<typeof schema>
 
 export function PlansPage() {
   const toast = useToast()
-  const { packages, labelFor, optionFor } = useCatalog()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filterStudentId = searchParams.get('studentId') ?? ''
-
-  const [plans, setPlans] = useState<Plan[]>([])
+  const { packages, optionFor, creditValidityDays, loading: catalogLoading } = useCatalog()
   const [students, setStudents] = useState<Student[]>([])
-  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<Plan | null>(null)
   const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState<Plan | null>(null)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [generating, setGenerating] = useState<Plan | null>(null)
 
   const {
     register,
@@ -63,73 +47,40 @@ export function PlansPage() {
   })
 
   const selectedPackage = watch('package') as PlanPackage
-  const studentsMap = useMemo(() => {
-    const map = new Map<number, Student>()
-    students.forEach((student) => map.set(student.id, student))
-    return map
-  }, [students])
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const loadStudents = useCallback(async () => {
     try {
-      const studentFilter = filterStudentId ? Number(filterStudentId) : undefined
-      const [plansData, studentsData] = await Promise.all([
-        plansService.listPlans(studentFilter),
-        studentsService.listStudents(),
-      ])
-      setPlans(plansData)
-      setStudents(studentsData)
+      setStudents(await studentsService.listStudents())
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível carregar os pacotes.'))
-    } finally {
-      setLoading(false)
+      toast.error(getErrorMessage(error, 'Não foi possível carregar os alunos.'))
     }
-  }, [filterStudentId, toast])
+  }, [toast])
 
   useEffect(() => {
-    void load()
-  }, [load])
+    void loadStudents()
+  }, [loadStudents])
 
-  function openCreate() {
-    setEditing(null)
+  function openCreate(pack?: PlanPackage) {
     reset({
-      studentId: filterStudentId || '',
-      package: 'pack_4',
+      studentId: '',
+      package: pack ?? 'pack_4',
       status: 'paid',
       notes: '',
     })
     setModalOpen(true)
   }
 
-  function openEdit(plan: Plan) {
-    setEditing(plan)
-    reset({
-      studentId: String(plan.studentId),
-      package: plan.package,
-      status: plan.status,
-      notes: plan.notes ?? '',
-    })
-    setModalOpen(true)
-  }
-
   async function onSubmit(values: FormValues) {
     setSaving(true)
-    const payload = {
-      studentId: Number(values.studentId),
-      package: values.package,
-      status: values.status as PlanStatus,
-      notes: values.notes || null,
-    }
     try {
-      if (editing) {
-        await plansService.updatePlan(editing.id, payload)
-        toast.success('Pacote atualizado.')
-      } else {
-        await plansService.createPlan(payload)
-        toast.success('Pacote criado.')
-      }
+      await plansService.createPlan({
+        studentId: Number(values.studentId),
+        package: values.package,
+        status: values.status as PlanStatus,
+        notes: values.notes || null,
+      })
+      toast.success('Pacote vendido.')
       setModalOpen(false)
-      await load()
     } catch (error) {
       const fields = getFieldErrors(error)
       Object.entries(fields).forEach(([field, message]) => {
@@ -141,142 +92,59 @@ export function PlansPage() {
     }
   }
 
-  async function markPaid(plan: Plan) {
-    try {
-      await plansService.updatePlan(plan.id, { status: 'paid' })
-      toast.success('Pacote marcado como pago.')
-      await load()
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o pagamento.'))
-    }
-  }
-
-  async function confirmDelete() {
-    if (!deleting) return
-    setDeleteLoading(true)
-    try {
-      await plansService.deletePlan(deleting.id)
-      toast.success('Pacote excluído.')
-      setDeleting(null)
-      await load()
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível excluir o pacote.'))
-    } finally {
-      setDeleteLoading(false)
-    }
-  }
-
   return (
     <div>
       <PageHeader
         title="Pacotes"
-        description="Pague agora ou depois — o pacote organiza as aulas e o que ainda falta receber."
+        description="Tipos de pacote disponíveis. Venda um para o aluno na ficha dele ou por aqui."
         actions={
-          <Button onClick={openCreate}>
+          <Button onClick={() => openCreate()}>
             <Plus className="size-4" />
-            Novo pacote
+            Vender pacote
           </Button>
         }
       />
 
-      <div className="mb-4 max-w-xs">
-        <Select
-          label="Filtrar por aluno"
-          value={filterStudentId}
-          onChange={(event) => {
-            const value = event.target.value
-            if (value) setSearchParams({ studentId: value })
-            else setSearchParams({})
-          }}
-          options={[
-            { value: '', label: 'Todos os alunos' },
-            ...students.map((student) => ({ value: student.id, label: student.name })),
-          ]}
-        />
-      </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
+      {catalogLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
         </div>
-      ) : plans.length === 0 ? (
-        <EmptyState
-          icon={<Package className="size-8" />}
-          title="Nenhum pacote"
-          description="Crie um pacote após cadastrar um aluno para marcar e concluir aulas."
-          actionLabel="Criar pacote"
-          onAction={openCreate}
-        />
       ) : (
-        <ul className="space-y-3">
-          {plans.map((plan, index) => {
-            const student = studentsMap.get(plan.studentId)
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {packages.map((item, index) => {
+            const perLesson = item.price / item.lessons
             return (
               <motion.li
-                key={plan.id}
-                initial={{ opacity: 0, y: 6 }}
+                key={item.value}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="rounded-2xl border border-border bg-surface-raised p-4 shadow-sm shadow-slate-900/[0.02] sm:p-5"
+                transition={{ duration: 0.22, delay: index * 0.04 }}
+                className="flex flex-col rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02]"
               >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-ink">{labelFor(plan.package)}</h3>
-                      <PlanStatusBadge status={plan.status} />
-                    </div>
-                    <p className="mt-1 text-sm text-ink-muted">
-                      <Link
-                        to={`/students/${plan.studentId}`}
-                        className="font-medium text-link hover:underline"
-                      >
-                        {student?.name ?? `Aluno #${plan.studentId}`}
-                      </Link>
-                      {' · '}
-                      {formatCurrency(Number(plan.price))}
-                    </p>
-                    <p className="mt-2 text-sm text-ink">
-                      <span className="font-medium text-link">{plan.lessonsDone}</span>
-                      <span className="text-ink-muted"> / {plan.lessonsTotal} aulas feitas</span>
-                    </p>
-                    {plan.expiresAt ? (
-                      <p className="mt-1 text-xs text-ink-muted">
-                        Válido até {formatDate(plan.expiresAt)}
-                        {planIsExpired(plan) ? ' · vencido' : ''}
-                      </p>
-                    ) : null}
-                    {planHoldsCredits(plan) && isLowCredit(plan.lessonsRemaining) ? (
-                      <p className="mt-1 text-xs text-warning-on-soft">
-                        {plan.lessonsRemaining === 0 ? 'Todas as aulas já foram feitas.' : 'Resta 1 aula a fazer.'}
-                      </p>
-                    ) : null}
-                    {plan.paidAt ? (
-                      <p className="mt-1 text-xs text-ink-muted">Pago em {formatDateTime(plan.paidAt)}</p>
-                    ) : null}
-                    {plan.notes ? <p className="mt-2 text-sm text-ink-muted">{plan.notes}</p> : null}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {plan.status === 'pending' ? (
-                      <Button size="sm" variant="secondary" onClick={() => markPaid(plan)}>
-                        Marcar pago
-                      </Button>
-                    ) : null}
-                    {canGenerateLessons(plan) ? (
-                      <Button size="sm" variant="secondary" onClick={() => setGenerating(plan)}>
-                        Gerar aulas
-                      </Button>
-                    ) : null}
-                    <Button size="sm" variant="secondary" onClick={() => openEdit(plan)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setDeleting(plan)}>
-                      Excluir
-                    </Button>
-                  </div>
+                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand-on-soft">
+                  {item.lessons === 1 ? (
+                    <BookOpen className="size-5" aria-hidden />
+                  ) : (
+                    <Package className="size-5" aria-hidden />
+                  )}
                 </div>
-                <div className="mt-4">
-                  <CreditBar remaining={plan.lessonsRemaining} total={plan.lessonsTotal} />
+                <h3 className="text-lg font-semibold text-ink">{item.label}</h3>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {item.lessons} aula{item.lessons === 1 ? '' : 's'} · válidas por{' '}
+                  {creditValidityDays} dias
+                </p>
+                <p className="mt-4 text-2xl font-semibold tracking-tight text-ink">
+                  {formatCurrency(item.price)}
+                </p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  {formatCurrency(perLesson)} por aula
+                </p>
+                <div className="mt-auto pt-5">
+                  <Button className="w-full" variant="secondary" onClick={() => openCreate(item.value)}>
+                    Vender este
+                  </Button>
                 </div>
               </motion.li>
             )
@@ -286,7 +154,7 @@ export function PlansPage() {
 
       <Modal
         open={modalOpen}
-        title={editing ? 'Editar pacote' : 'Novo pacote'}
+        title="Vender pacote"
         onClose={() => setModalOpen(false)}
         footer={
           <>
@@ -317,7 +185,8 @@ export function PlansPage() {
             {...register('package')}
           />
           <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand-on-soft">
-            {optionFor(selectedPackage).lessons} aula(s) por {formatCurrency(optionFor(selectedPackage).price)}
+            {optionFor(selectedPackage).lessons} aula(s) por{' '}
+            {formatCurrency(optionFor(selectedPackage).price)}
           </p>
           <Select
             label="Pagamento"
@@ -332,22 +201,6 @@ export function PlansPage() {
           <TextArea label="Observações" error={errors.notes?.message} {...register('notes')} />
         </form>
       </Modal>
-
-      <GenerateLessonsModal
-        plan={generating}
-        studentName={studentsMap.get(generating?.studentId ?? 0)?.name ?? 'aluno'}
-        onClose={() => setGenerating(null)}
-        onGenerated={load}
-      />
-
-      <ConfirmDialog
-        open={Boolean(deleting)}
-        title="Excluir pacote?"
-        description="As aulas vinculadas a este pacote também serão removidas."
-        loading={deleteLoading}
-        onCancel={() => setDeleting(null)}
-        onConfirm={confirmDelete}
-      />
     </div>
   )
 }

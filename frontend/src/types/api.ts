@@ -55,6 +55,7 @@ export type Lesson = {
   createdAt: string
   updatedAt: string | null
   studentName: string | null
+  studentInstrument: string | null
   planPackage: PlanPackage | null
 }
 

@@ -1,19 +1,39 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowRight, CircleDollarSign, Clock, TriangleAlert } from 'lucide-react'
+import {
+  ArrowRight,
+  CalendarCheck,
+  CalendarClock,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
+  Clock,
+  CreditCard,
+  TrendingUp,
+  TriangleAlert,
+  Users,
+  XCircle,
+  Zap,
+} from 'lucide-react'
 import * as dashboardService from '@/services/dashboard.service'
 import * as lessonsService from '@/services/lessons.service'
 import type { Dashboard, Lesson, LessonStatus, PlanAlert, PlanPackage } from '@/types/api'
-import { PageHeader, SectionHeader } from '@/components/Card'
+import { PageHeader } from '@/components/Card'
 import { Skeleton } from '@/components/Skeleton'
-import { LessonRow } from '@/components/LessonRow'
-import { LessonStatusBadge } from '@/components/StatusBadges'
+import { Button } from '@/components/Button'
+import { LESSON_STATUS } from '@/domain/status'
 import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage } from '@/utils/errors'
-import { formatCurrency, formatDateTime } from '@/utils/format'
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatTime,
+  formatWeekdayLong,
+} from '@/utils/format'
 
 export function DashboardPage() {
   const { user } = useAuth()
@@ -50,25 +70,30 @@ export function DashboardPage() {
   }
 
   const greeting = user?.fullName?.split(' ')[0] || 'Professor'
+  const today = formatWeekdayLong(new Date())
 
   return (
     <div>
       <PageHeader
-        title={`Olá, ${greeting}`}
-        description={data ? leadText(data) : 'O que precisa da sua atenção hoje.'}
+        title={`Olá, ${greeting}! 👋`}
+        description="Aqui está o resumo das suas aulas de hoje."
+        actions={
+          <span className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-ink">
+            <CalendarDays className="size-4 text-ink-muted" aria-hidden />
+            {today}
+          </span>
+        }
       />
 
       {loading || !data ? (
-        <div className="grid grid-cols-2 gap-x-8 gap-y-6 xl:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <div key={index}>
-              <Skeleton className="mb-2 h-3 w-16" />
-              <Skeleton className="h-8 w-24" />
-            </div>
-          ))}
-        </div>
+        <DashboardSkeleton />
       ) : (
-        <LoadedDashboard data={data} labelFor={labelFor} onStatus={setStatus} />
+        <LoadedDashboard
+          data={data}
+          today={today}
+          labelFor={labelFor}
+          onStatus={setStatus}
+        />
       )}
     </div>
   )
@@ -76,10 +101,12 @@ export function DashboardPage() {
 
 function LoadedDashboard({
   data,
+  today,
   labelFor,
   onStatus,
 }: {
   data: Dashboard
+  today: string
   labelFor: (value: PlanPackage | null | undefined) => string
   onStatus: (lesson: Lesson, status: LessonStatus) => Promise<void>
 }) {
@@ -87,71 +114,74 @@ function LoadedDashboard({
   const lastLessons = data.lowCredits ?? []
   const expiring = data.expiringSoon ?? []
   const expired = data.expiredPlans ?? []
-  const hasMoneyOrPacks = unpaid.length + lastLessons.length + expiring.length + expired.length > 0
+  const hasAlerts = unpaid.length + lastLessons.length + expiring.length + expired.length > 0
 
   return (
-    <>
-      <div className="grid grid-cols-2 gap-x-8 gap-y-6 xl:grid-cols-4">
-        <Metric label="Alunos" value={String(data.studentCount)} delay={0} />
-        <Metric
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          icon={<Users className="size-4" />}
+          label="Alunos"
+          value={String(data.studentCount)}
+          hint="Total de alunos"
+          delay={0}
+        />
+        <StatCard
+          icon={<CalendarDays className="size-4" />}
           label="Hoje"
           value={String(data.today.length)}
-          hint={
-            data.overdue.length
-              ? `${data.overdue.length} atrasada(s)`
-              : data.scheduledCount
-                ? `${data.scheduledCount} na agenda`
-                : undefined
-          }
+          hint="aulas agendadas"
           delay={0.04}
         />
-        <Metric
+        <StatCard
+          icon={<CreditCard className="size-4" />}
           label="A receber"
           value={formatCurrency(data.pendingAmount)}
-          hint={data.pendingPlans ? `${data.pendingPlans} pacote(s)` : 'Em dia'}
+          hint={data.pendingPlans ? `${data.pendingPlans} pacote(s)` : 'em dia'}
           delay={0.08}
         />
-        <Metric
+        <StatCard
+          icon={<TrendingUp className="size-4" />}
           label="Este mês"
           value={formatCurrency(data.revenueThisMonth ?? data.revenue)}
-          hint={data.doneCount ? `${data.doneCount} aula(s) feitas` : undefined}
+          hint={`${data.doneCount} aula(s) feitas`}
           delay={0.12}
         />
       </div>
 
       {data.overdue.length > 0 ? (
-        <section className="mt-10">
-          <SectionHeader
-            title="Atrasadas"
+        <Panel>
+          <PanelHeader
+            icon={<Clock className="size-4" />}
+            title="Aulas atrasadas"
             description="Passaram da data e ainda estão agendadas."
           />
-          <ul>
+          <ul className="divide-y divide-border">
             {data.overdue.map((lesson) => (
-              <LessonRow
+              <LessonListRow
                 key={lesson.id}
                 lesson={lesson}
                 planLabel={labelFor(lesson.planPackage)}
-                onComplete={(item) => onStatus(item, 'done')}
-                onNoShow={(item) => onStatus(item, 'no_show')}
-                onCancel={(item) => onStatus(item, 'cancelled')}
+                onStatus={onStatus}
               />
             ))}
           </ul>
-        </section>
+        </Panel>
       ) : null}
 
-      {hasMoneyOrPacks ? (
-        <section className="mt-10">
-          <SectionHeader
-            title="Atenção"
-            description="Receber, renovar ou validade do pacote."
+      {hasAlerts ? (
+        <Panel>
+          <PanelHeader
+            icon={<TriangleAlert className="size-4" />}
+            title="Pacotes que pedem atenção"
+            description="Receber, renovar ou validade acabando."
           />
-          <ul className="space-y-4">
+          <ul className="divide-y divide-border">
             {unpaid.map((item) => (
               <AlertRow
                 key={`unpaid-${item.planId}`}
                 item={item}
-                icon={<CircleDollarSign className="size-4 shrink-0 text-warning" />}
+                icon={<CircleDollarSign className="size-4" />}
                 note={unpaidNote(item)}
                 meta={formatCurrency(item.price)}
                 packageLabel={labelFor(item.package)}
@@ -161,7 +191,7 @@ function LoadedDashboard({
               <AlertRow
                 key={`low-${item.planId}`}
                 item={item}
-                icon={<TriangleAlert className="size-4 shrink-0 text-warning" />}
+                icon={<TriangleAlert className="size-4" />}
                 note="Resta 1 aula. Combine o próximo pacote."
                 meta={`${item.lessonsRemaining}/${item.lessonsTotal}`}
                 packageLabel={labelFor(item.package)}
@@ -171,7 +201,7 @@ function LoadedDashboard({
               <AlertRow
                 key={`soon-${item.planId}`}
                 item={item}
-                icon={<Clock className="size-4 shrink-0 text-warning" />}
+                icon={<Clock className="size-4" />}
                 note={`Vence em ${formatDateTime(item.expiresAt)}`}
                 meta={`${item.lessonsRemaining}/${item.lessonsTotal}`}
                 packageLabel={labelFor(item.package)}
@@ -181,127 +211,146 @@ function LoadedDashboard({
               <AlertRow
                 key={`expired-${item.planId}`}
                 item={item}
-                icon={<TriangleAlert className="size-4 shrink-0 text-warning" />}
+                icon={<TriangleAlert className="size-4" />}
                 note={`${item.lessonsRemaining} aula(s) a fazer, validade encerrada.`}
                 meta={`${item.lessonsRemaining}/${item.lessonsTotal}`}
                 packageLabel={labelFor(item.package)}
               />
             ))}
           </ul>
-        </section>
+        </Panel>
       ) : null}
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-2">
-        <section>
-          <SectionHeader
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel>
+          <PanelHeader
+            icon={<CalendarDays className="size-4" />}
             title="Hoje"
+            description={today}
             actions={
-              <Link to="/lessons" className="inline-flex items-center gap-1 text-sm text-link hover:underline">
-                Agenda <ArrowRight className="size-3.5" />
+              <Link
+                to="/lessons"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-muted"
+              >
+                Ver agenda <ArrowRight className="size-3.5" />
               </Link>
             }
           />
           {data.today.length === 0 ? (
-            <p className="text-sm text-ink-muted">
-              Nenhuma aula hoje.
-              {data.upcoming[0]
-                ? ` Próxima: ${data.upcoming[0].studentName ?? 'aluno'} · ${formatDateTime(data.upcoming[0].scheduledAt)}.`
-                : ''}
-            </p>
+            <div className="rounded-xl border border-success/15 bg-success/5 px-6 py-12 text-center">
+              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-success/10 text-success">
+                <CalendarCheck className="size-7" aria-hidden />
+              </div>
+              <p className="text-sm font-medium text-success">Nenhuma aula hoje.</p>
+              <p className="mt-1 text-xs text-ink-muted">
+                Aproveite para planejar as próximas aulas!
+              </p>
+            </div>
           ) : (
-            <ul>
+            <ul className="divide-y divide-border">
               {data.today.map((lesson) => (
-                <LessonRow
+                <LessonListRow
                   key={lesson.id}
                   lesson={lesson}
                   planLabel={labelFor(lesson.planPackage)}
-                  onComplete={(item) => onStatus(item, 'done')}
-                  onNoShow={(item) => onStatus(item, 'no_show')}
-                  onCancel={(item) => onStatus(item, 'cancelled')}
+                  onStatus={onStatus}
                 />
               ))}
             </ul>
           )}
-        </section>
+        </Panel>
 
-        <section>
-          <SectionHeader title="Próximas" />
+        <Panel>
+          <PanelHeader
+            icon={<CalendarClock className="size-4" />}
+            title="Próximas aulas"
+            description="Próximos compromissos agendados"
+          />
           {data.upcoming.length === 0 ? (
             <p className="text-sm text-ink-muted">Nada agendado depois de hoje.</p>
           ) : (
-            <ul className="space-y-3">
-              {data.upcoming.map((lesson) => (
-                <li key={lesson.id} className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-ink">
+            <>
+              <ul className="divide-y divide-border border-t border-border">
+                {data.upcoming.map((lesson) => (
+                  <li key={lesson.id} className="flex items-center gap-3 py-3">
+                    <Avatar name={lesson.studentName} />
+                    <div className="min-w-0 flex-1">
                       <Link
                         to={`/students/${lesson.studentId}`}
-                        className="text-link hover:underline"
+                        className="block truncate text-sm font-medium text-ink hover:underline"
                       >
                         {lesson.studentName ?? `Aluno #${lesson.studentId}`}
                       </Link>
-                    </p>
-                    <p className="text-xs text-ink-muted">{formatDateTime(lesson.scheduledAt)}</p>
-                  </div>
-                  <LessonStatusBadge status={lesson.status} />
-                </li>
-              ))}
-            </ul>
+                      <p className="truncate text-xs text-ink-muted">
+                        {lesson.studentInstrument ?? labelFor(lesson.planPackage)}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right text-xs tabular-nums text-ink-muted">
+                      <p>{formatDate(lesson.scheduledAt)}</p>
+                      <p>{formatTime(lesson.scheduledAt)}</p>
+                    </div>
+                    <StatusPill status={lesson.status} />
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/lessons"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-success hover:underline"
+              >
+                Ver todas as aulas <ArrowRight className="size-4" />
+              </Link>
+            </>
           )}
-        </section>
+        </Panel>
       </div>
 
-      <section className="mt-10">
-        <SectionHeader
+      <Panel>
+        <PanelHeader
+          icon={<Zap className="size-4" />}
           title="Atividade recente"
-          description="Últimas aulas concluídas ou com falta."
+          description="Últimas aulas concluídas ou com falta"
           actions={
-            <Link to="/students" className="inline-flex items-center gap-1 text-sm text-link hover:underline">
-              Alunos <ArrowRight className="size-3.5" />
+            <Link
+              to="/students"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-success hover:underline"
+            >
+              Ver todos os alunos <ArrowRight className="size-4" />
             </Link>
           }
         />
         {data.recent.length === 0 ? (
           <p className="text-sm text-ink-muted">Ainda não há aulas concluídas ou faltas.</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-1">
             {data.recent.map((lesson) => (
-              <li key={lesson.id} className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-ink">
-                    <Link
-                      to={`/students/${lesson.studentId}`}
-                      className="text-link hover:underline"
-                    >
-                      {lesson.studentName ?? `Aluno #${lesson.studentId}`}
-                    </Link>
-                  </p>
-                  <p className="text-xs text-ink-muted">{formatDateTime(lesson.scheduledAt)}</p>
+              <li
+                key={lesson.id}
+                className="grid grid-cols-[auto_1fr_auto] items-center gap-x-4 gap-y-1 py-2.5 md:grid-cols-[auto_1.2fr_1fr_1.4fr_auto]"
+              >
+                <ActivityIcon status={lesson.status} />
+                <Link
+                  to={`/students/${lesson.studentId}`}
+                  className="block truncate text-sm font-medium text-ink hover:underline"
+                >
+                  {lesson.studentName ?? `Aluno #${lesson.studentId}`}
+                </Link>
+                <p className="col-start-2 truncate text-xs text-ink-muted md:col-start-auto md:text-sm">
+                  {lesson.studentInstrument ?? labelFor(lesson.planPackage)}
+                </p>
+                <p className="col-start-2 flex items-center gap-2 text-xs text-ink-muted md:col-start-auto md:text-sm">
+                  <CalendarDays className="size-4 shrink-0" aria-hidden />
+                  {formatDateTime(lesson.scheduledAt)}
+                </p>
+                <div className="col-start-3 row-start-1 justify-self-end md:col-start-auto md:row-start-auto">
+                  <StatusPill status={lesson.status} />
                 </div>
-                <LessonStatusBadge status={lesson.status} />
               </li>
             ))}
           </ul>
         )}
-      </section>
-    </>
+      </Panel>
+    </div>
   )
-}
-
-function leadText(data: Dashboard) {
-  if (data.overdue.length) {
-    return `${data.overdue.length} aula(s) atrasada(s) pedem registro.`
-  }
-  if (data.pendingAmount) {
-    return `${formatCurrency(data.pendingAmount)} a receber.`
-  }
-  if (data.today.length) {
-    return `${data.today.length} aula(s) hoje.`
-  }
-  if (data.upcoming[0]) {
-    return `Próxima: ${data.upcoming[0].studentName ?? 'aluno'} · ${formatDateTime(data.upcoming[0].scheduledAt)}.`
-  }
-  return 'Nada urgente hoje.'
 }
 
 function unpaidNote(item: PlanAlert) {
@@ -328,43 +377,217 @@ function AlertRow({
   packageLabel: string
 }) {
   return (
-    <li className="flex items-start justify-between gap-4">
-      <div className="flex items-start gap-2.5">
+    <li className="flex items-center gap-3 py-3">
+      <span
+        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warning-soft text-warning"
+        aria-hidden
+      >
         {icon}
-        <div>
-          <Link to={`/students/${item.studentId}`} className="text-sm font-medium text-link hover:underline">
-            {item.studentName ?? `Aluno #${item.studentId}`}
-          </Link>
-          <p className="text-xs text-ink-muted">
-            {packageLabel} · {note}
-          </p>
-        </div>
+      </span>
+      <div className="min-w-0 flex-1">
+        <Link
+          to={`/students/${item.studentId}`}
+          className="block truncate text-sm font-medium text-ink hover:underline"
+        >
+          {item.studentName ?? `Aluno #${item.studentId}`}
+        </Link>
+        <p className="truncate text-xs text-ink-muted">
+          {packageLabel} · {note}
+        </p>
       </div>
       <p className="shrink-0 text-xs tabular-nums text-ink-muted">{meta}</p>
     </li>
   )
 }
 
-function Metric({
+function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <section
+      className={`rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02] ${className}`}
+    >
+      {children}
+    </section>
+  )
+}
+
+function PanelHeader({
+  icon,
+  title,
+  description,
+  actions,
+}: {
+  icon: ReactNode
+  title: string
+  description?: string
+  actions?: ReactNode
+}) {
+  return (
+    <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="flex items-start gap-2.5">
+        <span className="mt-0.5 text-success" aria-hidden>
+          {icon}
+        </span>
+        <div>
+          <h2 className="text-[0.95rem] font-semibold text-ink">{title}</h2>
+          {description ? <p className="mt-0.5 text-xs text-ink-muted">{description}</p> : null}
+        </div>
+      </div>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
+    </div>
+  )
+}
+
+function StatCard({
+  icon,
   label,
   value,
   hint,
   delay,
 }: {
+  icon: ReactNode
   label: string
   value: string
-  hint?: string
+  hint: string
   delay: number
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, delay }}
+      transition={{ duration: 0.25, delay }}
+      className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02]"
     >
-      <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-ink-muted">{hint}</p> : null}
+      <div className="flex items-start gap-3">
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-success/10 text-success"
+          aria-hidden
+        >
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[0.7rem] font-medium uppercase tracking-wide text-ink-muted">
+            {label}
+          </p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">{value}</p>
+          <p className="mt-1 text-xs text-ink-muted">{hint}</p>
+        </div>
+      </div>
     </motion.div>
+  )
+}
+
+function Avatar({ name }: { name: string | null }) {
+  const initials = (name ?? '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
+  return (
+    <span
+      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-success/10 text-xs font-semibold text-success"
+      aria-hidden
+    >
+      {initials || '?'}
+    </span>
+  )
+}
+
+const PILL_TONES: Record<LessonStatus, string> = {
+  scheduled: 'bg-success/10 text-success',
+  done: 'bg-success/10 text-success',
+  no_show: 'bg-danger/10 text-danger',
+  cancelled: 'bg-surface-muted text-ink-muted',
+}
+
+function StatusPill({ status }: { status: LessonStatus }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium ${PILL_TONES[status]}`}
+    >
+      {LESSON_STATUS[status].label}
+    </span>
+  )
+}
+
+function ActivityIcon({ status }: { status: LessonStatus }) {
+  const done = status === 'done'
+  return (
+    <span
+      className={`flex size-7 items-center justify-center rounded-full ${
+        done ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+      }`}
+      aria-hidden
+    >
+      {done ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}
+    </span>
+  )
+}
+
+function LessonListRow({
+  lesson,
+  planLabel,
+  onStatus,
+}: {
+  lesson: Lesson
+  planLabel: string
+  onStatus: (lesson: Lesson, status: LessonStatus) => Promise<void>
+}) {
+  return (
+    <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-3">
+      <Avatar name={lesson.studentName} />
+      <div className="min-w-0 flex-1">
+        <Link
+          to={`/students/${lesson.studentId}`}
+          className="block truncate text-sm font-medium text-ink hover:underline"
+        >
+          {lesson.studentName ?? `Aluno #${lesson.studentId}`}
+        </Link>
+        <p className="truncate text-xs text-ink-muted">
+          {lesson.studentInstrument ?? planLabel} · {formatDateTime(lesson.scheduledAt)}
+        </p>
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <Button size="sm" variant="secondary" onClick={() => onStatus(lesson, 'done')}>
+          Concluir
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onStatus(lesson, 'no_show')}>
+          Falta
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onStatus(lesson, 'cancelled')}>
+          Cancelar
+        </Button>
+      </div>
+    </li>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div
+            key={index}
+            className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02]"
+          >
+            <div className="flex items-start gap-3">
+              <Skeleton className="size-9 rounded-full" />
+              <div className="flex-1">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="mt-2 h-7 w-24" />
+                <Skeleton className="mt-2 h-3 w-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+      <Skeleton className="h-56 rounded-2xl" />
+    </div>
   )
 }

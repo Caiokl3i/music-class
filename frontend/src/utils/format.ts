@@ -22,6 +22,14 @@ export function formatTime(value: string | null | undefined) {
   return formatDate(value, 'HH:mm')
 }
 
+/** "Quinta-feira, 16 de outubro" */
+export function formatWeekdayLong(value: Date | string) {
+  const date = value instanceof Date ? value : parseISO(value)
+  if (!isValid(date)) return '—'
+  const label = format(date, "EEEE, d 'de' MMMM", { locale: ptBR })
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
