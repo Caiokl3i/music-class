@@ -2,20 +2,18 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Paleta única da aplicação. Componentes usam SÓ estes tokens semânticos,
+ * nunca cores cruas do Tailwind (amber-500, slate-900, teal-400...).
+ *
+ * Estrutura: surface / surface-raised / surface-muted / surface-hover, ink, ink-muted, border
+ * Identidade: accent (texto e ícones), accent-soft (fundo tingido), accent-strong (botão sólido)
+ * Status:     success (feito/pago), warning (atenção), danger (erro/destrutivo)
+ *             — tintados por opacidade: bg-warning/10 text-warning
+ */
 @theme {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Fraunces', ui-serif, Georgia, serif;
-
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-200: #99f6e4;
-  --color-brand-300: #5eead4;
-  --color-brand-400: #2dd4bf;
-  --color-brand-500: #14b8a6;
-  --color-brand-600: #0f766e;
-  --color-brand-700: #0f5f5a;
-  --color-brand-800: #115e59;
-  --color-brand-900: #134e4a;
 
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
@@ -24,16 +22,14 @@
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-border: var(--border);
-  --color-danger: var(--danger);
-  --color-warning: var(--warning);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-strong-hover: var(--accent-strong-hover);
   --color-success: var(--success);
-  --color-brand-soft: var(--brand-soft);
-  --color-brand-on-soft: var(--brand-on-soft);
-  --color-warning-soft: var(--warning-soft);
-  --color-warning-on-soft: var(--warning-on-soft);
-  --color-warning-border: var(--warning-border);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
   --color-overlay: var(--overlay);
-  --color-link: var(--link);
   --color-skeleton: var(--skeleton);
 }
 
@@ -46,16 +42,14 @@
   --ink: #0f172a;
   --ink-muted: #64748b;
   --border: #e2e8f0;
+  --accent: #0f5f5a;
+  --accent-soft: #f0fdfa;
+  --accent-strong: #0f766e;
+  --accent-strong-hover: #0f5f5a;
+  --success: #047857;
+  --warning: #b45309;
   --danger: #dc2626;
-  --warning: #d97706;
-  --success: #059669;
-  --brand-soft: #f0fdfa;
-  --brand-on-soft: #0f5f5a;
-  --warning-soft: #fffbeb;
-  --warning-on-soft: #78350f;
-  --warning-border: #fde68a;
   --overlay: rgb(15 23 42 / 0.45);
-  --link: #0f5f5a;
   --skeleton: #e2e8f0;
   --glow: rgb(15 118 110 / 0.12);
 }
@@ -69,16 +63,14 @@
   --ink: #e7eeec;
   --ink-muted: #94a3a0;
   --border: #2a3532;
-  --danger: #f87171;
-  --warning: #fbbf24;
+  --accent: #5eead4;
+  --accent-soft: rgb(45 212 191 / 0.12);
+  --accent-strong: #0f766e;
+  --accent-strong-hover: #115e59;
   --success: #34d399;
-  --brand-soft: rgb(45 212 191 / 0.12);
-  --brand-on-soft: #5eead4;
-  --warning-soft: rgb(251 191 36 / 0.12);
-  --warning-on-soft: #fde68a;
-  --warning-border: rgb(251 191 36 / 0.28);
+  --warning: #fbbf24;
+  --danger: #f87171;
   --overlay: rgb(0 0 0 / 0.62);
-  --link: #5eead4;
   --skeleton: #2a3532;
   --glow: rgb(45 212 191 / 0.1);
 }
@@ -97,7 +89,7 @@
   }
 
   *:focus-visible {
-    @apply outline-2 outline-offset-2 outline-brand-600;
+    @apply outline-2 outline-offset-2 outline-accent;
   }
 
   @media (prefers-reduced-motion: reduce) {

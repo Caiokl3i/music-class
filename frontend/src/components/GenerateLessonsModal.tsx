@@ -92,7 +92,7 @@ export function GenerateLessonsModal({
           onChange={(event) => setFirstAt(event.target.value)}
         />
         {preview.length === 0 ? (
-          <p className="text-sm text-warning-on-soft">Nenhuma data cabe na validade deste pacote.</p>
+          <p className="text-sm text-warning">Nenhuma data cabe na validade deste pacote.</p>
         ) : (
           <ul className="max-h-48 space-y-1 overflow-auto text-sm text-ink">
             {preview.map((slot) => (

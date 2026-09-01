@@ -230,7 +230,7 @@ export function LessonsPage() {
                 type="button"
                 onClick={() => setView('list')}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                  view === 'list' ? 'bg-brand-soft text-brand-on-soft' : 'text-ink-muted'
+                  view === 'list' ? 'bg-accent-soft text-accent' : 'text-ink-muted'
                 }`}
               >
                 <List className="size-3.5" />
@@ -240,7 +240,7 @@ export function LessonsPage() {
                 type="button"
                 onClick={() => setView('calendar')}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                  view === 'calendar' ? 'bg-brand-soft text-brand-on-soft' : 'text-ink-muted'
+                  view === 'calendar' ? 'bg-accent-soft text-accent' : 'text-ink-muted'
                 }`}
               >
                 <CalendarDays className="size-3.5" />
@@ -337,7 +337,7 @@ export function LessonsPage() {
                   key={day.toISOString()}
                   type="button"
                   onClick={() => openCreate(day)}
-                  className={`flex min-h-[88px] flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-brand-soft ${
+                  className={`flex min-h-[88px] flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft ${
                     inMonth ? 'bg-surface-raised' : 'bg-surface-muted'
                   }`}
                 >
@@ -353,7 +353,7 @@ export function LessonsPage() {
                           event.stopPropagation()
                           openEdit(lesson)
                         }}
-                        className="truncate rounded bg-brand-soft px-1 py-0.5 text-[10px] font-medium text-brand-on-soft"
+                        className="truncate rounded bg-accent-soft px-1 py-0.5 text-[10px] font-medium text-accent"
                       >
                         {formatTime(lesson.scheduledAt)}{' '}
                         {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
@@ -412,7 +412,7 @@ export function LessonsPage() {
               Este aluno não tem vaga em pacote.{' '}
               <button
                 type="button"
-                className="font-medium text-link hover:underline"
+                className="font-medium text-accent hover:underline"
                 onClick={() => navigate(`/students/${formStudentId}`)}
               >
                 Abrir ficha

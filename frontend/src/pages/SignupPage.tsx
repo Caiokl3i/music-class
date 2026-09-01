@@ -97,7 +97,7 @@ export function SignupPage() {
       </form>
       <p className="mt-6 text-center text-sm text-ink-muted">
         Já tem conta?{' '}
-        <Link to="/login" className="font-medium text-link hover:underline">
+        <Link to="/login" className="font-medium text-accent hover:underline">
           Entrar
         </Link>
       </p>

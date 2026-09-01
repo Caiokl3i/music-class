@@ -199,13 +199,13 @@ export function StudentsPage() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="grid cursor-pointer grid-cols-1 items-center gap-3 px-5 py-3.5 transition-colors hover:bg-brand-soft md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_9.5rem] md:gap-4"
+                className="grid cursor-pointer grid-cols-1 items-center gap-3 px-5 py-3.5 transition-colors hover:bg-accent-soft md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_9.5rem] md:gap-4"
                 onClick={() => navigate(`/students/${student.id}`)}
               >
                 <div className="min-w-0">
                   <Link
                     to={`/students/${student.id}`}
-                    className="inline-flex max-w-full items-center gap-1 font-medium text-link hover:underline"
+                    className="inline-flex max-w-full items-center gap-1 font-medium text-accent hover:underline"
                     onClick={(event) => event.stopPropagation()}
                   >
                     <span className="truncate">{student.name}</span>
@@ -293,15 +293,15 @@ function creditsCell(remaining: number) {
   if (remaining === 1) {
     return (
       <span className="text-sm">
-        <span className="font-medium text-warning-on-soft">1</span>
+        <span className="font-medium text-warning">1</span>
         <span className="text-ink-muted"> a fazer</span>
-        <span className="ml-1 text-xs text-warning-on-soft">acabando</span>
+        <span className="ml-1 text-xs text-warning">acabando</span>
       </span>
     )
   }
   return (
     <span className="text-sm">
-      <span className="font-medium text-link">{remaining}</span>
+      <span className="font-medium text-accent">{remaining}</span>
       <span className="text-ink-muted"> a fazer</span>
     </span>
   )

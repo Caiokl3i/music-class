@@ -6,7 +6,7 @@ export function PageLoader() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-surface">
       <div className="flex flex-col items-center gap-3">
-        <div className="size-8 animate-spin rounded-full border-2 border-brand-600 border-r-transparent" />
+        <div className="size-8 animate-spin rounded-full border-2 border-accent border-r-transparent" />
         <p className="text-sm text-ink-muted">Carregando…</p>
       </div>
     </div>
@@ -15,7 +15,7 @@ export function PageLoader() {
 
 export function CardSkeleton() {
   return (
-    <div className="rounded-2xl bg-surface-muted/50 p-5">
+    <div className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-black/[0.03]">
       <Skeleton className="mb-3 h-4 w-24" />
       <Skeleton className="h-8 w-16" />
       <Skeleton className="mt-4 h-3 w-full" />

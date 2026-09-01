@@ -47,18 +47,18 @@ export function AppLayout() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
       isActive
-        ? 'bg-brand-soft text-brand-on-soft'
+        ? 'bg-accent-soft text-accent'
         : 'text-ink-muted hover:bg-surface-hover hover:text-ink'
     }`
 
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-4 py-5">
-        <div className="flex size-9 items-center justify-center rounded-xl bg-brand-600 text-white">
+        <div className="flex size-9 items-center justify-center rounded-xl bg-accent-strong text-white">
           <Music2 className="size-4" aria-hidden />
         </div>
         <div>
-          <p className="font-display text-lg font-semibold leading-none text-link">Music Class</p>
+          <p className="font-display text-lg font-semibold leading-none text-accent">Music Class</p>
           <p className="mt-1 text-xs text-ink-muted">Painel do professor</p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export function AppLayout() {
           >
             <Menu className="size-5" />
           </button>
-          <p className="font-display text-lg font-semibold text-link">Music Class</p>
+          <p className="font-display text-lg font-semibold text-accent">Music Class</p>
           <ThemeToggle className="ml-auto" />
         </header>
         <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

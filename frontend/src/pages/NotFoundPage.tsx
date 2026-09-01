@@ -8,7 +8,7 @@ export function NotFoundPage() {
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <p className="font-display text-6xl font-semibold text-brand-600">404</p>
+      <p className="font-display text-6xl font-semibold text-accent">404</p>
       <h1 className="mt-4 text-xl font-semibold text-ink">Página não encontrada</h1>
       <p className="mt-2 max-w-sm text-sm text-ink-muted">
         O endereço que você acessou não existe ou foi movido.

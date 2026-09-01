@@ -1,23 +1,40 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Plus } from 'lucide-react'
+import {
+  ArrowLeft,
+  CalendarDays,
+  CalendarPlus,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  FileText,
+  Info,
+  Package,
+  Pencil,
+  Phone,
+  Plus,
+  SquarePen,
+  Trash2,
+  UserRound,
+} from 'lucide-react'
 import * as studentsService from '@/services/students.service'
 import * as plansService from '@/services/plans.service'
 import * as lessonsService from '@/services/lessons.service'
 import type { Lesson, LessonStatus, Plan, PlanPackage, PlanStatus, Student } from '@/types/api'
 import { PageHeader, Card, SectionHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
+import { Badge } from '@/components/Badge'
 import { Skeleton } from '@/components/Skeleton'
 import { Modal } from '@/components/Modal'
 import { Select } from '@/components/Select'
 import { Input } from '@/components/Input'
 import { TextArea } from '@/components/TextArea'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { LessonRow } from '@/components/LessonRow'
-import { PlanStatusBadge } from '@/components/StatusBadges'
+import { LessonStatusBadge, PlanStatusBadge } from '@/components/StatusBadges'
 import { GenerateLessonsModal } from '@/components/GenerateLessonsModal'
 import { CreditBar } from '@/components/CreditBar'
 import { useToast } from '@/contexts/ToastContext'
@@ -26,6 +43,7 @@ import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import {
   formatCurrency,
   formatDate,
+  formatDateTime,
   fromDatetimeLocalValue,
   toDatetimeLocalValue,
 } from '@/utils/format'
@@ -81,6 +99,7 @@ export function StudentDetailPage() {
   const [deletingLesson, setDeletingLesson] = useState<Lesson | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [generatingPlan, setGeneratingPlan] = useState<Plan | null>(null)
+  const [openPlanId, setOpenPlanId] = useState<number | null>(null)
 
   const lessonForm = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
@@ -321,19 +340,25 @@ export function StudentDetailPage() {
         Alunos
       </Button>
       <PageHeader
-        title={student.name}
-        description={`${student.instrument}${student.phone ? ` · ${student.phone}` : ''} · ${student.creditsRemaining} aula(s) a fazer`}
+        title={
+          <>
+            {student.name}
+            <Badge tone="success">Ativo</Badge>
+          </>
+        }
+        description={`${student.instrument} • ${student.creditsRemaining} aula(s) a fazer`}
         actions={
           <>
             <Button variant="secondary" onClick={openEditStudent}>
+              <SquarePen className="size-4" aria-hidden />
               Editar ficha
             </Button>
             <Button variant="secondary" onClick={openCreatePlan}>
-              <Plus className="size-4" />
+              <Plus className="size-4" aria-hidden />
               Pacote
             </Button>
             <Button onClick={openCreateLesson}>
-              <Plus className="size-4" />
+              <Plus className="size-4" aria-hidden />
               Agendar
             </Button>
           </>
@@ -341,93 +366,135 @@ export function StudentDetailPage() {
       />
 
       {isLowCredit(student.creditsRemaining, lowCreditThreshold) ? (
-        <p className="mb-4 rounded-xl border border-warning-border bg-warning-soft px-4 py-3 text-sm text-warning-on-soft">
-          {student.creditsRemaining === 0
-            ? 'Todas as aulas deste aluno já foram feitas. Venda um novo pacote.'
-            : 'Resta 1 aula a fazer. Hora de vender o próximo pacote.'}
-        </p>
+        <div className="mb-4 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent">
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>
+            {student.creditsRemaining === 0
+              ? 'Todas as aulas deste aluno já foram feitas. Venda um novo pacote.'
+              : 'Resta 1 aula a fazer. Hora de vender o próximo pacote.'}
+          </p>
+        </div>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <SectionHeader
-            title="Sobre"
+            icon={<UserRound className="size-4" />}
+            title="Sobre o aluno"
             actions={
-              <Button size="sm" variant="ghost" onClick={openEditStudent}>
+              <Button size="sm" variant="secondary" onClick={openEditStudent}>
                 Editar
               </Button>
             }
           />
-          <dl className="space-y-3 text-sm">
-            <div>
-              <dt className="text-ink-muted">Nascimento</dt>
-              <dd className="font-medium">{formatDate(student.birthdate)}</dd>
-            </div>
-            <div>
-              <dt className="text-ink-muted">Telefone</dt>
-              <dd className="font-medium">{student.phone || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-ink-muted">Observações</dt>
-              <dd className="font-medium whitespace-pre-wrap">{student.description || '—'}</dd>
-            </div>
+          <dl className="space-y-4 text-sm">
+            <InfoRow icon={<CalendarDays className="size-4" />} label="Nascimento">
+              {formatDate(student.birthdate)}
+            </InfoRow>
+            <InfoRow icon={<Phone className="size-4" />} label="Telefone">
+              {student.phone || '—'}
+            </InfoRow>
+            <InfoRow icon={<FileText className="size-4" />} label="Observações">
+              <span className="whitespace-pre-wrap">{student.description || '—'}</span>
+            </InfoRow>
           </dl>
         </Card>
 
         <Card className="lg:col-span-2">
           <SectionHeader
+            icon={<Package className="size-4" />}
             title="Pacotes"
             description="Pode pagar agora ou depois. Dá para abrir outro pacote mesmo com um pendente."
             actions={
-              <Button size="sm" variant="ghost" onClick={openCreatePlan}>
-                Novo
+              <Button size="sm" onClick={openCreatePlan}>
+                <Plus className="size-4" aria-hidden />
+                Novo pacote
               </Button>
             }
           />
           {plans.length === 0 ? (
             <p className="text-sm text-ink-muted">Nenhum pacote ainda. Crie um para agendar aulas.</p>
           ) : (
-            <ul className="space-y-4">
+            <ul className="space-y-3">
               {plans.map((plan) => {
                 const expired = planIsExpired(plan)
+                const open = openPlanId === plan.id
+                const canMarkPaid = plan.status === 'pending'
+                const canGenerate = canGenerateLessons(plan)
                 return (
-                <li key={plan.id}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-ink">{labelFor(plan.package)}</p>
-                      <p className="text-xs text-ink-muted">
-                        {plan.lessonsDone}/{plan.lessonsTotal} aulas feitas · {formatCurrency(Number(plan.price))}
-                        {plan.expiresAt
-                          ? ` · válido até ${formatDate(plan.expiresAt)}`
-                          : ''}
-                      </p>
-                      {expired && plan.lessonsRemaining > 0 ? (
-                        <p className="mt-1 text-xs text-warning-on-soft">Pacote vencido. Não agenda mais aulas novas.</p>
-                      ) : null}
-                      {!expired && isLowCredit(plan.lessonsRemaining, lowCreditThreshold) && planHoldsCredits(plan) ? (
-                        <p className="mt-1 text-xs text-warning-on-soft">
-                          {plan.lessonsRemaining === 0 ? 'Todas as aulas já foram feitas.' : 'Resta 1 aula a fazer.'}
+                  <li
+                    key={plan.id}
+                    className="rounded-xl border border-border bg-surface px-4 py-3.5"
+                  >
+                    <button
+                      type="button"
+                      className="flex w-full items-start justify-between gap-3 text-left"
+                      onClick={() => setOpenPlanId(open ? null : plan.id)}
+                      aria-expanded={open}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-ink">{labelFor(plan.package)}</p>
+                        <p className="mt-0.5 text-xs text-ink-muted">
+                          {plan.lessonsDone}/{plan.lessonsTotal} aulas feitas ·{' '}
+                          {formatCurrency(Number(plan.price))}
+                          {plan.expiresAt ? ` · válido até ${formatDate(plan.expiresAt)}` : ''}
                         </p>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <PlanStatusBadge status={plan.status} />
-                      {plan.status === 'pending' ? (
-                        <Button size="sm" variant="secondary" onClick={() => markPaid(plan)}>
-                          Marcar pago
-                        </Button>
-                      ) : null}
-                      {canGenerateLessons(plan) ? (
-                        <Button size="sm" variant="secondary" onClick={() => setGeneratingPlan(plan)}>
-                          Gerar aulas
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <CreditBar remaining={plan.lessonsRemaining} total={plan.lessonsTotal} />
-                  </div>
-                </li>
+                      </div>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <PlanStatusBadge status={plan.status} />
+                        {open ? (
+                          <ChevronDown className="size-4 text-ink-muted" aria-hidden />
+                        ) : (
+                          <ChevronRight className="size-4 text-ink-muted" aria-hidden />
+                        )}
+                      </span>
+                    </button>
+
+                    <CreditBar
+                      className="mt-3"
+                      remaining={plan.lessonsRemaining}
+                      total={plan.lessonsTotal}
+                    />
+
+                    {open ? (
+                      <div className="mt-3 space-y-2 border-t border-border pt-3">
+                        {expired && plan.lessonsRemaining > 0 ? (
+                          <p className="text-xs text-warning">
+                            Pacote vencido. Não agenda mais aulas novas.
+                          </p>
+                        ) : null}
+                        {!expired && plan.lessonsRemaining === 1 && planHoldsCredits(plan) ? (
+                          <p className="text-xs text-warning">Resta 1 aula a fazer.</p>
+                        ) : null}
+                        {plan.paidAt ? (
+                          <p className="text-xs text-ink-muted">
+                            Pago em {formatDateTime(plan.paidAt)}
+                          </p>
+                        ) : null}
+                        {plan.notes ? (
+                          <p className="text-sm text-ink-muted whitespace-pre-wrap">{plan.notes}</p>
+                        ) : null}
+                        {canMarkPaid || canGenerate ? (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {canMarkPaid ? (
+                              <Button size="sm" variant="secondary" onClick={() => markPaid(plan)}>
+                                Marcar pago
+                              </Button>
+                            ) : null}
+                            {canGenerate ? (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => setGeneratingPlan(plan)}
+                              >
+                                Gerar aulas
+                              </Button>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </li>
                 )
               })}
             </ul>
@@ -436,6 +503,7 @@ export function StudentDetailPage() {
 
         <Card className="lg:col-span-3">
           <SectionHeader
+            icon={<CalendarDays className="size-4" />}
             title="Aulas"
             description={
               availablePlans.length === 0 && plans.length > 0
@@ -444,19 +512,18 @@ export function StudentDetailPage() {
             }
             actions={
               <Button size="sm" onClick={openCreateLesson}>
+                <CalendarPlus className="size-4" aria-hidden />
                 Agendar
               </Button>
             }
           />
-          {upcomingLessons.length === 0 ? (
-            <p className="text-sm text-ink-muted">Nenhuma aula agendada.</p>
-          ) : (
+
+          {upcomingLessons.length > 0 ? (
             <ul className="divide-y divide-border">
               {upcomingLessons.map((lesson) => (
-                <LessonRow
+                <LessonItem
                   key={lesson.id}
                   lesson={lesson}
-                  showStudent={false}
                   planLabel={labelFor(lesson.planPackage)}
                   onComplete={(item) => setLessonStatus(item, 'done')}
                   onNoShow={(item) => setLessonStatus(item, 'no_show')}
@@ -466,18 +533,26 @@ export function StudentDetailPage() {
                 />
               ))}
             </ul>
-          )}
+          ) : pastLessons.length === 0 ? (
+            <p className="text-sm text-ink-muted">Nenhuma aula agendada.</p>
+          ) : null}
+
           {pastLessons.length > 0 ? (
-            <div className="mt-6 border-t border-border pt-4">
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">
-                Histórico
-              </h3>
+            <div className={upcomingLessons.length > 0 ? 'mt-6' : ''}>
+              <div className="mb-2 flex items-center gap-3">
+                <span
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
+                  aria-hidden
+                >
+                  <Clock className="size-4" />
+                </span>
+                <h3 className="text-[0.95rem] font-semibold text-ink">Histórico</h3>
+              </div>
               <ul className="divide-y divide-border">
                 {pastLessons.map((lesson) => (
-                  <LessonRow
+                  <LessonItem
                     key={lesson.id}
                     lesson={lesson}
-                    showStudent={false}
                     planLabel={labelFor(lesson.planPackage)}
                     onEdit={openEditLesson}
                     onDelete={setDeletingLesson}
@@ -565,7 +640,7 @@ export function StudentDetailPage() {
             }))}
             {...planForm.register('package')}
           />
-          <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand-on-soft">
+          <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">
             {optionFor(selectedPackage).lessons} aula(s) por {formatCurrency(optionFor(selectedPackage).price)}
           </p>
           <Select
@@ -639,5 +714,94 @@ export function StudentDetailPage() {
         onConfirm={confirmDeleteLesson}
       />
     </div>
+  )
+}
+
+function InfoRow({
+  icon,
+  label,
+  children,
+}: {
+  icon: ReactNode
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <span
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
+        aria-hidden
+      >
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <dt className="text-accent">{label}</dt>
+        <dd className="mt-0.5 text-ink-muted">{children}</dd>
+      </div>
+    </div>
+  )
+}
+
+type LessonItemProps = {
+  lesson: Lesson
+  planLabel?: string
+  onComplete?: (lesson: Lesson) => void
+  onNoShow?: (lesson: Lesson) => void
+  onCancel?: (lesson: Lesson) => void
+  onEdit?: (lesson: Lesson) => void
+  onDelete?: (lesson: Lesson) => void
+}
+
+function LessonItem({
+  lesson,
+  planLabel,
+  onComplete,
+  onNoShow,
+  onCancel,
+  onEdit,
+  onDelete,
+}: LessonItemProps) {
+  const scheduled = lesson.status === 'scheduled'
+
+  return (
+    <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium text-ink">{formatDateTime(lesson.scheduledAt)}</p>
+          <LessonStatusBadge status={lesson.status} />
+        </div>
+        {planLabel ? <p className="mt-0.5 text-sm text-ink-muted">{planLabel}</p> : null}
+        {lesson.description ? <p className="mt-1 text-sm text-ink">{lesson.description}</p> : null}
+      </div>
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {scheduled && onComplete ? (
+          <Button size="sm" variant="secondary" onClick={() => onComplete(lesson)}>
+            Concluir
+          </Button>
+        ) : null}
+        {scheduled && onNoShow ? (
+          <Button size="sm" variant="secondary" onClick={() => onNoShow(lesson)}>
+            Falta
+          </Button>
+        ) : null}
+        {scheduled && onCancel ? (
+          <Button size="sm" variant="ghost" onClick={() => onCancel(lesson)}>
+            Cancelar
+          </Button>
+        ) : null}
+        {onEdit ? (
+          <Button size="sm" variant="secondary" onClick={() => onEdit(lesson)}>
+            <Pencil className="size-3.5" aria-hidden />
+            Editar
+          </Button>
+        ) : null}
+        {onDelete ? (
+          <Button size="sm" variant="dangerSoft" onClick={() => onDelete(lesson)}>
+            <Trash2 className="size-3.5" aria-hidden />
+            Excluir
+          </Button>
+        ) : null}
+      </div>
+    </li>
   )
 }

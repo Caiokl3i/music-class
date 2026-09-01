@@ -98,7 +98,7 @@ export function ProfilePage() {
         <Card>
           <div className="mb-6 flex items-center gap-4">
             <div
-              className="flex size-14 items-center justify-center rounded-2xl bg-brand-600 text-lg font-semibold text-white"
+              className="flex size-14 items-center justify-center rounded-2xl bg-accent-strong text-lg font-semibold text-white"
               aria-hidden
             >
               {user.initials}

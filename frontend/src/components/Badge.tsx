@@ -1,11 +1,11 @@
-type BadgeTone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger'
+type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger'
 
 const tones: Record<BadgeTone, string> = {
-  neutral: 'bg-surface-muted text-ink',
-  brand: 'bg-brand-soft text-brand-on-soft',
-  success: 'bg-success/15 text-success',
-  warning: 'bg-warning-soft text-warning-on-soft',
-  danger: 'bg-danger/15 text-danger',
+  neutral: 'bg-surface-muted text-ink-muted',
+  accent: 'bg-accent-soft text-accent',
+  success: 'bg-success/10 text-success',
+  warning: 'bg-warning/10 text-warning',
+  danger: 'bg-danger/10 text-danger',
 }
 
 export function Badge({ children, tone = 'neutral' }: { children: string; tone?: BadgeTone }) {
@@ -17,3 +17,5 @@ export function Badge({ children, tone = 'neutral' }: { children: string; tone?:
     </span>
   )
 }
+
+export type { BadgeTone }

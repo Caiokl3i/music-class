@@ -22,7 +22,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         ref={ref}
         id={selectId}
         className={`h-10 rounded-lg border bg-surface-raised px-3 text-sm text-ink transition-colors ${
-          error ? 'border-danger' : 'border-border focus:border-brand-600'
+          error ? 'border-danger' : 'border-border focus:border-accent'
         } ${className}`}
         aria-invalid={Boolean(error)}
         {...props}

@@ -121,9 +121,9 @@ export function PlansPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22, delay: index * 0.04 }}
-                className="flex flex-col rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02]"
+                className="flex flex-col rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-black/[0.03]"
               >
-                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-brand-soft text-brand-on-soft">
+                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
                   {item.lessons === 1 ? (
                     <BookOpen className="size-5" aria-hidden />
                   ) : (
@@ -184,7 +184,7 @@ export function PlansPage() {
             }))}
             {...register('package')}
           />
-          <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand-on-soft">
+          <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">
             {optionFor(selectedPackage).lessons} aula(s) por{' '}
             {formatCurrency(optionFor(selectedPackage).price)}
           </p>

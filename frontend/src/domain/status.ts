@@ -1,16 +1,14 @@
+import type { BadgeTone } from '@/components/Badge'
 import type { LessonStatus, Plan, PlanStatus } from '@/types/api'
 
-export const PLAN_STATUS: Record<PlanStatus, { label: string; tone: 'warning' | 'success' | 'danger' }> = {
+export const PLAN_STATUS: Record<PlanStatus, { label: string; tone: BadgeTone }> = {
   pending: { label: 'Pendente', tone: 'warning' },
   paid: { label: 'Pago', tone: 'success' },
   cancelled: { label: 'Cancelado', tone: 'danger' },
 }
 
-export const LESSON_STATUS: Record<
-  LessonStatus,
-  { label: string; tone: 'brand' | 'success' | 'neutral' | 'warning' }
-> = {
-  scheduled: { label: 'Agendada', tone: 'brand' },
+export const LESSON_STATUS: Record<LessonStatus, { label: string; tone: BadgeTone }> = {
+  scheduled: { label: 'Agendada', tone: 'accent' },
   done: { label: 'Concluída', tone: 'success' },
   cancelled: { label: 'Cancelada', tone: 'neutral' },
   no_show: { label: 'Falta', tone: 'warning' },

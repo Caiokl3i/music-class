@@ -23,7 +23,7 @@ export function AuthLayout() {
           className="mb-10 lg:mb-0 lg:flex-1"
         >
           <Link to="/login" className="inline-block">
-            <p className="font-display text-4xl font-semibold tracking-tight text-link sm:text-5xl">
+            <p className="font-display text-4xl font-semibold tracking-tight text-accent sm:text-5xl">
               Music Class
             </p>
           </Link>
@@ -37,7 +37,7 @@ export function AuthLayout() {
           transition={{ duration: 0.35, delay: 0.05 }}
           className="w-full lg:max-w-md"
         >
-          <div className="rounded-2xl border border-border bg-surface-raised p-6 shadow-xl shadow-slate-900/5 sm:p-8">
+          <div className="rounded-2xl border border-border bg-surface-raised p-6 shadow-xl shadow-black/5 sm:p-8">
             <Outlet />
           </div>
         </motion.div>

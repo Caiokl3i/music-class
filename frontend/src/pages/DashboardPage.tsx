@@ -19,7 +19,7 @@ import {
 import * as dashboardService from '@/services/dashboard.service'
 import * as lessonsService from '@/services/lessons.service'
 import type { Dashboard, Lesson, LessonStatus, PlanAlert, PlanPackage } from '@/types/api'
-import { PageHeader } from '@/components/Card'
+import { Card, PageHeader, SectionHeader } from '@/components/Card'
 import { Skeleton } from '@/components/Skeleton'
 import { Button } from '@/components/Button'
 import { LESSON_STATUS } from '@/domain/status'
@@ -150,8 +150,8 @@ function LoadedDashboard({
       </div>
 
       {data.overdue.length > 0 ? (
-        <Panel>
-          <PanelHeader
+        <Card>
+          <SectionHeader
             icon={<Clock className="size-4" />}
             title="Aulas atrasadas"
             description="Passaram da data e ainda estão agendadas."
@@ -166,12 +166,12 @@ function LoadedDashboard({
               />
             ))}
           </ul>
-        </Panel>
+        </Card>
       ) : null}
 
       {hasAlerts ? (
-        <Panel>
-          <PanelHeader
+        <Card>
+          <SectionHeader
             icon={<TriangleAlert className="size-4" />}
             title="Pacotes que pedem atenção"
             description="Receber, renovar ou validade acabando."
@@ -218,12 +218,12 @@ function LoadedDashboard({
               />
             ))}
           </ul>
-        </Panel>
+        </Card>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel>
-          <PanelHeader
+        <Card>
+          <SectionHeader
             icon={<CalendarDays className="size-4" />}
             title="Hoje"
             description={today}
@@ -237,11 +237,11 @@ function LoadedDashboard({
             }
           />
           {data.today.length === 0 ? (
-            <div className="rounded-xl border border-success/15 bg-success/5 px-6 py-12 text-center">
-              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-success/10 text-success">
+            <div className="rounded-xl border border-border bg-surface-muted/40 px-6 py-12 text-center">
+              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
                 <CalendarCheck className="size-7" aria-hidden />
               </div>
-              <p className="text-sm font-medium text-success">Nenhuma aula hoje.</p>
+              <p className="text-sm font-medium text-ink">Nenhuma aula hoje.</p>
               <p className="mt-1 text-xs text-ink-muted">
                 Aproveite para planejar as próximas aulas!
               </p>
@@ -258,10 +258,10 @@ function LoadedDashboard({
               ))}
             </ul>
           )}
-        </Panel>
+        </Card>
 
-        <Panel>
-          <PanelHeader
+        <Card>
+          <SectionHeader
             icon={<CalendarClock className="size-4" />}
             title="Próximas aulas"
             description="Próximos compromissos agendados"
@@ -295,24 +295,24 @@ function LoadedDashboard({
               </ul>
               <Link
                 to="/lessons"
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-success hover:underline"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
                 Ver todas as aulas <ArrowRight className="size-4" />
               </Link>
             </>
           )}
-        </Panel>
+        </Card>
       </div>
 
-      <Panel>
-        <PanelHeader
+      <Card>
+        <SectionHeader
           icon={<Zap className="size-4" />}
           title="Atividade recente"
           description="Últimas aulas concluídas ou com falta"
           actions={
             <Link
               to="/students"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-success hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
             >
               Ver todos os alunos <ArrowRight className="size-4" />
             </Link>
@@ -348,7 +348,7 @@ function LoadedDashboard({
             ))}
           </ul>
         )}
-      </Panel>
+      </Card>
     </div>
   )
 }
@@ -379,7 +379,7 @@ function AlertRow({
   return (
     <li className="flex items-center gap-3 py-3">
       <span
-        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warning-soft text-warning"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning"
         aria-hidden
       >
         {icon}
@@ -397,43 +397,6 @@ function AlertRow({
       </div>
       <p className="shrink-0 text-xs tabular-nums text-ink-muted">{meta}</p>
     </li>
-  )
-}
-
-function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return (
-    <section
-      className={`rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02] ${className}`}
-    >
-      {children}
-    </section>
-  )
-}
-
-function PanelHeader({
-  icon,
-  title,
-  description,
-  actions,
-}: {
-  icon: ReactNode
-  title: string
-  description?: string
-  actions?: ReactNode
-}) {
-  return (
-    <div className="mb-4 flex items-start justify-between gap-3">
-      <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 text-success" aria-hidden>
-          {icon}
-        </span>
-        <div>
-          <h2 className="text-[0.95rem] font-semibold text-ink">{title}</h2>
-          {description ? <p className="mt-0.5 text-xs text-ink-muted">{description}</p> : null}
-        </div>
-      </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
-    </div>
   )
 }
 
@@ -455,23 +418,24 @@ function StatCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay }}
-      className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02]"
     >
-      <div className="flex items-start gap-3">
-        <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-success/10 text-success"
-          aria-hidden
-        >
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <p className="text-[0.7rem] font-medium uppercase tracking-wide text-ink-muted">
-            {label}
-          </p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">{value}</p>
-          <p className="mt-1 text-xs text-ink-muted">{hint}</p>
+      <Card>
+        <div className="flex items-start gap-3">
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"
+            aria-hidden
+          >
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[0.7rem] font-medium uppercase tracking-wide text-ink-muted">
+              {label}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">{value}</p>
+            <p className="mt-1 text-xs text-ink-muted">{hint}</p>
+          </div>
         </div>
-      </div>
+      </Card>
     </motion.div>
   )
 }
@@ -486,7 +450,7 @@ function Avatar({ name }: { name: string | null }) {
 
   return (
     <span
-      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-success/10 text-xs font-semibold text-success"
+      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent"
       aria-hidden
     >
       {initials || '?'}
@@ -495,9 +459,9 @@ function Avatar({ name }: { name: string | null }) {
 }
 
 const PILL_TONES: Record<LessonStatus, string> = {
-  scheduled: 'bg-success/10 text-success',
+  scheduled: 'bg-accent-soft text-accent',
   done: 'bg-success/10 text-success',
-  no_show: 'bg-danger/10 text-danger',
+  no_show: 'bg-warning/10 text-warning',
   cancelled: 'bg-surface-muted text-ink-muted',
 }
 
@@ -516,7 +480,7 @@ function ActivityIcon({ status }: { status: LessonStatus }) {
   return (
     <span
       className={`flex size-7 items-center justify-center rounded-full ${
-        done ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+        done ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
       }`}
       aria-hidden
     >
@@ -570,7 +534,7 @@ function DashboardSkeleton() {
         {Array.from({ length: 4 }, (_, index) => (
           <div
             key={index}
-            className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-slate-900/[0.02]"
+            className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-black/[0.03]"
           >
             <div className="flex items-start gap-3">
               <Skeleton className="size-9 rounded-full" />
