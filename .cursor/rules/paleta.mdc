@@ -1,0 +1,46 @@
+---
+description: Paleta e tokens de cor do frontend (única fonte de verdade)
+globs: frontend/src/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# Paleta
+
+Só existe UMA paleta, definida em `frontend/src/index.css`. Nunca use cores cruas do
+Tailwind (`amber-500`, `slate-900`, `teal-400`, `red-700`) nem invente tokens novos.
+
+## Tokens
+
+| Papel | Tokens |
+|---|---|
+| Estrutura | `surface`, `surface-raised`, `surface-muted`, `surface-hover`, `border` |
+| Texto | `ink`, `ink-muted` |
+| Identidade | `accent` (texto/ícone/barra), `accent-soft` (fundo tingido), `accent-strong` + `accent-strong-hover` (botão sólido com texto branco) |
+| Status | `success` (feito/pago), `warning` (atenção/falta), `danger` (erro/destrutivo) |
+
+## Regras
+
+- Identidade visual (links, ícones decorativos, item de menu ativo, aula agendada,
+  barra de progresso) usa **sempre** `accent` / `accent-soft`. Nunca `success`.
+- `success` / `warning` / `danger` são **só para status real**: badge de pagamento,
+  aula concluída, falta, pacote vencido, erro de formulário, ação destrutiva.
+- Fundo tingido de status é por opacidade, não por token dedicado:
+  `bg-warning/10 text-warning`, `bg-danger/10 text-danger`.
+- Sombras: `shadow-black/5`, `shadow-black/10`, `shadow-black/[0.03]`.
+
+```tsx
+// ❌ dois verdes competindo, cor crua, token inventado
+<span className="bg-success/10 text-success">  {/* ícone decorativo */}
+<div className="bg-amber-500" />
+<p className="text-warning-on-soft">
+
+// ✅
+<span className="bg-accent-soft text-accent">
+<div className="bg-warning" />
+<p className="text-warning">
+```
+
+## Componentes
+
+Reaproveite `Card` e `SectionHeader` (`@/components/Card`) em vez de recriar o
+retângulo com borda/sombra ou o cabeçalho com ícone em bloco.
