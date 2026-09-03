@@ -17,7 +17,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
       <textarea
         ref={ref}
         id={areaId}
-        className={`min-h-24 rounded-lg border bg-surface-raised px-3 py-2 text-sm text-ink transition-colors placeholder:text-ink-muted ${
+        className={`min-h-24 rounded-md border bg-surface-raised px-3 py-2 text-sm text-ink transition-colors placeholder:text-ink-muted ${
           error ? 'border-danger' : 'border-border focus:border-accent'
         } ${className}`}
         aria-invalid={Boolean(error)}

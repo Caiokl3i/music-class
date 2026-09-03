@@ -95,24 +95,23 @@ export function PlansPage() {
   return (
     <div>
       <PageHeader
-        title="Pacotes"
         description="Tipos de pacote disponíveis. Venda um para o aluno na ficha dele ou por aqui."
         actions={
           <Button onClick={() => openCreate()}>
-            <Plus className="size-4" />
+            <Plus />
             Vender pacote
           </Button>
         }
       />
 
       {catalogLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <Skeleton className="h-48 rounded-lg" />
+          <Skeleton className="h-48 rounded-lg" />
+          <Skeleton className="h-48 rounded-lg" />
         </div>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {packages.map((item, index) => {
             const perLesson = item.price / item.lessons
             return (
@@ -121,9 +120,9 @@ export function PlansPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22, delay: index * 0.04 }}
-                className="flex flex-col rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-black/[0.03]"
+                className="stat-card flex flex-col"
               >
-                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-accent-soft text-accent">
                   {item.lessons === 1 ? (
                     <BookOpen className="size-5" aria-hidden />
                   ) : (

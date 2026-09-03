@@ -20,6 +20,7 @@ import * as dashboardService from '@/services/dashboard.service'
 import * as lessonsService from '@/services/lessons.service'
 import type { Dashboard, Lesson, LessonStatus, PlanAlert, PlanPackage } from '@/types/api'
 import { Card, PageHeader, SectionHeader } from '@/components/Card'
+import { Avatar } from '@/components/Avatar'
 import { Skeleton } from '@/components/Skeleton'
 import { Button } from '@/components/Button'
 import { LESSON_STATUS } from '@/domain/status'
@@ -75,10 +76,9 @@ export function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title={`Olá, ${greeting}! 👋`}
-        description="Aqui está o resumo das suas aulas de hoje."
+        description={`Olá, ${greeting}. Resumo das suas aulas de hoje.`}
         actions={
-          <span className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-ink">
+          <span className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-raised px-3.5 py-2 text-sm text-ink">
             <CalendarDays className="size-4 text-ink-muted" aria-hidden />
             {today}
           </span>
@@ -117,31 +117,31 @@ function LoadedDashboard({
   const hasAlerts = unpaid.length + lastLessons.length + expiring.length + expired.length > 0
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">
+      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          icon={<Users className="size-4" />}
+          icon={<Users className="size-5" />}
           label="Alunos"
           value={String(data.studentCount)}
           hint="Total de alunos"
           delay={0}
         />
         <StatCard
-          icon={<CalendarDays className="size-4" />}
+          icon={<CalendarDays className="size-5" />}
           label="Hoje"
           value={String(data.today.length)}
           hint="aulas agendadas"
           delay={0.04}
         />
         <StatCard
-          icon={<CreditCard className="size-4" />}
+          icon={<CreditCard className="size-5" />}
           label="A receber"
           value={formatCurrency(data.pendingAmount)}
           hint={data.pendingPlans ? `${data.pendingPlans} pacote(s)` : 'em dia'}
           delay={0.08}
         />
         <StatCard
-          icon={<TrendingUp className="size-4" />}
+          icon={<TrendingUp className="size-5" />}
           label="Este mês"
           value={formatCurrency(data.revenueThisMonth ?? data.revenue)}
           hint={`${data.doneCount} aula(s) feitas`}
@@ -221,24 +221,24 @@ function LoadedDashboard({
         </Card>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <SectionHeader
-            icon={<CalendarDays className="size-4" />}
+            icon={<CalendarDays className="size-5" />}
             title="Hoje"
             description={today}
             actions={
               <Link
                 to="/lessons"
-                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-muted"
+                className="text-sm font-medium text-accent hover:underline"
               >
                 Ver agenda <ArrowRight className="size-3.5" />
               </Link>
             }
           />
           {data.today.length === 0 ? (
-            <div className="rounded-xl border border-border bg-surface-muted/40 px-6 py-12 text-center">
-              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+            <div className="rounded-lg border border-border bg-surface-muted/40 px-6 py-12 text-center">
+              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-lg bg-accent-soft text-accent">
                 <CalendarCheck className="size-7" aria-hidden />
               </div>
               <p className="text-sm font-medium text-ink">Nenhuma aula hoje.</p>
@@ -418,43 +418,19 @@ function StatCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay }}
+      className="stat-card animate-fade-in"
     >
-      <Card>
-        <div className="flex items-start gap-3">
-          <span
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"
-            aria-hidden
-          >
-            {icon}
-          </span>
-          <div className="min-w-0">
-            <p className="text-[0.7rem] font-medium uppercase tracking-wide text-ink-muted">
-              {label}
-            </p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">{value}</p>
-            <p className="mt-1 text-xs text-ink-muted">{hint}</p>
-          </div>
+      <div className="flex items-start justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-ink-muted">{label}</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{value}</p>
+          <p className="mt-1 text-sm text-ink-muted">{hint}</p>
         </div>
-      </Card>
+        <span className="rounded-lg bg-accent-soft p-3 text-accent" aria-hidden>
+          {icon}
+        </span>
+      </div>
     </motion.div>
-  )
-}
-
-function Avatar({ name }: { name: string | null }) {
-  const initials = (name ?? '?')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
-  return (
-    <span
-      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent"
-      aria-hidden
-    >
-      {initials || '?'}
-    </span>
   )
 }
 
@@ -529,29 +505,26 @@ function LessonListRow({
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">
+      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
-          <div
-            key={index}
-            className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-black/[0.03]"
-          >
-            <div className="flex items-start gap-3">
-              <Skeleton className="size-9 rounded-full" />
+          <div key={index} className="stat-card">
+            <div className="flex items-start justify-between">
               <div className="flex-1">
                 <Skeleton className="h-3 w-16" />
                 <Skeleton className="mt-2 h-7 w-24" />
                 <Skeleton className="mt-2 h-3 w-20" />
               </div>
+              <Skeleton className="size-11 rounded-lg" />
             </div>
           </div>
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Skeleton className="h-64 rounded-2xl" />
-        <Skeleton className="h-64 rounded-2xl" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Skeleton className="h-64 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
-      <Skeleton className="h-56 rounded-2xl" />
+      <Skeleton className="h-56 rounded-lg" />
     </div>
   )
 }

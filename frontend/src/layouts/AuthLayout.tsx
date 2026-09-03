@@ -1,46 +1,33 @@
-import { Outlet, Link } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { Link, Outlet } from 'react-router-dom'
+import { Music2 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function AuthLayout() {
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-surface">
+    <div className="relative flex min-h-dvh items-center justify-center bg-sidebar p-4">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle className="text-sidebar-ink hover:bg-sidebar-hover hover:text-sidebar-ink" />
+      </div>
       <div
-        className="pointer-events-none absolute inset-0 opacity-70"
+        className="pointer-events-none absolute inset-0 opacity-5"
         style={{
-          background:
-            'radial-gradient(ellipse 80% 50% at 10% -10%, var(--glow), transparent), radial-gradient(ellipse 60% 40% at 90% 100%, var(--glow), transparent)',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }}
       />
-      <div className="absolute right-4 top-4 z-10 sm:right-6">
-        <ThemeToggle />
-      </div>
-      <div className="relative mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="mb-10 lg:mb-0 lg:flex-1"
-        >
-          <Link to="/login" className="inline-block">
-            <p className="font-display text-4xl font-semibold tracking-tight text-accent sm:text-5xl">
-              Music Class
-            </p>
-          </Link>
-          <p className="mt-4 max-w-md text-base leading-relaxed text-ink-muted sm:text-lg">
-            Organize alunos, pacotes e aulas particulares com clareza — do agendamento ao pagamento.
-          </p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.05 }}
-          className="w-full lg:max-w-md"
-        >
-          <div className="rounded-2xl border border-border bg-surface-raised p-6 shadow-xl shadow-black/5 sm:p-8">
-            <Outlet />
-          </div>
-        </motion.div>
+
+      <div className="relative z-10 w-full max-w-md">
+        <Link to="/login" className="mb-8 flex items-center justify-center gap-3">
+          <span className="flex size-12 items-center justify-center rounded-lg bg-accent-strong text-white">
+            <Music2 className="size-6" aria-hidden />
+          </span>
+          <span className="text-3xl font-bold text-sidebar-ink">Music Class</span>
+        </Link>
+        <div className="rounded-lg border-0 bg-surface-raised/95 p-6 shadow-2xl backdrop-blur-sm sm:p-8">
+          <Outlet />
+        </div>
+        <p className="mt-6 text-center text-sm text-sidebar-ink/60">
+          Organize alunos, pacotes e aulas particulares.
+        </p>
       </div>
     </div>
   )

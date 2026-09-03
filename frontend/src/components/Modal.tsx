@@ -47,7 +47,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className={`relative z-10 flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-xl shadow-black/10 ${
+            className={`relative z-10 flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl shadow-black/10 ${
               size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
             }`}
           >

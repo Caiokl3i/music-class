@@ -366,7 +366,7 @@ export function StudentDetailPage() {
       />
 
       {isLowCredit(student.creditsRemaining, lowCreditThreshold) ? (
-        <div className="mb-4 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent">
+        <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
           <p>
             {student.creditsRemaining === 0
@@ -376,7 +376,7 @@ export function StudentDetailPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <SectionHeader
             icon={<UserRound className="size-4" />}
@@ -424,7 +424,7 @@ export function StudentDetailPage() {
                 return (
                   <li
                     key={plan.id}
-                    className="rounded-xl border border-border bg-surface px-4 py-3.5"
+                    className="rounded-lg border border-border bg-surface px-4 py-3.5"
                   >
                     <button
                       type="button"
@@ -539,14 +539,9 @@ export function StudentDetailPage() {
 
           {pastLessons.length > 0 ? (
             <div className={upcomingLessons.length > 0 ? 'mt-6' : ''}>
-              <div className="mb-2 flex items-center gap-3">
-                <span
-                  className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
-                  aria-hidden
-                >
-                  <Clock className="size-4" />
-                </span>
-                <h3 className="text-[0.95rem] font-semibold text-ink">Histórico</h3>
+              <div className="mb-4 flex items-center gap-2">
+                <Clock className="size-5 text-accent" aria-hidden />
+                <h3 className="text-base font-semibold text-ink">Histórico</h3>
               </div>
               <ul className="divide-y divide-border">
                 {pastLessons.map((lesson) => (

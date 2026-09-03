@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { motion } from 'motion/react'
-import { ChevronRight, Plus, Search, Users } from 'lucide-react'
+import { Pencil, Phone, Plus, Search, Trash2, Users } from 'lucide-react'
 import * as studentsService from '@/services/students.service'
 import type { Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
+import { Avatar } from '@/components/Avatar'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { TextArea } from '@/components/TextArea'
@@ -142,25 +142,24 @@ export function StudentsPage() {
   return (
     <div>
       <PageHeader
-        title="Alunos"
-        description="Abra a ficha para vender pacote e agendar. A lista é só o índice."
+        description="Abra a ficha para vender pacote e agendar."
         actions={
           <Button onClick={openCreate}>
-            <Plus className="size-4" aria-hidden />
+            <Plus aria-hidden />
             Novo aluno
           </Button>
         }
       />
 
-      <div className="mb-4">
-        <label className="relative block max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" />
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="relative block w-full max-w-sm">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por nome, instrumento…"
-            className="h-10 w-full rounded-lg border border-border bg-surface-raised pl-9 pr-3 text-sm text-ink placeholder:text-ink-muted"
+            placeholder="Buscar nome, instrumento, telefone…"
+            className="h-10 w-full rounded-md border border-border bg-surface-raised pr-3 pl-10 text-sm text-ink placeholder:text-ink-muted"
             aria-label="Buscar alunos"
           />
         </label>
@@ -185,63 +184,77 @@ export function StudentsPage() {
           onAction={query ? undefined : openCreate}
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
-          <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_9.5rem] items-center gap-4 border-b border-border bg-surface-muted px-5 py-3 text-xs font-medium uppercase tracking-wide text-ink-muted md:grid">
-            <span>Nome</span>
-            <span className="text-center">Instrumento</span>
-            <span className="text-center">Aulas</span>
-            <span className="text-right">Ações</span>
-          </div>
-          <ul className="divide-y divide-border">
-            {filtered.map((student, index) => (
-              <motion.li
-                key={student.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18, delay: Math.min(index * 0.03, 0.2) }}
-                className="grid cursor-pointer grid-cols-1 items-center gap-3 px-5 py-3.5 transition-colors hover:bg-accent-soft md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_9.5rem] md:gap-4"
-                onClick={() => navigate(`/students/${student.id}`)}
-              >
-                <div className="min-w-0">
-                  <Link
-                    to={`/students/${student.id}`}
-                    className="inline-flex max-w-full items-center gap-1 font-medium text-accent hover:underline"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <span className="truncate">{student.name}</span>
-                    <ChevronRight className="size-4 shrink-0" aria-hidden />
-                  </Link>
-                  {student.phone ? (
-                    <p className="truncate text-xs text-ink-muted">{student.phone}</p>
-                  ) : null}
-                </div>
-                <p className="text-sm text-ink md:text-center">{student.instrument}</p>
-                <div className="md:text-center">{creditsCell(student.creditsRemaining)}</div>
-                <div className="flex flex-wrap gap-2 md:justify-end">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      openEdit(student)
-                    }}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setDeleting(student)
-                    }}
-                  >
-                    Excluir
-                  </Button>
-                </div>
-              </motion.li>
-            ))}
-          </ul>
+        <div className="animate-fade-in overflow-hidden rounded-lg border border-border bg-surface-raised">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border bg-surface-muted/50 text-ink-muted">
+                <th className="px-5 py-3 font-medium">Aluno</th>
+                <th className="hidden px-5 py-3 font-medium md:table-cell">Instrumento</th>
+                <th className="hidden px-5 py-3 font-medium md:table-cell">Aulas</th>
+                <th className="w-24 px-5 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((student) => (
+                <tr
+                  key={student.id}
+                  className="table-row-hover cursor-pointer border-b border-border last:border-0"
+                  onClick={() => navigate(`/students/${student.id}`)}
+                >
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={student.name} />
+                      <div className="min-w-0">
+                        <Link
+                          to={`/students/${student.id}`}
+                          className="block truncate font-medium text-ink hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {student.name}
+                        </Link>
+                        {student.phone ? (
+                          <p className="flex items-center gap-1 truncate text-xs text-ink-muted">
+                            <Phone className="size-3" aria-hidden />
+                            {student.phone}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-ink-muted md:hidden">{student.instrument}</p>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="hidden px-5 py-3 text-ink-muted md:table-cell">
+                    {student.instrument}
+                  </td>
+                  <td className="hidden px-5 py-3 md:table-cell">
+                    {creditsCell(student.creditsRemaining)}
+                  </td>
+                  <td className="px-5 py-3" onClick={(event) => event.stopPropagation()}>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8"
+                        aria-label="Editar"
+                        onClick={() => openEdit(student)}
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-danger hover:bg-danger/10 hover:text-danger"
+                        aria-label="Excluir"
+                        onClick={() => setDeleting(student)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

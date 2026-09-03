@@ -221,11 +221,10 @@ export function LessonsPage() {
   return (
     <div>
       <PageHeader
-        title="Aulas"
         description="Agenda de todos os alunos. Clique no dia para marcar."
         actions={
           <>
-            <div className="flex rounded-lg border border-border bg-surface-raised p-0.5">
+            <div className="flex rounded-md border border-border bg-surface-raised p-0.5">
               <button
                 type="button"
                 onClick={() => setView('list')}
@@ -289,7 +288,7 @@ export function LessonsPage() {
           onAction={() => openCreate()}
         />
       ) : view === 'list' ? (
-        <ul className="divide-y divide-border rounded-2xl border border-border bg-surface-raised px-4 sm:px-5">
+        <ul className="divide-y divide-border rounded-lg border border-border bg-surface-raised px-4 sm:px-5">
           {filteredLessons.map((lesson) => (
             <LessonRow
               key={lesson.id}
@@ -307,7 +306,7 @@ export function LessonsPage() {
           ))}
         </ul>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface-raised">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <Button variant="ghost" size="sm" onClick={() => setMonth((m) => addMonths(m, -1))} aria-label="Mês anterior">
               <ChevronLeft className="size-4" />

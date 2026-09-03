@@ -3,17 +3,18 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Paleta única da aplicação. Componentes usam SÓ estes tokens semânticos,
- * nunca cores cruas do Tailwind (amber-500, slate-900, teal-400...).
+ * Paleta única. Componentes usam SÓ estes tokens, nunca cores cruas do Tailwind.
  *
- * Estrutura: surface / surface-raised / surface-muted / surface-hover, ink, ink-muted, border
- * Identidade: accent (texto e ícones), accent-soft (fundo tingido), accent-strong (botão sólido)
- * Status:     success (feito/pago), warning (atenção), danger (erro/destrutivo)
- *             — tintados por opacidade: bg-warning/10 text-warning
+ * Estrutura:  surface / surface-raised / surface-muted / surface-hover, ink, ink-muted, border
+ * Identidade: accent / accent-soft / accent-strong / accent-strong-hover
+ * Sidebar:    sidebar / sidebar-ink / sidebar-muted / sidebar-hover / sidebar-border
+ * Status:     success / warning / danger — tingidos por opacidade (bg-warning/10)
  */
 @theme {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --radius-lg: 0.5rem;
+  --radius-md: 0.375rem;
+  --radius-sm: 0.25rem;
 
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
@@ -29,50 +30,63 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-ink: var(--sidebar-ink);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-border: var(--sidebar-border);
   --color-overlay: var(--overlay);
   --color-skeleton: var(--skeleton);
 }
 
 :root {
   color-scheme: light;
-  --surface: #f7f8f6;
+  --surface: #f4f6f8;
   --surface-raised: #ffffff;
-  --surface-muted: #eef2f0;
-  --surface-hover: #e4ebe8;
-  --ink: #0f172a;
-  --ink-muted: #64748b;
+  --surface-muted: #eef1f4;
+  --surface-hover: #e4e9ee;
+  --ink: #1a2433;
+  --ink-muted: #5b6b7c;
   --border: #e2e8f0;
-  --accent: #0f5f5a;
+  --accent: #0f766e;
   --accent-soft: #f0fdfa;
   --accent-strong: #0f766e;
-  --accent-strong-hover: #0f5f5a;
+  --accent-strong-hover: #0d5f59;
   --success: #047857;
   --warning: #b45309;
   --danger: #dc2626;
+  --sidebar: #303d4d;
+  --sidebar-ink: #e8eef3;
+  --sidebar-muted: #a8b4c0;
+  --sidebar-hover: #3d4d60;
+  --sidebar-border: #3d4d60;
   --overlay: rgb(15 23 42 / 0.45);
   --skeleton: #e2e8f0;
-  --glow: rgb(15 118 110 / 0.12);
 }
 
 .dark {
   color-scheme: dark;
-  --surface: #0c1110;
-  --surface-raised: #151b1a;
-  --surface-muted: #1c2422;
-  --surface-hover: #24302d;
-  --ink: #e7eeec;
-  --ink-muted: #94a3a0;
-  --border: #2a3532;
-  --accent: #5eead4;
+  --surface: #0e141b;
+  --surface-raised: #161d26;
+  --surface-muted: #1c2530;
+  --surface-hover: #243040;
+  --ink: #e8eef3;
+  --ink-muted: #94a3b0;
+  --border: #273140;
+  --accent: #2dd4bf;
   --accent-soft: rgb(45 212 191 / 0.12);
   --accent-strong: #0f766e;
   --accent-strong-hover: #115e59;
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
+  --sidebar: #0c1117;
+  --sidebar-ink: #dce4ec;
+  --sidebar-muted: #8b99a8;
+  --sidebar-hover: #1a222c;
+  --sidebar-border: #1e2833;
   --overlay: rgb(0 0 0 / 0.62);
-  --skeleton: #2a3532;
-  --glow: rgb(45 212 191 / 0.1);
+  --skeleton: #273140;
 }
 
 @layer base {
@@ -105,7 +119,36 @@
 }
 
 @layer utilities {
-  .font-display {
-    font-family: var(--font-display);
+  .stat-card {
+    @apply rounded-lg border border-border bg-surface-raised p-5 shadow-sm
+      transition-all duration-200 hover:border-accent/20 hover:shadow-md;
+  }
+
+  .sidebar-item {
+    @apply flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium
+      text-sidebar-ink/80 transition-colors duration-200 hover:bg-sidebar-hover hover:text-sidebar-ink;
+  }
+
+  .sidebar-item-active {
+    @apply bg-sidebar-hover text-sidebar-ink hover:bg-sidebar-hover hover:text-sidebar-ink;
+  }
+
+  .table-row-hover {
+    @apply transition-colors duration-150 hover:bg-surface-muted/50;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSoft'
-type Size = 'sm' | 'md' | 'lg'
+type Size = 'sm' | 'md' | 'lg' | 'icon'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant
@@ -12,19 +12,20 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-accent-strong text-white hover:bg-accent-strong-hover shadow-sm shadow-accent-strong/20 disabled:bg-accent-strong/60',
+    'bg-accent-strong text-white hover:bg-accent-strong-hover shadow-sm disabled:bg-accent-strong/60',
   secondary:
-    'bg-surface-raised text-ink border border-border hover:bg-surface-muted shadow-sm disabled:opacity-60',
+    'border border-border bg-surface-raised text-ink hover:bg-surface-muted disabled:opacity-60',
   ghost: 'bg-transparent text-ink-muted hover:bg-surface-hover hover:text-ink disabled:opacity-50',
   danger: 'bg-danger text-white hover:bg-danger/85 shadow-sm disabled:opacity-60',
   dangerSoft:
-    'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 disabled:opacity-60',
+    'border border-danger/30 bg-danger/10 text-danger hover:bg-danger/20 disabled:opacity-60',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-xs',
+  sm: 'h-9 px-3 text-sm',
   md: 'h-10 px-4 text-sm',
   lg: 'h-11 px-5 text-sm',
+  icon: 'size-10 p-0',
 }
 
 export function Button({
@@ -40,7 +41,7 @@ export function Button({
     <button
       type="button"
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed [&_svg]:size-4 [&_svg]:shrink-0 ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {loading ? (

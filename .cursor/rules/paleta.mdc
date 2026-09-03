@@ -16,31 +16,30 @@ Tailwind (`amber-500`, `slate-900`, `teal-400`, `red-700`) nem invente tokens no
 | Estrutura | `surface`, `surface-raised`, `surface-muted`, `surface-hover`, `border` |
 | Texto | `ink`, `ink-muted` |
 | Identidade | `accent` (texto/ícone/barra), `accent-soft` (fundo tingido), `accent-strong` + `accent-strong-hover` (botão sólido com texto branco) |
+| Sidebar | `sidebar`, `sidebar-ink`, `sidebar-muted`, `sidebar-hover`, `sidebar-border` |
 | Status | `success` (feito/pago), `warning` (atenção/falta), `danger` (erro/destrutivo) |
 
 ## Regras
 
 - Identidade visual (links, ícones decorativos, item de menu ativo, aula agendada,
   barra de progresso) usa **sempre** `accent` / `accent-soft`. Nunca `success`.
-- `success` / `warning` / `danger` são **só para status real**: badge de pagamento,
-  aula concluída, falta, pacote vencido, erro de formulário, ação destrutiva.
-- Fundo tingido de status é por opacidade, não por token dedicado:
-  `bg-warning/10 text-warning`, `bg-danger/10 text-danger`.
-- Sombras: `shadow-black/5`, `shadow-black/10`, `shadow-black/[0.03]`.
+- A sidebar usa só tokens `sidebar-*`, inclusive no tema claro (navy, não `surface`).
+- `success` / `warning` / `danger` são **só para status real**.
+- Fundo tingido de status é por opacidade: `bg-warning/10 text-warning`.
+- Sombras: `shadow-black/5`, `shadow-black/10`, `shadow-sm`.
+- Cantos: `rounded-lg` (cards, tabelas), `rounded-md` (botões, inputs), `rounded-full` (badges).
 
 ```tsx
 // ❌ dois verdes competindo, cor crua, token inventado
 <span className="bg-success/10 text-success">  {/* ícone decorativo */}
 <div className="bg-amber-500" />
-<p className="text-warning-on-soft">
 
 // ✅
 <span className="bg-accent-soft text-accent">
 <div className="bg-warning" />
-<p className="text-warning">
 ```
 
 ## Componentes
 
-Reaproveite `Card` e `SectionHeader` (`@/components/Card`) em vez de recriar o
-retângulo com borda/sombra ou o cabeçalho com ícone em bloco.
+Reaproveite `Card` e `SectionHeader` (`@/components/Card`), `Avatar` e as classes
+`stat-card`, `sidebar-item`, `table-row-hover` em vez de recriar o retângulo.

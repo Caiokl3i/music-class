@@ -15,7 +15,7 @@ export function PageLoader() {
 
 export function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm shadow-black/[0.03]">
+    <div className="rounded-lg border border-border bg-surface-raised p-5 shadow-sm">
       <Skeleton className="mb-3 h-4 w-24" />
       <Skeleton className="h-8 w-16" />
       <Skeleton className="mt-4 h-3 w-full" />

@@ -60,8 +60,10 @@ export function SignupPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-ink">Criar conta</h1>
-      <p className="mt-1 text-sm text-ink-muted">Comece a organizar suas aulas.</p>
+      <h1 className="text-center text-2xl font-bold text-ink">Criar conta</h1>
+      <p className="mt-1 text-center text-sm text-ink-muted">
+        Comece a organizar alunos, pacotes e aulas
+      </p>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Input
           label="Nome completo"
@@ -91,7 +93,7 @@ export function SignupPage() {
           error={errors.passwordConfirmation?.message}
           {...register('passwordConfirmation')}
         />
-        <Button type="submit" className="w-full" loading={submitting}>
+        <Button type="submit" size="lg" className="w-full" loading={submitting}>
           Criar conta
         </Button>
       </form>
