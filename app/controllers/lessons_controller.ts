@@ -39,6 +39,7 @@ export default class LessonsController {
       studentId: payload.studentId,
       planId: payload.planId,
       scheduledAt: payload.scheduledAt,
+      endsAt: payload.endsAt,
       status: (payload.status ?? 'scheduled') as LessonStatus,
       description: payload.description ?? null,
     })
@@ -55,6 +56,7 @@ export default class LessonsController {
       studentId: Number(params.studentId),
       planId: payload.planId,
       scheduledAt: payload.scheduledAt,
+      endsAt: payload.endsAt,
       status: (payload.status ?? 'scheduled') as LessonStatus,
       description: payload.description ?? null,
     })
@@ -86,6 +88,7 @@ export default class LessonsController {
       studentId: payload.studentId,
       planId: payload.planId,
       scheduledAt: payload.scheduledAt,
+      endsAt: payload.endsAt,
       status: payload.status as LessonStatus | undefined,
       description: payload.description,
     })

@@ -11,6 +11,7 @@ const lessonFields = {
   studentId: vine.number().positive(),
   planId: vine.number().positive(),
   scheduledAt: vine.date({ formats: ['iso8601'] }),
+  endsAt: vine.date({ formats: ['iso8601'] }).optional().nullable(),
   status: vine.enum(LESSON_STATUSES),
   description: vine.string().trim().optional().nullable(),
 }
@@ -24,6 +25,7 @@ export const createLessonValidator = vine.create({
   studentId: lessonFields.studentId,
   planId: lessonFields.planId,
   scheduledAt: lessonFields.scheduledAt,
+  endsAt: lessonFields.endsAt,
   status: lessonFields.status.clone().optional(),
   description: lessonFields.description,
 })
@@ -34,6 +36,7 @@ export const createLessonValidator = vine.create({
 export const createLessonForStudentValidator = vine.create({
   planId: lessonFields.planId,
   scheduledAt: lessonFields.scheduledAt,
+  endsAt: lessonFields.endsAt,
   status: lessonFields.status.clone().optional(),
   description: lessonFields.description,
 })
@@ -45,6 +48,7 @@ export const updateLessonValidator = vine.create({
   studentId: lessonFields.studentId.clone().optional(),
   planId: lessonFields.planId.clone().optional(),
   scheduledAt: lessonFields.scheduledAt.clone().optional(),
+  endsAt: lessonFields.endsAt.clone(),
   status: lessonFields.status.clone().optional(),
   description: lessonFields.description.clone(),
 })

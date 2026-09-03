@@ -22,6 +22,28 @@ export function formatTime(value: string | null | undefined) {
   return formatDate(value, 'HH:mm')
 }
 
+export function formatTimeRange(start?: string | null, end?: string | null) {
+  if (!start) return '—'
+  if (!end) return formatTime(start)
+  return `${formatTime(start)}–${formatTime(end)}`
+}
+
+export function formatDateTimeRange(start?: string | null, end?: string | null) {
+  if (!start) return '—'
+  if (!end) return formatDateTime(start)
+  const startDate = parseISO(start)
+  const endDate = parseISO(end)
+  if (!isValid(startDate) || !isValid(endDate)) return formatDateTime(start)
+  if (
+    startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate()
+  ) {
+    return `${format(startDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}–${format(endDate, 'HH:mm')}`
+  }
+  return `${formatDateTime(start)} – ${formatDateTime(end)}`
+}
+
 /** "Quinta-feira, 16 de outubro" */
 export function formatWeekdayLong(value: Date | string) {
   const date = value instanceof Date ? value : parseISO(value)

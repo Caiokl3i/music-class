@@ -8,6 +8,7 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   E_PLAN_LESSONS_TOTAL_TOO_LOW:
     'Não é possível reduzir o pacote abaixo das aulas já agendadas.',
   E_LESSON_SCHEDULE_CONFLICT: 'Já existe uma aula nesse horário.',
+  E_LESSON_INVALID_DURATION: 'O fim da aula precisa ser depois do início.',
   E_PLAN_EXPIRED: 'Este pacote venceu. Venda um novo para continuar agendando.',
   E_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
   E_SIGNUP_CLOSED: 'O cadastro está fechado. Peça um convite.',

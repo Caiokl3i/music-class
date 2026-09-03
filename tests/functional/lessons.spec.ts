@@ -413,6 +413,69 @@ test.group('Lessons', (group) => {
     })
   })
 
+  test('defaults the end to one hour after the start', async ({ assert, client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const response = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+    })
+
+    response.assertStatus(201)
+    assert.equal(
+      DateTime.fromISO(response.body().data.endsAt).toUTC().toISO(),
+      '2026-09-01T15:00:00.000Z'
+    )
+  })
+
+  test('accepts a custom duration and conflicts on the real window', async ({
+    assert,
+    client,
+  }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const long = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+      endsAt: '2026-09-01T16:00:00.000Z',
+    })
+    long.assertStatus(201)
+    assert.equal(
+      DateTime.fromISO(long.body().data.endsAt).toUTC().toISO(),
+      '2026-09-01T16:00:00.000Z'
+    )
+
+    const overlap = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: '2026-09-01T15:00:00.000Z',
+    })
+    overlap.assertStatus(422)
+    overlap.assertBodyContains({ code: 'E_LESSON_SCHEDULE_CONFLICT' })
+
+    const after = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: '2026-09-01T16:00:00.000Z',
+    })
+    after.assertStatus(201)
+  })
+
+  test('rejects an end before the start', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const response = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+      endsAt: '2026-09-01T13:00:00.000Z',
+    })
+    response.assertStatus(422)
+    response.assertBodyContains({ code: 'E_LESSON_INVALID_DURATION' })
+  })
+
   test('rejects two lessons in the same hour', async ({ client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan()
 

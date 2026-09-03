@@ -7,6 +7,7 @@ import {
   CalendarClock,
   CalendarDays,
   CheckCircle2,
+  Download,
   CircleDollarSign,
   Clock,
   CreditCard,
@@ -32,7 +33,8 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
-  formatTime,
+  formatDateTimeRange,
+  formatTimeRange,
   formatWeekdayLong,
 } from '@/utils/format'
 
@@ -42,6 +44,8 @@ export function DashboardPage() {
   const toast = useToast()
   const [data, setData] = useState<Dashboard | null>(null)
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const [month, setMonth] = useState(() => currentMonthValue())
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,15 +77,49 @@ export function DashboardPage() {
   const greeting = user?.fullName?.split(' ')[0] || 'Professor'
   const today = formatWeekdayLong(new Date())
 
+  async function exportMonth() {
+    setExporting(true)
+    try {
+      await dashboardService.downloadMonthCsv(
+        month,
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+      )
+      toast.success('CSV do mês baixado.')
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível exportar o mês.'))
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div>
       <PageHeader
         description={`Olá, ${greeting}. Resumo das suas aulas de hoje.`}
         actions={
-          <span className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-raised px-3.5 py-2 text-sm text-ink">
-            <CalendarDays className="size-4 text-ink-muted" aria-hidden />
-            {today}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-raised px-3 py-1.5 text-sm text-ink">
+              <CalendarDays className="size-4 text-ink-muted" aria-hidden />
+              <span className="sr-only">Mês do CSV</span>
+              <input
+                id="export-month"
+                type="month"
+                value={month}
+                onChange={(event) => setMonth(event.target.value)}
+                className="bg-transparent text-sm text-ink outline-none"
+              />
+            </label>
+            <Button
+              id="export-csv"
+              variant="secondary"
+              size="sm"
+              loading={exporting}
+              onClick={() => void exportMonth()}
+            >
+              <Download />
+              Exportar CSV
+            </Button>
+          </div>
         }
       />
 
@@ -287,7 +325,7 @@ function LoadedDashboard({
                     </div>
                     <div className="shrink-0 text-right text-xs tabular-nums text-ink-muted">
                       <p>{formatDate(lesson.scheduledAt)}</p>
-                      <p>{formatTime(lesson.scheduledAt)}</p>
+                      <p>{formatTimeRange(lesson.scheduledAt, lesson.endsAt)}</p>
                     </div>
                     <StatusPill status={lesson.status} />
                   </li>
@@ -339,7 +377,7 @@ function LoadedDashboard({
                 </p>
                 <p className="col-start-2 flex items-center gap-2 text-xs text-ink-muted md:col-start-auto md:text-sm">
                   <CalendarDays className="size-4 shrink-0" aria-hidden />
-                  {formatDateTime(lesson.scheduledAt)}
+                  {formatDateTimeRange(lesson.scheduledAt, lesson.endsAt)}
                 </p>
                 <div className="col-start-3 row-start-1 justify-self-end md:col-start-auto md:row-start-auto">
                   <StatusPill status={lesson.status} />
@@ -351,6 +389,11 @@ function LoadedDashboard({
       </Card>
     </div>
   )
+}
+
+function currentMonthValue() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 function unpaidNote(item: PlanAlert) {
@@ -485,7 +528,8 @@ function LessonListRow({
           {lesson.studentName ?? `Aluno #${lesson.studentId}`}
         </Link>
         <p className="truncate text-xs text-ink-muted">
-          {lesson.studentInstrument ?? planLabel} · {formatDateTime(lesson.scheduledAt)}
+          {lesson.studentInstrument ?? planLabel} ·{' '}
+          {formatDateTimeRange(lesson.scheduledAt, lesson.endsAt)}
         </p>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">

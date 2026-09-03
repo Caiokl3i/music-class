@@ -85,6 +85,7 @@ erDiagram
         int student_id FK
         int plan_id FK
         datetime scheduled_at
+        datetime ends_at
         enum status
         text description
         datetime created_at
@@ -191,7 +192,8 @@ Aula individual ligada a um pacote.
 | user_id | FK → users | sim | |
 | student_id | FK → students | sim | |
 | plan_id | FK → plans | sim | Pacote que esta aula consome |
-| scheduled_at | datetime | sim | Data e hora da aula |
+| scheduled_at | datetime | sim | Início da aula |
+| ends_at | datetime | sim | Fim da aula (padrão: início + 60 min) |
 | status | enum | sim | `scheduled` \| `done` \| `cancelled` \| `no_show` |
 | description | text | não | O que foi treinado / anotações |
 | created_at | datetime | sim | |
@@ -220,7 +222,7 @@ vagas      = lessons_total - aulas com status != cancelled
 - Não permitir mais aulas ativas (agendada / feita / falta) em um `plan` do que `lessons_total`.
 - Cancelar aula (`cancelled`) **libera a vaga**. Falta (`no_show`) ocupa vaga, mas não conta como feita.
 - Pagamento fica no próprio `plan` (`price` + `status` + `paid_at`). Sem tabela `payments` na v1.
-- Cada aula ocupa **60 minutos**. Duas aulas do mesmo professor não podem se sobrepor; encostar (14h e 15h) pode. Aula cancelada não ocupa horário.
+- Cada aula tem **início e fim** (padrão 60 minutos, no máximo 8h). Duas aulas do mesmo professor não podem se sobrepor; encostar (14h–15h e 15h–16h) pode. Aula cancelada não ocupa horário.
 - Créditos valem **60 dias** a partir de `paid_at` (`expires_at`). Pacote vencido não agenda aula nova; concluir uma já agendada continua permitido.
 - Dá para gerar as aulas restantes do pacote em lote (mesmo dia da semana, de hora em hora semanal), parando na validade. Se algum horário já estiver ocupado, não cria nenhuma.
 

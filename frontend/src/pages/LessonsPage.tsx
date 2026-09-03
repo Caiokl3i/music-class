@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -34,17 +34,32 @@ import { LessonRow } from '@/components/LessonRow'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
-import { formatTime, fromDatetimeLocalValue, toDatetimeLocalFromDate, toDatetimeLocalValue } from '@/utils/format'
-import { preferredSlot } from '@/domain/schedule'
+import {
+  formatTimeRange,
+  fromDatetimeLocalValue,
+  toDatetimeLocalFromDate,
+  toDatetimeLocalValue,
+} from '@/utils/format'
+import {
+  addMinutesToDatetimeLocal,
+  moveDatetimeLocalKeepingDuration,
+  preferredSlot,
+} from '@/domain/schedule'
 import { bookablePlans } from '@/domain/status'
 
-const schema = z.object({
-  studentId: z.string().min(1, 'Selecione o aluno'),
-  planId: z.string().min(1, 'Selecione o pacote'),
-  scheduledAt: z.string().min(1, 'Informe data e hora'),
-  status: z.enum(['scheduled', 'done', 'cancelled', 'no_show']),
-  description: z.string().optional(),
-})
+const schema = z
+  .object({
+    studentId: z.string().min(1, 'Selecione o aluno'),
+    planId: z.string().min(1, 'Selecione o pacote'),
+    scheduledAt: z.string().min(1, 'Informe o início'),
+    endsAt: z.string().min(1, 'Informe o fim'),
+    status: z.enum(['scheduled', 'done', 'cancelled', 'no_show']),
+    description: z.string().optional(),
+  })
+  .refine((values) => new Date(values.endsAt) > new Date(values.scheduledAt), {
+    message: 'O fim precisa ser depois do início',
+    path: ['endsAt'],
+  })
 
 type FormValues = z.infer<typeof schema>
 type ViewMode = 'list' | 'calendar'
@@ -52,7 +67,8 @@ type ViewMode = 'list' | 'calendar'
 export function LessonsPage() {
   const navigate = useNavigate()
   const toast = useToast()
-  const { labelFor } = useCatalog()
+  const { labelFor, lessonDurationMinutes } = useCatalog()
+  const previousStart = useRef('')
   const [view, setView] = useState<ViewMode>('calendar')
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
   const [lessons, setLessons] = useState<Lesson[]>([])
@@ -73,6 +89,7 @@ export function LessonsPage() {
     reset,
     watch,
     setValue,
+    getValues,
     setError,
     formState: { errors },
   } = useForm<FormValues>({
@@ -81,6 +98,7 @@ export function LessonsPage() {
       studentId: '',
       planId: '',
       scheduledAt: '',
+      endsAt: '',
       status: 'scheduled',
       description: '',
     },
@@ -140,10 +158,13 @@ export function LessonsPage() {
     setEditing(null)
     setCreateDay(day)
     const studentId = filterStudentId || ''
+    const scheduledAt = scheduleForStudent(studentId, day)
+    previousStart.current = scheduledAt
     reset({
       studentId,
       planId: '',
-      scheduledAt: scheduleForStudent(studentId, day),
+      scheduledAt,
+      endsAt: addMinutesToDatetimeLocal(scheduledAt, lessonDurationMinutes),
       status: 'scheduled',
       description: '',
     })
@@ -152,10 +173,16 @@ export function LessonsPage() {
 
   function openEdit(lesson: Lesson) {
     setEditing(lesson)
+    const scheduledAt = toDatetimeLocalValue(lesson.scheduledAt)
+    const endsAt = lesson.endsAt
+      ? toDatetimeLocalValue(lesson.endsAt)
+      : addMinutesToDatetimeLocal(scheduledAt, lessonDurationMinutes)
+    previousStart.current = scheduledAt
     reset({
       studentId: String(lesson.studentId),
       planId: String(lesson.planId),
-      scheduledAt: toDatetimeLocalValue(lesson.scheduledAt),
+      scheduledAt,
+      endsAt,
       status: lesson.status,
       description: lesson.description ?? '',
     })
@@ -168,6 +195,7 @@ export function LessonsPage() {
       studentId: Number(values.studentId),
       planId: Number(values.planId),
       scheduledAt: fromDatetimeLocalValue(values.scheduledAt),
+      endsAt: fromDatetimeLocalValue(values.endsAt),
       status: values.status as LessonStatus,
       description: values.description || null,
     }
@@ -359,7 +387,7 @@ export function LessonsPage() {
                         }}
                         className="truncate rounded bg-accent-soft px-1 py-0.5 text-[10px] font-medium text-accent"
                       >
-                        {formatTime(lesson.scheduledAt)}{' '}
+                        {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
                         {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
                       </span>
                     ))}
@@ -399,7 +427,10 @@ export function LessonsPage() {
               onChange: (event) => {
                 setValue('planId', '')
                 if (editing) return
-                setValue('scheduledAt', scheduleForStudent(event.target.value, createDay))
+                const scheduledAt = scheduleForStudent(event.target.value, createDay)
+                previousStart.current = scheduledAt
+                setValue('scheduledAt', scheduledAt)
+                setValue('endsAt', addMinutesToDatetimeLocal(scheduledAt, lessonDurationMinutes))
               },
             })}
           />
@@ -427,12 +458,35 @@ export function LessonsPage() {
               </button>
             </p>
           ) : null}
-          <Input
-            label="Data e hora"
-            type="datetime-local"
-            error={errors.scheduledAt?.message}
-            {...register('scheduledAt')}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Início"
+              type="datetime-local"
+              error={errors.scheduledAt?.message}
+              {...register('scheduledAt', {
+                onChange: (event) => {
+                  const next = event.target.value
+                  setValue(
+                    'endsAt',
+                    moveDatetimeLocalKeepingDuration(
+                      previousStart.current,
+                      getValues('endsAt'),
+                      next,
+                      lessonDurationMinutes,
+                    ),
+                  )
+                  previousStart.current = next
+                },
+              })}
+            />
+            <Input
+              label="Fim"
+              type="datetime-local"
+              hint="Padrão: 1 hora"
+              error={errors.endsAt?.message}
+              {...register('endsAt')}
+            />
+          </div>
           <Select
             label="Status"
             error={errors.status?.message}

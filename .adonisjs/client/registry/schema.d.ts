@@ -91,6 +91,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/dashboard_controller').default['show']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'dashboard.export_month': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/export'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/export').exportQueryValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/dashboard_controller').default['exportMonth']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/dashboard_controller').default['exportMonth']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'catalog.packages': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/packages'

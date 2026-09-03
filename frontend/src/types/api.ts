@@ -52,6 +52,7 @@ export type Lesson = {
   studentId: number
   planId: number
   scheduledAt: string
+  endsAt: string | null
   status: LessonStatus
   description: string | null
   createdAt: string
@@ -146,6 +147,7 @@ export type CreateLessonInput = {
   studentId: number
   planId: number
   scheduledAt: string
+  endsAt?: string | null
   status?: LessonStatus
   description?: string | null
 }

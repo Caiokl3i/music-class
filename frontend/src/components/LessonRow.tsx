@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/Button'
 import { LessonStatusBadge } from '@/components/StatusBadges'
-import { formatDateTime } from '@/utils/format'
+import { formatDateTimeRange } from '@/utils/format'
 import type { Lesson } from '@/types/api'
 
 type LessonRowProps = {
@@ -32,7 +32,9 @@ export function LessonRow({
     <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-medium text-ink">{formatDateTime(lesson.scheduledAt)}</p>
+          <p className="font-medium text-ink">
+            {formatDateTimeRange(lesson.scheduledAt, lesson.endsAt)}
+          </p>
           <LessonStatusBadge status={lesson.status} />
         </div>
         <p className="mt-1 text-sm text-ink-muted">

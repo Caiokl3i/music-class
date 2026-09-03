@@ -1,6 +1,12 @@
 import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
-import { windowsOverlap, weeklySlots, lessonEnd } from '#services/lesson_schedule'
+import {
+  windowsOverlap,
+  weeklySlots,
+  defaultLessonEnd,
+  resolveLessonWindow,
+  LESSON_INVALID_DURATION,
+} from '#services/lesson_schedule'
 import {
   expiresAtFromPaidAt,
   isNewCreditConsumption,
@@ -14,12 +20,33 @@ test.group('Lesson schedule', () => {
     const two = DateTime.fromISO('2026-09-01T14:00:00.000Z')
     const three = DateTime.fromISO('2026-09-01T15:00:00.000Z')
     const halfPast = DateTime.fromISO('2026-09-01T14:30:00.000Z')
+    const four = DateTime.fromISO('2026-09-01T16:00:00.000Z')
 
-    assert.isFalse(windowsOverlap(two, three))
-    assert.isFalse(windowsOverlap(three, two))
-    assert.isTrue(windowsOverlap(two, two))
-    assert.isTrue(windowsOverlap(two, halfPast))
-    assert.equal(lessonEnd(two).toISO(), three.toISO())
+    assert.isFalse(windowsOverlap(two, three, three, four))
+    assert.isFalse(windowsOverlap(three, four, two, three))
+    assert.isTrue(windowsOverlap(two, three, two, three))
+    assert.isTrue(windowsOverlap(two, three, halfPast, DateTime.fromISO('2026-09-01T15:30:00.000Z')))
+    assert.isTrue(windowsOverlap(two, four, three, DateTime.fromISO('2026-09-01T15:30:00.000Z')))
+    assert.isFalse(windowsOverlap(two, halfPast, halfPast, three))
+    assert.equal(defaultLessonEnd(two).toISO(), three.toISO())
+  })
+
+  test('defaults the end to one hour and keeps a previous duration when moving', ({ assert }) => {
+    const start = DateTime.fromISO('2026-09-01T14:00:00.000Z')
+    const created = resolveLessonWindow(start)
+    assert.equal(created.endsAt.toUTC().toISO(), '2026-09-01T15:00:00.000Z')
+
+    const moved = resolveLessonWindow(
+      DateTime.fromISO('2026-09-08T10:00:00.000Z'),
+      undefined,
+      { scheduledAt: start, endsAt: DateTime.fromISO('2026-09-01T15:30:00.000Z') }
+    )
+    assert.equal(moved.endsAt.toUTC().toISO(), '2026-09-08T11:30:00.000Z')
+
+    assert.throws(
+      () => resolveLessonWindow(start, DateTime.fromISO('2026-09-01T13:00:00.000Z')),
+      LESSON_INVALID_DURATION
+    )
   })
 
   test('builds weekly slots and stops at expiry', ({ assert }) => {

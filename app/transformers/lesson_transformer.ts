@@ -15,6 +15,7 @@ export default class LessonTransformer extends BaseTransformer<Lesson> {
         'studentId',
         'planId',
         'scheduledAt',
+        'endsAt',
         'status',
         'description',
         'createdAt',

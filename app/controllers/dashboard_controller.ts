@@ -8,7 +8,9 @@ import {
   lessonsDoneFromExtras,
 } from '#services/plan_credits'
 import { EXPIRING_SOON_DAYS, LOW_CREDIT_THRESHOLD } from '#services/package_catalog'
+import { buildMonthCsv } from '#services/month_export'
 import { dashboardQueryValidator } from '#validators/dashboard'
+import { exportQueryValidator } from '#validators/export'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 import type Lesson from '#models/lesson'
@@ -90,6 +92,18 @@ export default class DashboardController {
       upcoming: LessonTransformer.transform(this.after(scheduledLessons, endOfDay).slice(0, 5)),
       recent: LessonTransformer.transform(recent),
     })
+  }
+
+  async exportMonth({ auth, request, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const { month, timezone } = await request.validateUsing(exportQueryValidator)
+    const csv = await buildMonthCsv(user, { month, timezone })
+
+    return response
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="${csv.filename}"`)
+      .header('Cache-Control', 'no-store')
+      .send(csv.body)
   }
 
   private resolveZone(timezone?: string) {

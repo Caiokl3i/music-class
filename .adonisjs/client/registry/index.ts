@@ -48,6 +48,12 @@ const routes = {
     tokens: [{"old":"/api/v1/dashboard","type":0,"val":"api","end":""},{"old":"/api/v1/dashboard","type":0,"val":"v1","end":""},{"old":"/api/v1/dashboard","type":0,"val":"dashboard","end":""}],
     types: placeholder as Registry['dashboard.show']['types'],
   },
+  'dashboard.export_month': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/export',
+    tokens: [{"old":"/api/v1/export","type":0,"val":"api","end":""},{"old":"/api/v1/export","type":0,"val":"v1","end":""},{"old":"/api/v1/export","type":0,"val":"export","end":""}],
+    types: placeholder as Registry['dashboard.export_month']['types'],
+  },
   'catalog.packages': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/packages',

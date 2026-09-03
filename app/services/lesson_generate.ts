@@ -6,7 +6,12 @@ import {
   remainingCredits,
   assertCanConsumeCredit,
 } from '#services/plan_credits'
-import { assertSlotFree, loadOccupiedLessons, weeklySlots } from '#services/lesson_schedule'
+import {
+  assertSlotFree,
+  defaultLessonEnd,
+  loadOccupiedLessons,
+  weeklySlots,
+} from '#services/lesson_schedule'
 import { lessonsQuery } from '#services/lesson_booking'
 import type User from '#models/user'
 import type { DateTime } from 'luxon'
@@ -35,7 +40,7 @@ export async function generatePlanLessons(user: User, planId: number, firstSched
 
     const occupied = await loadOccupiedLessons(user, trx)
     for (const slot of slots) {
-      await assertSlotFree(user, slot, { occupied, trx })
+      await assertSlotFree(user, slot, { endsAt: defaultLessonEnd(slot), occupied, trx })
     }
 
     const created = await Lesson.createMany(
@@ -44,6 +49,7 @@ export async function generatePlanLessons(user: User, planId: number, firstSched
         studentId: plan.studentId,
         planId: plan.id,
         scheduledAt,
+        endsAt: defaultLessonEnd(scheduledAt),
         status: 'scheduled' as const,
         description: null,
       })),

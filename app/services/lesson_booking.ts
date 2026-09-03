@@ -2,7 +2,7 @@ import { createError } from '@adonisjs/core/exceptions'
 import db from '@adonisjs/lucid/services/db'
 import Lesson from '#models/lesson'
 import { assertCanConsumeCredit, lessonOccupiesSlot } from '#services/plan_credits'
-import { assertSlotFree } from '#services/lesson_schedule'
+import { assertSlotFree, resolveLessonWindow } from '#services/lesson_schedule'
 import type User from '#models/user'
 import type { DateTime } from 'luxon'
 import type { LessonStatus } from '#validators/lesson'
@@ -18,6 +18,7 @@ type LessonPayload = {
   studentId: number
   planId: number
   scheduledAt: DateTime
+  endsAt?: DateTime | null
   status: LessonStatus
   description: string | null
 }
@@ -33,14 +34,16 @@ export async function createBookedLesson(user: User, payload: LessonPayload) {
 
     plan.useTransaction(trx)
     await assertCanConsumeCredit(plan, payload.status)
-    await assertOccupancy(user, payload.scheduledAt, payload.status, trx)
+    const window = resolveLessonWindow(payload.scheduledAt, payload.endsAt)
+    await assertOccupancy(user, window.scheduledAt, window.endsAt, payload.status, trx)
 
     const lesson = await Lesson.create(
       {
         userId: user.id,
         studentId: student.id,
         planId: plan.id,
-        scheduledAt: payload.scheduledAt,
+        scheduledAt: window.scheduledAt,
+        endsAt: window.endsAt,
         status: payload.status,
         description: payload.description,
       },
@@ -67,19 +70,24 @@ export async function updateBookedLesson(
     const studentId = payload.studentId ?? lesson.studentId
     const planId = payload.planId ?? lesson.planId
     const status = (payload.status ?? lesson.status) as LessonStatus
-    const scheduledAt = payload.scheduledAt ?? lesson.scheduledAt
     const previousStatus = lesson.status
+    const window = resolveLessonWindow(
+      payload.scheduledAt ?? lesson.scheduledAt,
+      payload.endsAt,
+      { scheduledAt: lesson.scheduledAt, endsAt: lesson.endsAt }
+    )
 
     const { plan } = await loadOwnedStudentAndPlan(user, studentId, planId, trx)
     plan.useTransaction(trx)
     await assertCanConsumeCredit(plan, status, lesson.id, previousStatus)
-    await assertOccupancy(user, scheduledAt, status, trx, lesson.id)
+    await assertOccupancy(user, window.scheduledAt, window.endsAt, status, trx, lesson.id)
 
     lesson.useTransaction(trx)
     lesson.studentId = studentId
     lesson.planId = planId
     lesson.status = status
-    lesson.scheduledAt = scheduledAt
+    lesson.scheduledAt = window.scheduledAt
+    lesson.endsAt = window.endsAt
 
     if (payload.description !== undefined) {
       lesson.description = payload.description
@@ -102,6 +110,7 @@ export function loadLesson(user: User, id: number | string) {
 async function assertOccupancy(
   user: User,
   scheduledAt: DateTime,
+  endsAt: DateTime,
   status: string,
   trx: TransactionClientContract,
   exceptLessonId?: number
@@ -110,7 +119,7 @@ async function assertOccupancy(
     return
   }
 
-  await assertSlotFree(user, scheduledAt, { exceptLessonId, trx })
+  await assertSlotFree(user, scheduledAt, { endsAt, exceptLessonId, trx })
 }
 
 async function loadOwnedStudentAndPlan(

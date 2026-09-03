@@ -23,7 +23,7 @@ Ciclo fechado: **aluno → pacote → aula**. Só a aula concluída conta no pac
 - Isolamento por professor (`user_id`).
 - Catálogo fixo: avulsa, pack 4, pack 8 (preço no servidor).
 - Crédito em pacote **pago ou pendente**. Cancelar aula devolve; falta consome. Vários pendentes no mesmo aluno.
-- Conflito de horário (aula de 1h; encostadas passam).
+- Conflito de horário (início + fim, 1h padrão; encostadas passam).
 - Validade de 60 dias a partir do pagamento; gerar as aulas da semana de uma vez.
 - Aviso de crédito 0–1 e receita do mês no painel.
 - Pacotes pendentes, validade acabando e vencidos destacados no painel.
@@ -34,6 +34,8 @@ Ciclo fechado: **aluno → pacote → aula**. Só a aula concluída conta no pac
 - Signup por convite (`SIGNUP_INVITE_CODE`).
 - Backup do SQLite em `backups/` (`npm run db:backup`).
 - Horário usual por aluno (dia + hora) no agendar e no gerar aulas.
+- Duração da aula com início e fim (1h padrão) no agendar e no conflito.
+- CSV do mês (aulas + pacotes) no painel.
 
 Ainda deliberadamente **fora** (e isso continua fazendo sentido): tabela de pagamentos, tipos de plano editáveis, vários papéis, portal do aluno, comissões.
 
@@ -56,7 +58,7 @@ Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito
 | Ideia | Status | Facilidade | Momento | Por quê |
 |-------|--------|------------|---------|---------|
 | Bloquear (ou avisar) duas aulas no mesmo horário | **Feito** | Fácil | Agora | Professor não se clona |
-| Duração da aula (início + fim, 1h padrão) | **Parcial** | Fácil | Agora | 1h fixo no conflito; UI só escolhe o início |
+| Duração da aula (início + fim, 1h padrão) | **Feito** | Fácil | Agora | Agendar escolhe o fim; conflito usa a janela real |
 | Aviso de créditos 0–1 | **Feito** | Fácil | Agora | Pacote acaba e ninguém vende o próximo |
 | Gerar N aulas a partir de um dia da semana | **Feito** | Médio | Agora | Pacote mensal hoje é N cliques |
 | Horário padrão por aluno (“sempre 14h”) | **Feito** | Fácil | Depois | Acelera o agendar |
@@ -106,7 +108,7 @@ Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito
 | Destacar pacotes pendentes (a receber) | **Feito** | Fácil | Agora | Já tem o número; falta o hábito na UI |
 | Forma de pagamento no pacote (PIX, dinheiro) | **Não** | Fácil | Depois | Cabe em `notes` hoje; um enum ajuda relatório |
 | Recibo / PDF simples | **Não** | Médio | Depois | Pedido clássico de responsável |
-| Export CSV do mês (aulas + pacotes) | **Não** | Fácil | Depois | Substitui o caderno no Imposto / controle |
+| Export CSV do mês (aulas + pacotes) | **Feito** | Fácil | Depois | Substitui o caderno no Imposto / controle |
 | Tabela `payments` (várias parcelas) | **Não** | Difícil | Adicional | Modelo novo; v1 não precisa |
 | Reajuste de catálogo com inflação | **Não** | Médio | Adicional | Junto com `plan_types` |
 | Comissões / estúdio compartilhado | **Não** | Difícil | Adicional | Outro negócio |
@@ -186,13 +188,12 @@ O modelo em `docs/modelo.md` já marca isso como fora da v1. Continua válido.
 **Ciclo A — não se enrolar na agenda**  
 Conflito de horário + duração 1h + aviso de crédito + receita do mês + backup do banco + signup fechado (convite ou desligar registro público).
 
-- **Feito:** conflito, duração 1h no agendamento, aviso de crédito, receita do mês, pendentes no painel, backup do SQLite, signup só por convite.
+- **Feito:** conflito, duração com início e fim (1h padrão), aviso de crédito, receita do mês, pendentes no painel, backup do SQLite, signup só por convite.
 
 **Ciclo B — o pacote mensal de verdade**  
 Gerar aulas da semana + validade dos créditos + horário padrão do aluno + CSV do mês.
 
-- **Feito:** gerar aulas da semana, validade dos créditos, horário padrão por aluno.
-- **Não:** CSV do mês.
+- **Feito:** gerar aulas da semana, validade dos créditos, horário padrão do aluno, CSV do mês.
 
 **Ciclo C — carinho e operação**  
 WhatsApp na ficha, aniversário, responsável, recibo, paginação, “esqueci senha”, CI.

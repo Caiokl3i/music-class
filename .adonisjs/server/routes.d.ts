@@ -11,6 +11,7 @@ export type ScannedRoutes = {
     'profile.profile.update_password': { paramsTuple?: []; params?: {} }
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'dashboard.show': { paramsTuple?: []; params?: {} }
+    'dashboard.export_month': { paramsTuple?: []; params?: {} }
     'catalog.packages': { paramsTuple?: []; params?: {} }
     'lessons.index_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'lessons.store_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
@@ -34,6 +35,7 @@ export type ScannedRoutes = {
   GET: {
     'profile.profile.show': { paramsTuple?: []; params?: {} }
     'dashboard.show': { paramsTuple?: []; params?: {} }
+    'dashboard.export_month': { paramsTuple?: []; params?: {} }
     'catalog.packages': { paramsTuple?: []; params?: {} }
     'lessons.index_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'students.index': { paramsTuple?: []; params?: {} }
@@ -46,6 +48,7 @@ export type ScannedRoutes = {
   HEAD: {
     'profile.profile.show': { paramsTuple?: []; params?: {} }
     'dashboard.show': { paramsTuple?: []; params?: {} }
+    'dashboard.export_month': { paramsTuple?: []; params?: {} }
     'catalog.packages': { paramsTuple?: []; params?: {} }
     'lessons.index_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'students.index': { paramsTuple?: []; params?: {} }

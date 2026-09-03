@@ -55,6 +55,27 @@ export function preferredSlot(
   return applyPreferredTime(base, student.preferredTime)
 }
 
+export function addMinutesToDatetimeLocal(value: string, minutes: number) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  date.setMinutes(date.getMinutes() + minutes)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+export function moveDatetimeLocalKeepingDuration(
+  previousStart: string,
+  previousEnd: string,
+  nextStart: string,
+  fallbackMinutes: number,
+) {
+  if (!nextStart) return ''
+  const previousMs = new Date(previousEnd).getTime() - new Date(previousStart).getTime()
+  const minutes = previousMs > 0 ? previousMs / 60_000 : fallbackMinutes
+  return addMinutesToDatetimeLocal(nextStart, minutes)
+}
+
 export function weeklySlots(first: Date, count: number, until?: Date | null) {
   const slots: Date[] = []
   const current = new Date(first.getTime())

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -44,6 +44,7 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
+  formatDateTimeRange,
   fromDatetimeLocalValue,
   toDatetimeLocalFromDate,
   toDatetimeLocalValue,
@@ -57,16 +58,24 @@ import {
 } from '@/domain/status'
 import {
   WEEKDAY_OPTIONS,
+  addMinutesToDatetimeLocal,
   formatPreferredSchedule,
+  moveDatetimeLocalKeepingDuration,
   preferredSlot,
 } from '@/domain/schedule'
 
-const lessonSchema = z.object({
-  planId: z.string().min(1, 'Selecione o pacote'),
-  scheduledAt: z.string().min(1, 'Informe data e hora'),
-  status: z.enum(['scheduled', 'done', 'cancelled', 'no_show']),
-  description: z.string().optional(),
-})
+const lessonSchema = z
+  .object({
+    planId: z.string().min(1, 'Selecione o pacote'),
+    scheduledAt: z.string().min(1, 'Informe o início'),
+    endsAt: z.string().min(1, 'Informe o fim'),
+    status: z.enum(['scheduled', 'done', 'cancelled', 'no_show']),
+    description: z.string().optional(),
+  })
+  .refine((values) => new Date(values.endsAt) > new Date(values.scheduledAt), {
+    message: 'O fim precisa ser depois do início',
+    path: ['endsAt'],
+  })
 
 const planSchema = z.object({
   package: z.enum(['single', 'pack_4', 'pack_8']),
@@ -92,7 +101,8 @@ export function StudentDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  const { packages, labelFor, optionFor, lowCreditThreshold } = useCatalog()
+  const { packages, labelFor, optionFor, lowCreditThreshold, lessonDurationMinutes } = useCatalog()
+  const previousStart = useRef('')
   const [student, setStudent] = useState<Student | null>(null)
   const [plans, setPlans] = useState<Plan[]>([])
   const [lessons, setLessons] = useState<Lesson[]>([])
@@ -111,7 +121,7 @@ export function StudentDetailPage() {
 
   const lessonForm = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
-    defaultValues: { planId: '', scheduledAt: '', status: 'scheduled', description: '' },
+    defaultValues: { planId: '', scheduledAt: '', endsAt: '', status: 'scheduled', description: '' },
   })
 
   const planForm = useForm<PlanFormValues>({
@@ -179,9 +189,12 @@ export function StudentDetailPage() {
       return
     }
     setEditingLesson(null)
+    const scheduledAt = defaultSchedule()
+    previousStart.current = scheduledAt
     lessonForm.reset({
       planId: String(availablePlans[0].id),
-      scheduledAt: defaultSchedule(),
+      scheduledAt,
+      endsAt: addMinutesToDatetimeLocal(scheduledAt, lessonDurationMinutes),
       status: 'scheduled',
       description: '',
     })
@@ -190,9 +203,15 @@ export function StudentDetailPage() {
 
   function openEditLesson(lesson: Lesson) {
     setEditingLesson(lesson)
+    const scheduledAt = toDatetimeLocalValue(lesson.scheduledAt)
+    const endsAt = lesson.endsAt
+      ? toDatetimeLocalValue(lesson.endsAt)
+      : addMinutesToDatetimeLocal(scheduledAt, lessonDurationMinutes)
+    previousStart.current = scheduledAt
     lessonForm.reset({
       planId: String(lesson.planId),
-      scheduledAt: toDatetimeLocalValue(lesson.scheduledAt),
+      scheduledAt,
+      endsAt,
       status: lesson.status,
       description: lesson.description ?? '',
     })
@@ -224,6 +243,7 @@ export function StudentDetailPage() {
     const payload = {
       planId: Number(values.planId),
       scheduledAt: fromDatetimeLocalValue(values.scheduledAt),
+      endsAt: fromDatetimeLocalValue(values.endsAt),
       status: values.status as LessonStatus,
       description: values.description || null,
     }
@@ -590,12 +610,35 @@ export function StudentDetailPage() {
             }))}
             {...lessonForm.register('planId')}
           />
-          <Input
-            label="Data e hora"
-            type="datetime-local"
-            error={lessonForm.formState.errors.scheduledAt?.message}
-            {...lessonForm.register('scheduledAt')}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Início"
+              type="datetime-local"
+              error={lessonForm.formState.errors.scheduledAt?.message}
+              {...lessonForm.register('scheduledAt', {
+                onChange: (event) => {
+                  const next = event.target.value
+                  lessonForm.setValue(
+                    'endsAt',
+                    moveDatetimeLocalKeepingDuration(
+                      previousStart.current,
+                      lessonForm.getValues('endsAt'),
+                      next,
+                      lessonDurationMinutes,
+                    ),
+                  )
+                  previousStart.current = next
+                },
+              })}
+            />
+            <Input
+              label="Fim"
+              type="datetime-local"
+              hint="Padrão: 1 hora"
+              error={lessonForm.formState.errors.endsAt?.message}
+              {...lessonForm.register('endsAt')}
+            />
+          </div>
           <Select
             label="Status"
             error={lessonForm.formState.errors.status?.message}
@@ -790,7 +833,9 @@ function LessonItem({
     <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-medium text-ink">{formatDateTime(lesson.scheduledAt)}</p>
+          <p className="font-medium text-ink">
+            {formatDateTimeRange(lesson.scheduledAt, lesson.endsAt)}
+          </p>
           <LessonStatusBadge status={lesson.status} />
         </div>
         {planLabel ? <p className="mt-0.5 text-sm text-ink-muted">{planLabel}</p> : null}

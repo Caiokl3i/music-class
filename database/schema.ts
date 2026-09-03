@@ -33,12 +33,14 @@ export class AuthAccessTokenSchema extends BaseModel {
 }
 
 export class LessonSchema extends BaseModel {
-  static $columns = ['createdAt', 'description', 'id', 'planId', 'scheduledAt', 'status', 'studentId', 'updatedAt', 'userId'] as const
+  static $columns = ['createdAt', 'description', 'endsAt', 'id', 'planId', 'scheduledAt', 'status', 'studentId', 'updatedAt', 'userId'] as const
   $columns = LessonSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
   declare description: string | null
+  @column.dateTime()
+  declare endsAt: DateTime | null
   @column({ isPrimary: true })
   declare id: number
   @column()
