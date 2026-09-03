@@ -138,6 +138,12 @@ const routes = {
     tokens: [{"old":"/api/v1/plans/:id","type":0,"val":"api","end":""},{"old":"/api/v1/plans/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/plans/:id","type":0,"val":"plans","end":""},{"old":"/api/v1/plans/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['plans.destroy']['types'],
   },
+  'lessons.reposition': {
+    methods: ["POST"],
+    pattern: '/api/v1/lessons/:id/reposition',
+    tokens: [{"old":"/api/v1/lessons/:id/reposition","type":0,"val":"api","end":""},{"old":"/api/v1/lessons/:id/reposition","type":0,"val":"v1","end":""},{"old":"/api/v1/lessons/:id/reposition","type":0,"val":"lessons","end":""},{"old":"/api/v1/lessons/:id/reposition","type":1,"val":"id","end":""},{"old":"/api/v1/lessons/:id/reposition","type":0,"val":"reposition","end":""}],
+    types: placeholder as Registry['lessons.reposition']['types'],
+  },
   'lessons.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/lessons',

@@ -52,3 +52,13 @@ export const updateLessonValidator = vine.create({
   status: lessonFields.status.clone().optional(),
   description: lessonFields.description.clone(),
 })
+
+/**
+ * Validator for explicit "reposição": create a replacement lesson
+ * while cancelling the credit consumption of an existing `no_show` lesson.
+ */
+export const repositionLessonValidator = vine.create({
+  scheduledAt: lessonFields.scheduledAt,
+  endsAt: lessonFields.endsAt,
+  description: lessonFields.description,
+})

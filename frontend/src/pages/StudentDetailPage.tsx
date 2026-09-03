@@ -77,6 +77,17 @@ const lessonSchema = z
     path: ['endsAt'],
   })
 
+const repositionSchema = z
+  .object({
+    scheduledAt: z.string().min(1, 'Informe o início'),
+    endsAt: z.string().min(1, 'Informe o fim'),
+    description: z.string().optional(),
+  })
+  .refine((values) => new Date(values.endsAt) > new Date(values.scheduledAt), {
+    message: 'O fim precisa ser depois do início',
+    path: ['endsAt'],
+  })
+
 const planSchema = z.object({
   package: z.enum(['single', 'pack_4', 'pack_8']),
   status: z.enum(['pending', 'paid', 'cancelled']),
@@ -94,6 +105,7 @@ const studentSchema = z.object({
 })
 
 type LessonFormValues = z.infer<typeof lessonSchema>
+type RepositionFormValues = z.infer<typeof repositionSchema>
 type PlanFormValues = z.infer<typeof planSchema>
 type StudentFormValues = z.infer<typeof studentSchema>
 
@@ -118,10 +130,19 @@ export function StudentDetailPage() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [generatingPlan, setGeneratingPlan] = useState<Plan | null>(null)
   const [openPlanId, setOpenPlanId] = useState<number | null>(null)
+  const repositionStart = useRef('')
+  const [repositionModalOpen, setRepositionModalOpen] = useState(false)
+  const [repositioningLesson, setRepositioningLesson] = useState<Lesson | null>(null)
+  const [savingReposition, setSavingReposition] = useState(false)
 
   const lessonForm = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
     defaultValues: { planId: '', scheduledAt: '', endsAt: '', status: 'scheduled', description: '' },
+  })
+
+  const repositionForm = useForm<RepositionFormValues>({
+    resolver: zodResolver(repositionSchema),
+    defaultValues: { scheduledAt: '', endsAt: '', description: '' },
   })
 
   const planForm = useForm<PlanFormValues>({
@@ -218,6 +239,21 @@ export function StudentDetailPage() {
     setLessonModalOpen(true)
   }
 
+  function openRepositionLesson(lesson: Lesson) {
+    setRepositioningLesson(lesson)
+    const scheduledAt = toDatetimeLocalValue(lesson.scheduledAt)
+    const endsAt = lesson.endsAt
+      ? toDatetimeLocalValue(lesson.endsAt)
+      : addMinutesToDatetimeLocal(scheduledAt, lessonDurationMinutes)
+    repositionStart.current = scheduledAt
+    repositionForm.reset({
+      scheduledAt,
+      endsAt,
+      description: lesson.description ?? '',
+    })
+    setRepositionModalOpen(true)
+  }
+
   function openCreatePlan() {
     planForm.reset({ package: 'pack_4', status: 'paid', notes: '' })
     setPlanModalOpen(true)
@@ -265,6 +301,32 @@ export function StudentDetailPage() {
       toast.error(getErrorMessage(error, 'Não foi possível salvar a aula.'))
     } finally {
       setSavingLesson(false)
+    }
+  }
+
+  async function onSubmitReposition(values: RepositionFormValues) {
+    if (!repositioningLesson) return
+    setSavingReposition(true)
+
+    try {
+      await lessonsService.repositionLesson(repositioningLesson.id, {
+        scheduledAt: fromDatetimeLocalValue(values.scheduledAt),
+        endsAt: fromDatetimeLocalValue(values.endsAt),
+        description: values.description || null,
+      })
+
+      toast.success('Reposição criada.')
+      setRepositionModalOpen(false)
+      setRepositioningLesson(null)
+      await load()
+    } catch (error) {
+      const fields = getFieldErrors(error)
+      Object.entries(fields).forEach(([field, message]) => {
+        if (field in values) repositionForm.setError(field as keyof RepositionFormValues, { message })
+      })
+      toast.error(getErrorMessage(error, 'Não foi possível salvar a reposição.'))
+    } finally {
+      setSavingReposition(false)
     }
   }
 
@@ -575,6 +637,7 @@ export function StudentDetailPage() {
                     lesson={lesson}
                     planLabel={labelFor(lesson.planPackage)}
                     onEdit={openEditLesson}
+                    onReposition={openRepositionLesson}
                     onDelete={setDeletingLesson}
                   />
                 ))}
@@ -654,6 +717,69 @@ export function StudentDetailPage() {
             label="Anotações"
             error={lessonForm.formState.errors.description?.message}
             {...lessonForm.register('description')}
+          />
+        </form>
+      </Modal>
+
+      <Modal
+        open={repositionModalOpen}
+        title={student ? `Reposição · ${student.name}` : 'Reposição'}
+        onClose={() => {
+          setRepositionModalOpen(false)
+          setRepositioningLesson(null)
+        }}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setRepositionModalOpen(false)
+                setRepositioningLesson(null)
+              }}
+              disabled={savingReposition}
+            >
+              Fechar
+            </Button>
+            <Button loading={savingReposition} onClick={repositionForm.handleSubmit(onSubmitReposition)}>
+              Salvar
+            </Button>
+          </>
+        }
+      >
+        <form className="space-y-4" onSubmit={repositionForm.handleSubmit(onSubmitReposition)}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Início"
+              type="datetime-local"
+              error={repositionForm.formState.errors.scheduledAt?.message}
+              {...repositionForm.register('scheduledAt', {
+                onChange: (event) => {
+                  const next = event.target.value
+                  repositionForm.setValue(
+                    'endsAt',
+                    moveDatetimeLocalKeepingDuration(
+                      repositionStart.current,
+                      repositionForm.getValues('endsAt'),
+                      next,
+                      lessonDurationMinutes,
+                    ),
+                  )
+                  repositionStart.current = next
+                },
+              })}
+            />
+            <Input
+              label="Fim"
+              type="datetime-local"
+              hint="Padrão: 1 hora"
+              error={repositionForm.formState.errors.endsAt?.message}
+              {...repositionForm.register('endsAt')}
+            />
+          </div>
+          <TextArea
+            label="Anotações"
+            error={repositionForm.formState.errors.description?.message}
+            {...repositionForm.register('description')}
           />
         </form>
       </Modal>
@@ -814,6 +940,7 @@ type LessonItemProps = {
   onComplete?: (lesson: Lesson) => void
   onNoShow?: (lesson: Lesson) => void
   onCancel?: (lesson: Lesson) => void
+  onReposition?: (lesson: Lesson) => void
   onEdit?: (lesson: Lesson) => void
   onDelete?: (lesson: Lesson) => void
 }
@@ -824,6 +951,7 @@ function LessonItem({
   onComplete,
   onNoShow,
   onCancel,
+  onReposition,
   onEdit,
   onDelete,
 }: LessonItemProps) {
@@ -850,6 +978,11 @@ function LessonItem({
         {scheduled && onNoShow ? (
           <Button size="sm" variant="secondary" onClick={() => onNoShow(lesson)}>
             Falta
+          </Button>
+        ) : null}
+        {lesson.status === 'no_show' && onReposition ? (
+          <Button size="sm" variant="secondary" onClick={() => onReposition(lesson)}>
+            Reposição
           </Button>
         ) : null}
         {scheduled && onCancel ? (

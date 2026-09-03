@@ -26,6 +26,7 @@ export type ScannedRoutes = {
     'plans.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'lessons.reposition': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.index': { paramsTuple?: []; params?: {} }
     'lessons.store': { paramsTuple?: []; params?: {} }
     'lessons.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -66,6 +67,7 @@ export type ScannedRoutes = {
     'students.store': { paramsTuple?: []; params?: {} }
     'plans.generate_lessons': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.store': { paramsTuple?: []; params?: {} }
+    'lessons.reposition': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.store': { paramsTuple?: []; params?: {} }
   }
   PATCH: {

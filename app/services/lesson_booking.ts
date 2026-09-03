@@ -14,6 +14,12 @@ export const LESSON_STUDENT_MISMATCH = createError(
   422
 )
 
+export const LESSON_REPOSITION_REQUIRES_NO_SHOW = createError(
+  'Only a no_show lesson can be repositioned',
+  'E_LESSON_REPOSITION_REQUIRES_NO_SHOW',
+  422
+)
+
 type LessonPayload = {
   studentId: number
   planId: number
@@ -97,6 +103,64 @@ export async function updateBookedLesson(
   })
 
   return loadLesson(user, lessonId)
+}
+
+type RepositionLessonPayload = {
+  scheduledAt: DateTime
+  endsAt?: DateTime | null
+  description: string | null
+}
+
+export async function repositionBookedLesson(
+  user: User,
+  lessonId: number,
+  payload: RepositionLessonPayload
+) {
+  const newLessonId = await db.transaction(async (trx) => {
+    const lesson = await Lesson.query({ client: trx })
+      .where('id', lessonId)
+      .where('userId', user.id)
+      .firstOrFail()
+
+    if (lesson.status !== 'no_show') {
+      throw new LESSON_REPOSITION_REQUIRES_NO_SHOW()
+    }
+
+    // Return credit from the existing `no_show`.
+    lesson.useTransaction(trx)
+    lesson.status = 'cancelled'
+    await lesson.save()
+
+    const { student, plan } = await loadOwnedStudentAndPlan(
+      user,
+      lesson.studentId,
+      lesson.planId,
+      trx
+    )
+
+    plan.useTransaction(trx)
+    await assertCanConsumeCredit(plan, 'scheduled')
+
+    const window = resolveLessonWindow(payload.scheduledAt, payload.endsAt)
+    await assertOccupancy(user, window.scheduledAt, window.endsAt, 'scheduled', trx)
+
+    const replacement = await Lesson.create(
+      {
+        userId: user.id,
+        studentId: student.id,
+        planId: plan.id,
+        scheduledAt: window.scheduledAt,
+        endsAt: window.endsAt,
+        status: 'scheduled',
+        description: payload.description,
+      },
+      { client: trx }
+    )
+
+    return replacement.id
+  })
+
+  return loadLesson(user, newLessonId)
 }
 
 export function lessonsQuery(user: User) {

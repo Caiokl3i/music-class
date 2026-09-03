@@ -66,7 +66,7 @@ Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito
 | Arrastar aula no calendário para remarcar | **Não** | Difícil | Adicional | Conforto; remarcar no modal já resolve |
 | Bloquear agenda (viagem, feriado) | **Não** | Médio | Depois | Evita marcar em cima da folga |
 | Aula atrasada (chegou tarde) vs falta | **Não** | Fácil | Adicional | Política fina; falta já existe |
-| Reposição explícita (remarcar sem gastar crédito extra) | **Não** | Médio | Depois | Cancelar já devolve; reposição é o nome disso |
+| Reposição explícita (remarcar sem gastar crédito extra) | **Feito** | Médio | Depois | Cancelar já devolve; reposição faz isso explicitamente (1 fluxo) |
 | Sincronizar Google Calendar / feed iCal | **Não** | Difícil | Adicional | Integração e OAuth |
 | Cor por aluno no calendário | **Não** | Fácil | Adicional | Leitura visual |
 

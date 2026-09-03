@@ -271,6 +271,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['destroy']>>>
     }
   }
+  'lessons.reposition': {
+    methods: ["POST"]
+    pattern: '/api/v1/lessons/:id/reposition'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/lesson').repositionLessonValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/lesson').repositionLessonValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/lessons_controller').default['reposition']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/lessons_controller').default['reposition']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'lessons.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/lessons'

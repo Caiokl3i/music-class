@@ -10,6 +10,7 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   E_LESSON_SCHEDULE_CONFLICT: 'Já existe uma aula nesse horário.',
   E_LESSON_INVALID_DURATION: 'O fim da aula precisa ser depois do início.',
   E_PLAN_EXPIRED: 'Este pacote venceu. Venda um novo para continuar agendando.',
+  E_LESSON_REPOSITION_REQUIRES_NO_SHOW: 'A reposição só pode ser feita a partir de uma falta registrada.',
   E_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
   E_SIGNUP_CLOSED: 'O cadastro está fechado. Peça um convite.',
   E_INVALID_INVITE: 'Código de convite inválido.',

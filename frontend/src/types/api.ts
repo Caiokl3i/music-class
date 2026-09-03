@@ -156,6 +156,12 @@ export type CreateLessonForStudentInput = Omit<CreateLessonInput, 'studentId'>
 
 export type UpdateLessonInput = Partial<CreateLessonInput>
 
+export type RepositionLessonInput = {
+  scheduledAt: string
+  endsAt?: string | null
+  description?: string | null
+}
+
 export type AuthResponse = {
   user: User
   token: string

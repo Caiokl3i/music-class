@@ -37,6 +37,7 @@ router
         router.resource('students', controllers.Students).apiOnly()
         router.post('plans/:id/lessons/generate', [controllers.Plans, 'generateLessons'])
         router.resource('plans', controllers.Plans).apiOnly()
+            router.post('lessons/:id/reposition', [controllers.Lessons, 'reposition'])
         router.resource('lessons', controllers.Lessons).apiOnly()
       })
       .use(middleware.auth())

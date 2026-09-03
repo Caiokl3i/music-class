@@ -3,6 +3,7 @@ import {
   createLessonValidator,
   createLessonForStudentValidator,
   updateLessonValidator,
+  repositionLessonValidator,
   type LessonStatus,
 } from '#validators/lesson'
 import {
@@ -10,6 +11,7 @@ import {
   lessonsQuery,
   loadLesson,
   updateBookedLesson,
+  repositionBookedLesson,
 } from '#services/lesson_booking'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
@@ -93,6 +95,20 @@ export default class LessonsController {
       description: payload.description,
     })
 
+    return serialize(LessonTransformer.transform(lesson))
+  }
+
+  async reposition({ auth, params, request, response, serialize }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const payload = await request.validateUsing(repositionLessonValidator)
+
+    const lesson = await repositionBookedLesson(user, Number(params.id), {
+      scheduledAt: payload.scheduledAt,
+      endsAt: payload.endsAt,
+      description: payload.description ?? null,
+    })
+
+    response.status(201)
     return serialize(LessonTransformer.transform(lesson))
   }
 

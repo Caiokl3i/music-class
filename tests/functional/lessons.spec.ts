@@ -334,6 +334,54 @@ test.group('Lessons', (group) => {
     reused.assertStatus(201)
   })
 
+  test('repositions a no_show without spending extra credit', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan({ package: 'single' })
+
+    const noShow = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+      status: 'no_show',
+    })
+    noShow.assertStatus(201)
+
+    const blockedBefore = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: '2026-09-08T14:00:00.000Z',
+    })
+    blockedBefore.assertStatus(422)
+
+    const repositioned = await client
+      .post(`/api/v1/lessons/${noShow.body().data.id}/reposition`)
+      .loginAs(teacher)
+      .json({
+        scheduledAt: '2026-09-08T14:00:00.000Z',
+        description: 'Reposição após falta',
+      })
+    repositioned.assertStatus(201)
+    repositioned.assertBodyContains({
+      data: {
+        status: 'scheduled',
+        planId: plan.id,
+        studentId: student.id,
+      },
+    })
+
+    const oldLesson = await client
+      .get(`/api/v1/lessons/${noShow.body().data.id}`)
+      .loginAs(teacher)
+    oldLesson.assertStatus(200)
+    oldLesson.assertBodyContains({ data: { status: 'cancelled' } })
+
+    const blockedAfter = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: '2026-09-15T14:00:00.000Z',
+    })
+    blockedAfter.assertStatus(422)
+  })
+
   test('consumes credits on a pending plan', async ({ client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan({
       email: 'pending@example.com',

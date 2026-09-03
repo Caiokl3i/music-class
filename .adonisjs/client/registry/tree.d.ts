@@ -30,6 +30,7 @@ export interface ApiDefinition {
   lessons: {
     indexForStudent: typeof routes['lessons.index_for_student']
     storeForStudent: typeof routes['lessons.store_for_student']
+    reposition: typeof routes['lessons.reposition']
     index: typeof routes['lessons.index']
     store: typeof routes['lessons.store']
     show: typeof routes['lessons.show']
