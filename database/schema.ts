@@ -87,7 +87,7 @@ export class PlanSchema extends BaseModel {
 }
 
 export class StudentSchema extends BaseModel {
-  static $columns = ['birthdate', 'createdAt', 'description', 'id', 'instrument', 'name', 'phone', 'preferredTime', 'preferredWeekday', 'updatedAt', 'userId'] as const
+  static $columns = ['birthdate', 'createdAt', 'description', 'id', 'instrument', 'level', 'name', 'phone', 'preferredTime', 'preferredWeekday', 'tags', 'updatedAt', 'userId'] as const
   $columns = StudentSchema.$columns
   @column.date()
   declare birthdate: DateTime | null
@@ -100,6 +100,8 @@ export class StudentSchema extends BaseModel {
   @column()
   declare instrument: string
   @column()
+  declare level: string | null
+  @column()
   declare name: string
   @column()
   declare phone: string | null
@@ -107,6 +109,8 @@ export class StudentSchema extends BaseModel {
   declare preferredTime: string | null
   @column()
   declare preferredWeekday: number | null
+  @column()
+  declare tags: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()

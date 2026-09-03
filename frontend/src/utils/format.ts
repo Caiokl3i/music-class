@@ -59,6 +59,23 @@ export function formatCurrency(value: number) {
   }).format(value)
 }
 
+/**
+ * Age in full years, based on a birthdate in ISO format: "YYYY-MM-DD".
+ * Returns `null` when birthdate is missing/invalid.
+ */
+export function ageFromBirthdate(birthdate: string | null | undefined, now = new Date()) {
+  if (!birthdate) return null
+  const date = parseISO(birthdate)
+  if (!isValid(date)) return null
+
+  let years = now.getFullYear() - date.getFullYear()
+  const hasHadBirthdayThisYear =
+    now.getMonth() > date.getMonth() || (now.getMonth() === date.getMonth() && now.getDate() >= date.getDate())
+
+  if (!hasHadBirthdayThisYear) years -= 1
+  return years >= 0 ? years : null
+}
+
 export function toDatetimeLocalValue(iso: string) {
   const date = parseISO(iso)
   if (!isValid(date)) return ''

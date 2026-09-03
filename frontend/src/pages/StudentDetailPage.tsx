@@ -45,6 +45,7 @@ import {
   formatDate,
   formatDateTime,
   formatDateTimeRange,
+  ageFromBirthdate,
   fromDatetimeLocalValue,
   toDatetimeLocalFromDate,
   toDatetimeLocalValue,
@@ -100,6 +101,8 @@ const studentSchema = z.object({
   phone: z.string().optional(),
   birthdate: z.string().optional(),
   description: z.string().optional(),
+  level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
+  tags: z.string().optional(),
   preferredWeekday: z.string().optional(),
   preferredTime: z.string().optional(),
 })
@@ -267,6 +270,8 @@ export function StudentDetailPage() {
       phone: student.phone ?? '',
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
+      level: student.level ?? '',
+      tags: student.tags ?? '',
       preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
       preferredTime: student.preferredTime ?? '',
     })
@@ -474,9 +479,29 @@ export function StudentDetailPage() {
           <dl className="space-y-4 text-sm">
             <InfoRow icon={<CalendarDays className="size-4" />} label="Nascimento">
               {formatDate(student.birthdate)}
+              {ageFromBirthdate(student.birthdate) !== null ? (
+                <span> · {ageFromBirthdate(student.birthdate)} anos</span>
+              ) : null}
             </InfoRow>
             <InfoRow icon={<Clock className="size-4" />} label="Horário usual">
               {formatPreferredSchedule(student.preferredWeekday, student.preferredTime) || '—'}
+            </InfoRow>
+            <InfoRow icon={<Info className="size-4" />} label="Nível">
+              {student.level === 'beginner'
+                ? 'Iniciante'
+                : student.level === 'intermediate'
+                  ? 'Intermediário'
+                  : '—'}
+            </InfoRow>
+            <InfoRow icon={<FileText className="size-4" />} label="Tags">
+              {student.tags
+                ? student.tags
+                    .split(',')
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                    .slice(0, 6)
+                    .join(', ')
+                : '—'}
             </InfoRow>
             <InfoRow icon={<Phone className="size-4" />} label="Telefone">
               {student.phone || '—'}
@@ -859,6 +884,24 @@ export function StudentDetailPage() {
             error={studentForm.formState.errors.birthdate?.message}
             {...studentForm.register('birthdate')}
           />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select
+              label="Nível"
+              error={studentForm.formState.errors.level?.message}
+              options={[
+                { value: '', label: 'Sem nível' },
+                { value: 'beginner', label: 'Iniciante' },
+                { value: 'intermediate', label: 'Intermediário' },
+              ]}
+              {...studentForm.register('level')}
+            />
+            <Input
+              label="Tags"
+              hint="Separe por vírgula"
+              error={studentForm.formState.errors.tags?.message}
+              {...studentForm.register('tags')}
+            />
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
               label="Dia da aula"

@@ -52,6 +52,20 @@ export default class DashboardController {
           .limit(5),
       ])
 
+    const birthdaysToday = await user
+      .related('students')
+      .query()
+      .whereNotNull('birthdate')
+
+    const birthdays = birthdaysToday
+      .filter((student) => student.birthdate?.month === now.month && student.birthdate?.day === now.day)
+      .map((student) => ({
+        studentId: student.id,
+        studentName: student.name,
+        studentInstrument: student.instrument,
+        birthdate: student.birthdate?.toISODate(),
+      }))
+
     const paidPlans = plans.filter((plan) => plan.status === 'paid')
     const pendingPlans = plans.filter((plan) => plan.status === 'pending')
     const openPlans = plans.filter((plan) => plan.status !== 'cancelled')
@@ -65,6 +79,7 @@ export default class DashboardController {
       activePlans: activePlans.length,
       scheduledCount,
       doneCount,
+      birthdays: birthdays,
       revenue: paidPlans.reduce((sum, plan) => sum + Number(plan.price), 0),
       revenueThisMonth: paidThisMonth.reduce((sum, plan) => sum + Number(plan.price), 0),
       pendingPlans: pendingPlans.length,

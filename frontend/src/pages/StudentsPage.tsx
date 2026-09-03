@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
+import { ageFromBirthdate } from '@/utils/format'
 
 const schema = z.object({
   name: z.string().min(1, 'Informe o nome'),
@@ -26,6 +27,8 @@ const schema = z.object({
   phone: z.string().optional(),
   birthdate: z.string().optional(),
   description: z.string().optional(),
+  level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
+  tags: z.string().optional(),
   preferredWeekday: z.string().optional(),
   preferredTime: z.string().optional(),
 })
@@ -86,6 +89,8 @@ export function StudentsPage() {
       phone: '',
       birthdate: '',
       description: '',
+      level: '',
+      tags: '',
       preferredWeekday: '',
       preferredTime: '',
     })
@@ -100,6 +105,8 @@ export function StudentsPage() {
       phone: student.phone ?? '',
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
+      level: student.level ?? '',
+      tags: student.tags ?? '',
       preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
       preferredTime: student.preferredTime ?? '',
     })
@@ -224,9 +231,29 @@ export function StudentsPage() {
                           <p className="flex items-center gap-1 truncate text-xs text-ink-muted">
                             <Phone className="size-3" aria-hidden />
                             {student.phone}
+                            {ageFromBirthdate(student.birthdate) !== null ? (
+                              <span>
+                                · {ageFromBirthdate(student.birthdate)} anos
+                              </span>
+                            ) : null}
+                            {student.level ? <span> · {levelLabel(student.level)}</span> : null}
+                            {!student.level && tagsPreview(student.tags) ? (
+                              <span> · {tagsPreview(student.tags)}</span>
+                            ) : null}
                           </p>
                         ) : (
-                          <p className="text-xs text-ink-muted md:hidden">{student.instrument}</p>
+                          <p className="text-xs text-ink-muted md:hidden">
+                            {student.instrument}
+                            {ageFromBirthdate(student.birthdate) !== null ? (
+                              <span> · {ageFromBirthdate(student.birthdate)} anos</span>
+                            ) : null}
+                            {student.level ? (
+                              <span> · {levelLabel(student.level)}</span>
+                            ) : null}
+                            {!student.level && tagsPreview(student.tags) ? (
+                              <span> · {tagsPreview(student.tags)}</span>
+                            ) : null}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -293,6 +320,24 @@ export function StudentsPage() {
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
+              label="Nível"
+              error={errors.level?.message}
+              options={[
+                { value: '', label: 'Sem nível' },
+                { value: 'beginner', label: 'Iniciante' },
+                { value: 'intermediate', label: 'Intermediário' },
+              ]}
+              {...register('level')}
+            />
+            <Input
+              label="Tags"
+              hint="Separe por vírgula"
+              error={errors.tags?.message}
+              {...register('tags')}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select
               label="Dia da aula"
               error={errors.preferredWeekday?.message}
               options={[
@@ -326,6 +371,22 @@ export function StudentsPage() {
       />
     </div>
   )
+}
+
+function levelLabel(level: Student['level']) {
+  if (level === 'beginner') return 'Iniciante'
+  if (level === 'intermediate') return 'Intermediário'
+  return null
+}
+
+function tagsPreview(tags: string | null) {
+  if (!tags) return null
+  const items = tags
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+  if (items.length === 0) return null
+  return items.slice(0, 2).join(', ')
 }
 
 function creditsCell(remaining: number) {

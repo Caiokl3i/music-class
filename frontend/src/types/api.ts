@@ -15,6 +15,8 @@ export type Student = {
   instrument: string
   phone: string | null
   description: string | null
+  level: 'beginner' | 'intermediate' | null
+  tags: string | null
   preferredWeekday: number | null
   preferredTime: string | null
   createdAt: string
@@ -93,6 +95,12 @@ export type Dashboard = {
   activePlans: number
   scheduledCount: number
   doneCount: number
+  birthdays: Array<{
+    studentId: number
+    studentName: string
+    studentInstrument: string | null
+    birthdate: string | null
+  }>
   revenue: number
   revenueThisMonth: number
   pendingPlans: number
@@ -127,6 +135,8 @@ export type CreateStudentInput = {
   birthdate?: string | null
   phone?: string | null
   description?: string | null
+  level?: 'beginner' | 'intermediate' | null
+  tags?: string | null
   preferredWeekday?: number | null
   preferredTime?: string | null
 }

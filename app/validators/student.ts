@@ -9,6 +9,8 @@ const studentFields = {
   instrument: vine.string().trim().minLength(1).maxLength(255),
   phone: vine.string().trim().maxLength(30).optional().nullable(),
   description: vine.string().trim().optional().nullable(),
+  level: vine.enum(['beginner', 'intermediate']).optional().nullable(),
+  tags: vine.string().trim().optional().nullable(),
   preferredWeekday: vine.number().withoutDecimals().min(1).max(7).optional().nullable(),
   preferredTime: vine.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional().nullable(),
 }
@@ -28,6 +30,8 @@ export const updateStudentValidator = vine.create({
   instrument: studentFields.instrument.clone().optional(),
   phone: studentFields.phone.clone(),
   description: studentFields.description.clone(),
+  level: studentFields.level.clone(),
+  tags: studentFields.tags.clone(),
   preferredWeekday: studentFields.preferredWeekday.clone(),
   preferredTime: studentFields.preferredTime.clone(),
 })

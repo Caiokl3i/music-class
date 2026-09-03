@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
   ArrowRight,
+  Cake,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
@@ -34,6 +35,7 @@ import {
   formatDate,
   formatDateTime,
   formatDateTimeRange,
+  ageFromBirthdate,
   formatTimeRange,
   formatWeekdayLong,
 } from '@/utils/format'
@@ -254,6 +256,37 @@ function LoadedDashboard({
                 meta={`${item.lessonsRemaining}/${item.lessonsTotal}`}
                 packageLabel={labelFor(item.package)}
               />
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      {data.birthdays.length > 0 ? (
+        <Card>
+          <SectionHeader
+            icon={<Cake className="size-4" />}
+            title="Aniversários de hoje"
+            description="Alunos que fazem aniversário hoje."
+          />
+          <ul className="divide-y divide-border">
+            {data.birthdays.map((birthday) => (
+              <li key={birthday.studentId} className="flex items-center gap-3 py-3">
+                <Avatar name={birthday.studentName} />
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`/students/${birthday.studentId}`}
+                    className="block truncate text-sm font-medium text-ink hover:underline"
+                  >
+                    {birthday.studentName}
+                  </Link>
+                  <p className="truncate text-xs text-ink-muted">
+                    {birthday.studentInstrument ?? '—'}
+                    {ageFromBirthdate(birthday.birthdate) !== null ? (
+                      <span> · {ageFromBirthdate(birthday.birthdate)} anos</span>
+                    ) : null}
+                  </p>
+                </div>
+              </li>
             ))}
           </ul>
         </Card>

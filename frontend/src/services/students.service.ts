@@ -31,6 +31,8 @@ export function studentFormPayload(values: {
   phone?: string
   birthdate?: string
   description?: string
+  level?: 'beginner' | 'intermediate' | '' | null
+  tags?: string
   preferredWeekday?: string
   preferredTime?: string
 }): CreateStudentInput {
@@ -40,6 +42,8 @@ export function studentFormPayload(values: {
     phone: values.phone || null,
     birthdate: values.birthdate || null,
     description: values.description || null,
+    level: values.level || null,
+    tags: values.tags || null,
     preferredWeekday: values.preferredWeekday ? Number(values.preferredWeekday) : null,
     preferredTime: values.preferredTime ? values.preferredTime.slice(0, 5) : null,
   }

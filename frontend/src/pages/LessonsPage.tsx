@@ -64,6 +64,20 @@ const schema = z
 type FormValues = z.infer<typeof schema>
 type ViewMode = 'list' | 'calendar'
 
+const STUDENT_TONES = ['accent', 'success', 'warning', 'danger'] as const
+type StudentTone = (typeof STUDENT_TONES)[number]
+
+const STUDENT_TONE_CLASSES: Record<StudentTone, string> = {
+  accent: 'bg-accent-soft text-accent',
+  success: 'bg-success/10 text-success',
+  warning: 'bg-warning/10 text-warning',
+  danger: 'bg-danger/10 text-danger',
+}
+
+function toneForStudentId(studentId: number) {
+  return STUDENT_TONES[studentId % STUDENT_TONES.length]
+}
+
 export function LessonsPage() {
   const navigate = useNavigate()
   const toast = useToast()
@@ -385,7 +399,7 @@ export function LessonsPage() {
                           event.stopPropagation()
                           openEdit(lesson)
                         }}
-                        className="truncate rounded bg-accent-soft px-1 py-0.5 text-[10px] font-medium text-accent"
+                        className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${STUDENT_TONE_CLASSES[toneForStudentId(lesson.studentId)]}`}
                       >
                         {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
                         {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
