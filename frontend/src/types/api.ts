@@ -15,6 +15,8 @@ export type Student = {
   instrument: string
   phone: string | null
   description: string | null
+  preferredWeekday: number | null
+  preferredTime: string | null
   createdAt: string
   updatedAt: string | null
   creditsRemaining: number
@@ -124,6 +126,8 @@ export type CreateStudentInput = {
   birthdate?: string | null
   phone?: string | null
   description?: string | null
+  preferredWeekday?: number | null
+  preferredTime?: string | null
 }
 
 export type UpdateStudentInput = Partial<CreateStudentInput>

@@ -34,7 +34,8 @@ import { LessonRow } from '@/components/LessonRow'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
-import { formatTime, fromDatetimeLocalValue, toDatetimeLocalValue } from '@/utils/format'
+import { formatTime, fromDatetimeLocalValue, toDatetimeLocalFromDate, toDatetimeLocalValue } from '@/utils/format'
+import { preferredSlot } from '@/domain/schedule'
 import { bookablePlans } from '@/domain/status'
 
 const schema = z.object({
@@ -64,6 +65,7 @@ export function LessonsPage() {
   const [deleting, setDeleting] = useState<Lesson | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [filterStudentId, setFilterStudentId] = useState('')
+  const [createDay, setCreateDay] = useState<Date | undefined>()
 
   const {
     register,
@@ -123,10 +125,11 @@ export function LessonsPage() {
     void load()
   }, [load])
 
-  function defaultSchedule(day?: Date) {
-    const base = day ? new Date(day) : new Date()
-    base.setHours(14, 0, 0, 0)
-    return toDatetimeLocalValue(base.toISOString())
+  function scheduleForStudent(studentId: string, day?: Date) {
+    const student = students.find((item) => String(item.id) === studentId)
+    return toDatetimeLocalFromDate(
+      preferredSlot(student ?? {}, day ?? new Date(), { lockDate: Boolean(day) }),
+    )
   }
 
   function openCreate(day?: Date) {
@@ -135,10 +138,12 @@ export function LessonsPage() {
       return
     }
     setEditing(null)
+    setCreateDay(day)
+    const studentId = filterStudentId || ''
     reset({
-      studentId: filterStudentId || '',
+      studentId,
       planId: '',
-      scheduledAt: defaultSchedule(day),
+      scheduledAt: scheduleForStudent(studentId, day),
       status: 'scheduled',
       description: '',
     })
@@ -391,7 +396,11 @@ export function LessonsPage() {
             error={errors.studentId?.message}
             options={students.map((student) => ({ value: student.id, label: student.name }))}
             {...register('studentId', {
-              onChange: () => setValue('planId', ''),
+              onChange: (event) => {
+                setValue('planId', '')
+                if (editing) return
+                setValue('scheduledAt', scheduleForStudent(event.target.value, createDay))
+              },
             })}
           />
           <Select

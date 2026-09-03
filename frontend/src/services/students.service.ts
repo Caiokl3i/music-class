@@ -24,3 +24,23 @@ export async function updateStudent(id: number, input: UpdateStudentInput) {
 export async function deleteStudent(id: number) {
   await api.delete(`/students/${id}`)
 }
+
+export function studentFormPayload(values: {
+  name: string
+  instrument: string
+  phone?: string
+  birthdate?: string
+  description?: string
+  preferredWeekday?: string
+  preferredTime?: string
+}): CreateStudentInput {
+  return {
+    name: values.name,
+    instrument: values.instrument,
+    phone: values.phone || null,
+    birthdate: values.birthdate || null,
+    description: values.description || null,
+    preferredWeekday: values.preferredWeekday ? Number(values.preferredWeekday) : null,
+    preferredTime: values.preferredTime ? values.preferredTime.slice(0, 5) : null,
+  }
+}

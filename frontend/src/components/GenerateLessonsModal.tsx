@@ -4,38 +4,52 @@ import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import * as plansService from '@/services/plans.service'
 import type { Plan } from '@/types/api'
-import { weeklySlots } from '@/domain/schedule'
+import { applyPreferredTime, preferredSlot, weeklySlots } from '@/domain/schedule'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/utils/errors'
-import { formatWeekdayDateTime, fromDatetimeLocalValue, toDatetimeLocalValue } from '@/utils/format'
+import {
+  formatWeekdayDateTime,
+  fromDatetimeLocalValue,
+  toDatetimeLocalFromDate,
+} from '@/utils/format'
 
-function defaultFirstSlot() {
+function defaultFirstSlot(
+  preferredWeekday?: number | null,
+  preferredTime?: string | null,
+) {
+  if (preferredWeekday) {
+    return toDatetimeLocalFromDate(preferredSlot({ preferredWeekday, preferredTime }, new Date()))
+  }
+
   const base = new Date()
   const day = base.getDay()
   const daysUntilTuesday = (2 - day + 7) % 7 || 7
   base.setDate(base.getDate() + daysUntilTuesday)
-  base.setHours(14, 0, 0, 0)
-  return toDatetimeLocalValue(base.toISOString())
+  return toDatetimeLocalFromDate(applyPreferredTime(base, preferredTime))
 }
 
 export function GenerateLessonsModal({
   plan,
   studentName,
+  preferredWeekday,
+  preferredTime,
   onClose,
   onGenerated,
 }: {
   plan: Plan | null
   studentName: string
+  preferredWeekday?: number | null
+  preferredTime?: string | null
   onClose: () => void
   onGenerated: () => Promise<void> | void
 }) {
   const toast = useToast()
-  const [firstAt, setFirstAt] = useState(defaultFirstSlot)
+  const [firstAt, setFirstAt] = useState(() => defaultFirstSlot(preferredWeekday, preferredTime))
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (plan) setFirstAt(defaultFirstSlot())
-  }, [plan])
+    if (plan) setFirstAt(defaultFirstSlot(preferredWeekday, preferredTime))
+  }, [plan, preferredWeekday, preferredTime])
 
   const preview = useMemo(() => {
     if (!plan || !firstAt) return []

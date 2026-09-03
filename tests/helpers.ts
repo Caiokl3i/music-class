@@ -2,6 +2,8 @@ import { DateTime } from 'luxon'
 import User from '#models/user'
 import { PACKAGES, CREDIT_VALIDITY_DAYS, type PlanPackage } from '#services/package_catalog'
 
+export const TEST_INVITE_CODE = 'test-invite'
+
 export function createTeacher(overrides: { email?: string; fullName?: string } = {}) {
   return User.create({
     fullName: overrides.fullName ?? 'Teacher',

@@ -27,4 +27,10 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   // CORS — comma-separated origins for production (optional in development)
   CORS_ORIGIN: Env.schema.string.optional(),
+
+  // Empty = signup closed. Set a phrase to accept that invite code only.
+  SIGNUP_INVITE_CODE: Env.schema.string.optional(),
+
+  // Where `npm run db:backup` writes copies. Defaults to ./backups
+  BACKUP_DIR: Env.schema.string.optional(),
 })

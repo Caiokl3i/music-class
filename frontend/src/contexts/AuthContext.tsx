@@ -22,6 +22,7 @@ type AuthContextValue = {
     email: string
     password: string
     passwordConfirmation: string
+    inviteCode: string
   }) => Promise<void>
   logout: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -80,12 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string
       password: string
       passwordConfirmation: string
+      inviteCode: string
     }) => {
       const result = await authService.signup({
         fullName: input.fullName || null,
         email: input.email,
         password: input.password,
         passwordConfirmation: input.passwordConfirmation,
+        inviteCode: input.inviteCode,
       })
       setStoredToken(result.token)
       setUser(result.user)

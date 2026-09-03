@@ -10,6 +10,8 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   E_LESSON_SCHEDULE_CONFLICT: 'Já existe uma aula nesse horário.',
   E_PLAN_EXPIRED: 'Este pacote venceu. Venda um novo para continuar agendando.',
   E_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
+  E_SIGNUP_CLOSED: 'O cadastro está fechado. Peça um convite.',
+  E_INVALID_INVITE: 'Código de convite inválido.',
 }
 
 export function getErrorMessage(error: unknown, fallback: string): string {

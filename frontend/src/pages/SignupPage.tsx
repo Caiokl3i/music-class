@@ -15,6 +15,7 @@ const schema = z
     email: z.string().email('Informe um e-mail válido'),
     password: z.string().min(8, 'Mínimo de 8 caracteres').max(32, 'Máximo de 32 caracteres'),
     passwordConfirmation: z.string().min(8, 'Confirme a senha'),
+    inviteCode: z.string().min(1, 'Informe o código de convite'),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
     message: 'As senhas não coincidem',
@@ -47,7 +48,8 @@ export function SignupPage() {
           field === 'email' ||
           field === 'password' ||
           field === 'passwordConfirmation' ||
-          field === 'fullName'
+          field === 'fullName' ||
+          field === 'inviteCode'
         ) {
           setError(field, { message })
         }
@@ -62,7 +64,7 @@ export function SignupPage() {
     <div>
       <h1 className="text-center text-2xl font-bold text-ink">Criar conta</h1>
       <p className="mt-1 text-center text-sm text-ink-muted">
-        Comece a organizar alunos, pacotes e aulas
+        Cadastro só com código de convite
       </p>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Input
@@ -92,6 +94,13 @@ export function SignupPage() {
           autoComplete="new-password"
           error={errors.passwordConfirmation?.message}
           {...register('passwordConfirmation')}
+        />
+        <Input
+          label="Código de convite"
+          autoComplete="one-time-code"
+          hint="Quem já usa o sistema te passa esse código"
+          error={errors.inviteCode?.message}
+          {...register('inviteCode')}
         />
         <Button type="submit" size="lg" className="w-full" loading={submitting}>
           Criar conta

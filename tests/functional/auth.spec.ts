@@ -1,7 +1,7 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import db from '@adonisjs/lucid/services/db'
-import { createTeacher } from '#tests/helpers'
+import { TEST_INVITE_CODE, createTeacher } from '#tests/helpers'
 
 test.group('Auth', (group) => {
   group.each.setup(() => testUtils.db().truncate())
@@ -12,6 +12,7 @@ test.group('Auth', (group) => {
       email: 'maria@example.com',
       password: 'password123',
       passwordConfirmation: 'password123',
+      inviteCode: TEST_INVITE_CODE,
     })
 
     response.assertStatus(200)
@@ -29,6 +30,28 @@ test.group('Auth', (group) => {
     assert.isNotNull(tokenRow?.expires_at)
   })
 
+  test('rejects signup without an invite code', async ({ client }) => {
+    const response = await client.post('/api/v1/auth/signup').json({
+      email: 'aberto@example.com',
+      password: 'password123',
+      passwordConfirmation: 'password123',
+    })
+
+    response.assertStatus(422)
+  })
+
+  test('rejects signup with the wrong invite code', async ({ client }) => {
+    const response = await client.post('/api/v1/auth/signup').json({
+      email: 'intruso@example.com',
+      password: 'password123',
+      passwordConfirmation: 'password123',
+      inviteCode: 'codigo-errado',
+    })
+
+    response.assertStatus(403)
+    response.assertBodyContains({ code: 'E_INVALID_INVITE' })
+  })
+
   test('rejects signup with duplicate email', async ({ client }) => {
     await createTeacher({ email: 'maria@example.com' })
 
@@ -36,6 +59,7 @@ test.group('Auth', (group) => {
       email: 'maria@example.com',
       password: 'password123',
       passwordConfirmation: 'password123',
+      inviteCode: TEST_INVITE_CODE,
     })
 
     response.assertStatus(422)
@@ -130,6 +154,7 @@ test.group('Auth', (group) => {
       email: 'logout@example.com',
       password: 'password123',
       passwordConfirmation: 'password123',
+      inviteCode: TEST_INVITE_CODE,
     })
     signup.assertStatus(200)
     const token = signup.body().data.token

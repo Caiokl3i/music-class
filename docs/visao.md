@@ -31,6 +31,9 @@ Ciclo fechado: **aluno → pacote → aula**. Só a aula concluída conta no pac
 - Painel com hoje, atrasadas, próximas e atividade recente.
 - Perfil (nome, senha), token com validade, testes de API no domínio.
 - Tema claro / escuro.
+- Signup por convite (`SIGNUP_INVITE_CODE`).
+- Backup do SQLite em `backups/` (`npm run db:backup`).
+- Horário usual por aluno (dia + hora) no agendar e no gerar aulas.
 
 Ainda deliberadamente **fora** (e isso continua fazendo sentido): tabela de pagamentos, tipos de plano editáveis, vários papéis, portal do aluno, comissões.
 
@@ -40,9 +43,9 @@ Ainda deliberadamente **fora** (e isso continua fazendo sentido): tabela de paga
 
 Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito, duração 1h, aviso de crédito, gerar aulas, validade, receita do mês, pendentes no painel). Próximo recorte útil, ainda barato:
 
-1. **Signup só por convite** — qualquer um cria conta na API hoje. **Não**
-2. **Backup do SQLite** — copiar `tmp/`; perder o arquivo é irreversível. **Não**
-3. **Horário padrão por aluno** — “sempre terça 14h” acelera o agendar avulso. **Não** (o agendar só pré-preenche 14h genérico)
+1. **Signup só por convite** — `SIGNUP_INVITE_CODE` no ambiente; sem código o cadastro fecha. **Feito**
+2. **Backup do SQLite** — `npm run db:backup` copia para `backups/`, fora de `tmp/`. **Feito**
+3. **Horário padrão por aluno** — dia da semana + hora na ficha; agendar e gerar aulas já nascem preenchidos. **Feito**
 
 ---
 
@@ -56,7 +59,7 @@ Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito
 | Duração da aula (início + fim, 1h padrão) | **Parcial** | Fácil | Agora | 1h fixo no conflito; UI só escolhe o início |
 | Aviso de créditos 0–1 | **Feito** | Fácil | Agora | Pacote acaba e ninguém vende o próximo |
 | Gerar N aulas a partir de um dia da semana | **Feito** | Médio | Agora | Pacote mensal hoje é N cliques |
-| Horário padrão por aluno (“sempre 14h”) | **Não** | Fácil | Depois | Acelera o agendar |
+| Horário padrão por aluno (“sempre 14h”) | **Feito** | Fácil | Depois | Acelera o agendar |
 | Vista semanal além do mês | **Não** | Médio | Depois | O mês é overview; a semana é o trabalho |
 | Arrastar aula no calendário para remarcar | **Não** | Difícil | Adicional | Conforto; remarcar no modal já resolve |
 | Bloquear agenda (viagem, feriado) | **Não** | Médio | Depois | Evita marcar em cima da folga |
@@ -121,11 +124,11 @@ Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito
 
 | Ideia | Status | Facilidade | Momento | Por quê |
 |-------|--------|------------|---------|---------|
-| Signup só por convite (fechar cadastro aberto) | **Não** | Fácil | Agora | Qualquer um cria conta na API hoje |
+| Signup só por convite (fechar cadastro aberto) | **Feito** | Fácil | Agora | Qualquer um cria conta na API hoje |
 | Rate limit em login / signup | **Não** | Fácil | Depois | Abuso óbvio |
 | Esqueci a senha | **Não** | Médio | Depois | E-mail + token; hoje só troca logado |
 | Lembrar sessão (não cair ao fechar a aba) | **Não** | Fácil | Depois | `sessionStorage` some com a aba |
-| Backup do SQLite (copiar `tmp/`) | **Não** | Fácil | Agora | Um arquivo; perder é irreversível |
+| Backup do SQLite (copiar `tmp/`) | **Feito** | Fácil | Agora | Um arquivo; perder é irreversível |
 | Paginação nas listas | **Não** | Médio | Depois | Vai doer com um ano de aulas |
 | Testes do frontend | **Não** | Médio | Depois | API está coberta; UI não |
 | CI (testes no push) | **Não** | Fácil | Depois | Evita regressão |
@@ -183,14 +186,13 @@ O modelo em `docs/modelo.md` já marca isso como fora da v1. Continua válido.
 **Ciclo A — não se enrolar na agenda**  
 Conflito de horário + duração 1h + aviso de crédito + receita do mês + backup do banco + signup fechado (convite ou desligar registro público).
 
-- **Feito:** conflito, duração 1h no agendamento, aviso de crédito, receita do mês, pendentes no painel.
-- **Não:** backup do SQLite, signup só por convite.
+- **Feito:** conflito, duração 1h no agendamento, aviso de crédito, receita do mês, pendentes no painel, backup do SQLite, signup só por convite.
 
 **Ciclo B — o pacote mensal de verdade**  
 Gerar aulas da semana + validade dos créditos + horário padrão do aluno + CSV do mês.
 
-- **Feito:** gerar aulas da semana, validade dos créditos.
-- **Não:** horário padrão por aluno, CSV do mês.
+- **Feito:** gerar aulas da semana, validade dos créditos, horário padrão por aluno.
+- **Não:** CSV do mês.
 
 **Ciclo C — carinho e operação**  
 WhatsApp na ficha, aniversário, responsável, recibo, paginação, “esqueci senha”, CI.

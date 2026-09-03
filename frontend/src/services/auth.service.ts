@@ -6,6 +6,7 @@ export async function signup(input: {
   email: string
   password: string
   passwordConfirmation: string
+  inviteCode: string
 }) {
   const { data } = await api.post<ApiData<AuthResponse>>('/auth/signup', input)
   return data.data

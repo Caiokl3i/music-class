@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "rebuild:native": "npm rebuild better-sqlite3"
+    "rebuild:native": "npm rebuild better-sqlite3",
+    "db:backup": "node --import=@poppinss/ts-exec bin/db_backup.ts"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",

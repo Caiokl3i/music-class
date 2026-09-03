@@ -108,6 +108,8 @@ test.group('Students', (group) => {
     const response = await client.put(`/api/v1/students/${student.id}`).loginAs(teacher).json({
       name: 'Ana Clara',
       instrument: 'violão',
+      preferredWeekday: 2,
+      preferredTime: '14:00',
     })
 
     response.assertStatus(200)
@@ -116,6 +118,27 @@ test.group('Students', (group) => {
         id: student.id,
         name: 'Ana Clara',
         instrument: 'violão',
+        preferredWeekday: 2,
+        preferredTime: '14:00',
+      },
+    })
+  })
+
+  test('stores a preferred weekday and time on create', async ({ client }) => {
+    const user = await createTeacher()
+
+    const response = await client.post('/api/v1/students').loginAs(user).json({
+      ...studentPayload,
+      preferredWeekday: 3,
+      preferredTime: '09:30',
+    })
+
+    response.assertStatus(201)
+    response.assertBodyContains({
+      data: {
+        name: 'Maria Silva',
+        preferredWeekday: 3,
+        preferredTime: '09:30',
       },
     })
   })

@@ -58,6 +58,8 @@ erDiagram
         string instrument
         string phone
         text description
+        int preferred_weekday
+        string preferred_time
         datetime created_at
         datetime updated_at
     }
@@ -155,6 +157,8 @@ Professor autenticado no sistema. Usado como `user_id` nas demais tabelas para i
 | instrument | string | sim | Ex.: violão |
 | phone | string | não | Contato / WhatsApp |
 | description | text | não | Observações gerais |
+| preferred_weekday | int | não | ISO 1–7 (segunda=1); `null` = sem dia fixo |
+| preferred_time | string | não | `HH:mm`; `null` = 14:00 no agendar |
 | created_at | datetime | sim | |
 | updated_at | datetime | não | |
 

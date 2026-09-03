@@ -43,6 +43,10 @@ export function toDatetimeLocalValue(iso: string) {
   return format(date, "yyyy-MM-dd'T'HH:mm")
 }
 
+export function toDatetimeLocalFromDate(date: Date) {
+  return toDatetimeLocalValue(date.toISOString())
+}
+
 export function fromDatetimeLocalValue(value: string) {
   const date = new Date(value)
   return date.toISOString()

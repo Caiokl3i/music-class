@@ -45,6 +45,7 @@ import {
   formatDate,
   formatDateTime,
   fromDatetimeLocalValue,
+  toDatetimeLocalFromDate,
   toDatetimeLocalValue,
 } from '@/utils/format'
 import {
@@ -54,6 +55,11 @@ import {
   planHoldsCredits,
   planIsExpired,
 } from '@/domain/status'
+import {
+  WEEKDAY_OPTIONS,
+  formatPreferredSchedule,
+  preferredSlot,
+} from '@/domain/schedule'
 
 const lessonSchema = z.object({
   planId: z.string().min(1, 'Selecione o pacote'),
@@ -74,6 +80,8 @@ const studentSchema = z.object({
   phone: z.string().optional(),
   birthdate: z.string().optional(),
   description: z.string().optional(),
+  preferredWeekday: z.string().optional(),
+  preferredTime: z.string().optional(),
 })
 
 type LessonFormValues = z.infer<typeof lessonSchema>
@@ -161,9 +169,7 @@ export function StudentDetailPage() {
   }, [load])
 
   function defaultSchedule() {
-    const base = new Date()
-    base.setHours(14, 0, 0, 0)
-    return toDatetimeLocalValue(base.toISOString())
+    return toDatetimeLocalFromDate(preferredSlot(student ?? {}, new Date()))
   }
 
   function openCreateLesson() {
@@ -206,6 +212,8 @@ export function StudentDetailPage() {
       phone: student.phone ?? '',
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
+      preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
+      preferredTime: student.preferredTime ?? '',
     })
     setStudentModalOpen(true)
   }
@@ -268,13 +276,7 @@ export function StudentDetailPage() {
     if (!student) return
     setSavingStudent(true)
     try {
-      await studentsService.updateStudent(student.id, {
-        name: values.name,
-        instrument: values.instrument,
-        phone: values.phone || null,
-        birthdate: values.birthdate || null,
-        description: values.description || null,
-      })
+      await studentsService.updateStudent(student.id, studentsService.studentFormPayload(values))
       toast.success('Aluno atualizado.')
       setStudentModalOpen(false)
       await load()
@@ -390,6 +392,9 @@ export function StudentDetailPage() {
           <dl className="space-y-4 text-sm">
             <InfoRow icon={<CalendarDays className="size-4" />} label="Nascimento">
               {formatDate(student.birthdate)}
+            </InfoRow>
+            <InfoRow icon={<Clock className="size-4" />} label="Horário usual">
+              {formatPreferredSchedule(student.preferredWeekday, student.preferredTime) || '—'}
             </InfoRow>
             <InfoRow icon={<Phone className="size-4" />} label="Telefone">
               {student.phone || '—'}
@@ -685,6 +690,27 @@ export function StudentDetailPage() {
             error={studentForm.formState.errors.birthdate?.message}
             {...studentForm.register('birthdate')}
           />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select
+              label="Dia da aula"
+              error={studentForm.formState.errors.preferredWeekday?.message}
+              options={[
+                { value: '', label: 'Qualquer dia' },
+                ...WEEKDAY_OPTIONS.map((day) => ({
+                  value: String(day.value),
+                  label: day.label,
+                })),
+              ]}
+              {...studentForm.register('preferredWeekday')}
+            />
+            <Input
+              label="Horário"
+              type="time"
+              hint="Padrão 14:00"
+              error={studentForm.formState.errors.preferredTime?.message}
+              {...studentForm.register('preferredTime')}
+            />
+          </div>
           <TextArea
             label="Observações"
             error={studentForm.formState.errors.description?.message}
@@ -696,6 +722,8 @@ export function StudentDetailPage() {
       <GenerateLessonsModal
         plan={generatingPlan}
         studentName={student.name}
+        preferredWeekday={student.preferredWeekday}
+        preferredTime={student.preferredTime}
         onClose={() => setGeneratingPlan(null)}
         onGenerated={load}
       />

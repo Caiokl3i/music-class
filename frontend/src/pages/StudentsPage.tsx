@@ -5,11 +5,13 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Pencil, Phone, Plus, Search, Trash2, Users } from 'lucide-react'
 import * as studentsService from '@/services/students.service'
+import { WEEKDAY_OPTIONS } from '@/domain/schedule'
 import type { Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
 import { Avatar } from '@/components/Avatar'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
+import { Select } from '@/components/Select'
 import { TextArea } from '@/components/TextArea'
 import { Modal } from '@/components/Modal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -24,6 +26,8 @@ const schema = z.object({
   phone: z.string().optional(),
   birthdate: z.string().optional(),
   description: z.string().optional(),
+  preferredWeekday: z.string().optional(),
+  preferredTime: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -76,7 +80,15 @@ export function StudentsPage() {
 
   function openCreate() {
     setEditing(null)
-    reset({ name: '', instrument: '', phone: '', birthdate: '', description: '' })
+    reset({
+      name: '',
+      instrument: '',
+      phone: '',
+      birthdate: '',
+      description: '',
+      preferredWeekday: '',
+      preferredTime: '',
+    })
     setModalOpen(true)
   }
 
@@ -88,19 +100,15 @@ export function StudentsPage() {
       phone: student.phone ?? '',
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
+      preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
+      preferredTime: student.preferredTime ?? '',
     })
     setModalOpen(true)
   }
 
   async function onSubmit(values: FormValues) {
     setSaving(true)
-    const payload = {
-      name: values.name,
-      instrument: values.instrument,
-      phone: values.phone || null,
-      birthdate: values.birthdate || null,
-      description: values.description || null,
-    }
+    const payload = studentsService.studentFormPayload(values)
     try {
       if (editing) {
         await studentsService.updateStudent(editing.id, payload)
@@ -283,6 +291,27 @@ export function StudentsPage() {
             error={errors.birthdate?.message}
             {...register('birthdate')}
           />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select
+              label="Dia da aula"
+              error={errors.preferredWeekday?.message}
+              options={[
+                { value: '', label: 'Qualquer dia' },
+                ...WEEKDAY_OPTIONS.map((day) => ({
+                  value: String(day.value),
+                  label: day.label,
+                })),
+              ]}
+              {...register('preferredWeekday')}
+            />
+            <Input
+              label="Horário"
+              type="time"
+              hint="Padrão 14:00"
+              error={errors.preferredTime?.message}
+              {...register('preferredTime')}
+            />
+          </div>
           <TextArea label="Observações" error={errors.description?.message} {...register('description')} />
         </form>
       </Modal>
