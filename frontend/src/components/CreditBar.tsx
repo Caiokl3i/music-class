@@ -13,7 +13,9 @@ export function CreditBar({
   return (
     <div className={`h-1.5 overflow-hidden rounded-full bg-surface-muted ${className}`}>
       <div
-        className={`h-full rounded-full transition-all ${runningLow ? 'bg-warning' : 'bg-accent'}`}
+        className={`h-full rounded-full transition-[width,background-color] duration-300 ease-out ${
+          runningLow ? 'bg-warning' : 'bg-accent'
+        }`}
         style={{ width: `${done}%` }}
       />
     </div>

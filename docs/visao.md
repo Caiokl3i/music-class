@@ -36,6 +36,7 @@ Ciclo fechado: **aluno → pacote → aula**. Só a aula concluída conta no pac
 - Horário usual por aluno (dia + hora) no agendar e no gerar aulas.
 - Duração da aula com início e fim (1h padrão) no agendar e no conflito.
 - CSV do mês (aulas + pacotes) no painel.
+- Seed de demonstração (`node ace db:seed`) com conta `demo@musicclass.test`.
 
 Ainda deliberadamente **fora** (e isso continua fazendo sentido): tabela de pagamentos, tipos de plano editáveis, vários papéis, portal do aluno, comissões.
 
@@ -68,7 +69,7 @@ Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito
 | Aula atrasada (chegou tarde) vs falta | **Não** | Fácil | Adicional | Política fina; falta já existe |
 | Reposição explícita (remarcar sem gastar crédito extra) | **Feito** | Médio | Depois | Cancelar já devolve; reposição faz isso explicitamente (1 fluxo) |
 | Sincronizar Google Calendar / feed iCal | **Não** | Difícil | Adicional | Integração e OAuth |
-| Cor por aluno no calendário | **Não** | Fácil | Adicional | Leitura visual |
+| Cor por aluno no calendário | **Feito** | Fácil | Adicional | Leitura visual |
 
 ### Pacotes e créditos
 
@@ -86,9 +87,9 @@ Os itens de agenda e pacote da lista “Agora” já estão no produto (conflito
 
 | Ideia | Status | Facilidade | Momento | Por quê |
 |-------|--------|------------|---------|---------|
-| Idade visível a partir do nascimento | **Não** | Fácil | Depois | Já tem a data; não mostra a idade |
-| Aniversário no painel | **Não** | Fácil | Depois | Relacionamento barato |
-| Nível (iniciante / intermediário) ou tags | **Não** | Fácil | Depois | Filtro e contexto na ficha |
+| Idade visível a partir do nascimento | **Feito** | Fácil | Depois | Já tem a data; mostra a idade |
+| Aniversário no painel | **Feito** | Fácil | Depois | Relacionamento barato |
+| Nível (iniciante / intermediário) ou tags | **Feito** | Fácil | Depois | Filtro e contexto na ficha |
 | Dois instrumentos no mesmo aluno | **Não** | Médio | Depois | Hoje é um campo só |
 | Contato do responsável (aluno menor) | **Não** | Fácil | Depois | Telefone hoje é “do aluno” |
 | Repertório / músicas em andamento | **Não** | Médio | Depois | A anotação da aula vira histórico solto |
@@ -165,7 +166,7 @@ Não estão na matriz de “fazer agora”, mas valem anotar para não esquecer:
 - **Tema escuro** — **Feito** (claro / escuro no layout).
 - **Comando rápido (Ctrl+K)** — “Ana, agendar terça”. **Não**
 - **Linha do tempo na ficha** — pacotes e aulas misturados por data, em vez de dois cards. **Não**
-- **Seed / conta demo** — para testar o painel sem cadastro manual. **Não**
+- **Seed / conta demo** — `node ace db:seed` cria Marina Silva com o painel preenchido. **Feito**
 - **Desfazer** os 10 segundos depois de “Concluir” (toque errado no celular). **Não**
 
 ---

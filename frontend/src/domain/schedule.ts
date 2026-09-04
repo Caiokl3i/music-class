@@ -1,3 +1,9 @@
+import {
+  brazilTodayParts,
+  fromBrazilWallTime,
+  toDatetimeLocalFromDate,
+} from '@/utils/format'
+
 export const FALLBACK_LESSON_TIME = '14:00'
 
 export const WEEKDAY_OPTIONS = [
@@ -28,19 +34,26 @@ function parseHm(value: string | null | undefined) {
   return { hours: Number(match[1]), minutes: Number(match[2]) }
 }
 
+/** ISO weekday 1=seg … 7=dom a partir de um instante, no fuso de Brasília. */
+function brazilIsoWeekday(date: Date) {
+  // JS: 0=dom … 6=sáb → ISO: 7=dom, 1=seg …
+  const wall = brazilTodayParts(date)
+  const asLocal = new Date(wall.year, wall.month - 1, wall.day)
+  const jsDay = asLocal.getDay()
+  return jsDay === 0 ? 7 : jsDay
+}
+
 export function applyPreferredTime(date: Date, time?: string | null) {
   const { hours, minutes } = parseHm(time)
-  const next = new Date(date.getTime())
-  next.setHours(hours, minutes, 0, 0)
-  return next
+  const wall = brazilTodayParts(date)
+  return fromBrazilWallTime(wall.year, wall.month, wall.day, hours, minutes)
 }
 
 export function nextDateOnIsoWeekday(from: Date, isoWeekday: number) {
-  const target = isoWeekday === 7 ? 0 : isoWeekday
-  const delta = (target - from.getDay() + 7) % 7
-  const next = new Date(from.getTime())
-  next.setDate(from.getDate() + delta)
-  return next
+  const wall = brazilTodayParts(from)
+  const currentIso = brazilIsoWeekday(from)
+  const delta = (isoWeekday - currentIso + 7) % 7
+  return fromBrazilWallTime(wall.year, wall.month, wall.day + delta, wall.hour, wall.minute, wall.second)
 }
 
 export function preferredSlot(
@@ -57,11 +70,11 @@ export function preferredSlot(
 
 export function addMinutesToDatetimeLocal(value: string, minutes: number) {
   if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  date.setMinutes(date.getMinutes() + minutes)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value)
+  if (!match) return ''
+  const [, y, m, d, h, min] = match
+  const start = fromBrazilWallTime(Number(y), Number(m), Number(d), Number(h), Number(min))
+  return toDatetimeLocalFromDate(new Date(start.getTime() + minutes * 60_000))
 }
 
 export function moveDatetimeLocalKeepingDuration(
@@ -71,21 +84,41 @@ export function moveDatetimeLocalKeepingDuration(
   fallbackMinutes: number,
 ) {
   if (!nextStart) return ''
-  const previousMs = new Date(previousEnd).getTime() - new Date(previousStart).getTime()
-  const minutes = previousMs > 0 ? previousMs / 60_000 : fallbackMinutes
+  const startMatch = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(previousStart)
+  const endMatch = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(previousEnd)
+  let minutes = fallbackMinutes
+  if (startMatch && endMatch) {
+    const start = fromBrazilWallTime(
+      Number(startMatch[1]),
+      Number(startMatch[2]),
+      Number(startMatch[3]),
+      Number(startMatch[4]),
+      Number(startMatch[5]),
+    )
+    const end = fromBrazilWallTime(
+      Number(endMatch[1]),
+      Number(endMatch[2]),
+      Number(endMatch[3]),
+      Number(endMatch[4]),
+      Number(endMatch[5]),
+    )
+    const diff = (end.getTime() - start.getTime()) / 60_000
+    if (diff > 0) minutes = diff
+  }
   return addMinutesToDatetimeLocal(nextStart, minutes)
 }
 
 export function weeklySlots(first: Date, count: number, until?: Date | null) {
   const slots: Date[] = []
-  const current = new Date(first.getTime())
+  let current = new Date(first.getTime())
 
   while (slots.length < count) {
     if (until && current.getTime() >= until.getTime()) {
       break
     }
     slots.push(new Date(current.getTime()))
-    current.setDate(current.getDate() + 7)
+    const wall = brazilTodayParts(current)
+    current = fromBrazilWallTime(wall.year, wall.month, wall.day + 7, wall.hour, wall.minute, wall.second)
   }
 
   return slots

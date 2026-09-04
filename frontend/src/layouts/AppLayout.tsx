@@ -19,9 +19,10 @@ import { useToast } from '@/contexts/ToastContext'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Avatar } from '@/components/Avatar'
 import { getErrorMessage } from '@/utils/errors'
+import { overlayMotion, pageMotion, popoverMotion } from '@/utils/motion'
 
 const mainNav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Painel', icon: LayoutDashboard, end: true },
 ]
 
 const studioNav = [
@@ -31,7 +32,7 @@ const studioNav = [
 ]
 
 function pageTitle(pathname: string) {
-  if (pathname === '/') return 'Dashboard'
+  if (pathname === '/') return 'Painel'
   if (pathname.startsWith('/students/')) return 'Ficha do aluno'
   if (pathname.startsWith('/students')) return 'Alunos'
   if (pathname.startsWith('/plans')) return 'Pacotes'
@@ -100,16 +101,14 @@ export function AppLayout() {
               type="button"
               aria-label="Fechar menu"
               className="absolute inset-0 bg-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              {...overlayMotion}
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ duration: 0.22 }}
+              initial={{ x: -24, opacity: 0.85 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -16, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-y-0 left-0 w-72 bg-sidebar shadow-xl"
             >
               <div className="absolute top-3 right-3">
@@ -157,7 +156,9 @@ export function AppLayout() {
           </div>
         </header>
         <main className="min-h-0 flex-1 overflow-y-auto p-6">
-          <Outlet />
+          <motion.div key={location.pathname} {...pageMotion}>
+            <Outlet />
+          </motion.div>
         </main>
       </div>
     </div>
@@ -290,41 +291,44 @@ function UserMenu({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="rounded-full"
+        className="rounded-full transition-transform duration-150 active:scale-95"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Menu da conta"
       >
         <Avatar name={name} />
       </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute top-full right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-surface-raised py-1 shadow-lg shadow-black/10"
-        >
-          <div className="border-b border-border px-3 py-2">
-            <p className="truncate text-sm font-medium text-ink">{name || 'Conta'}</p>
-            {email ? <p className="truncate text-xs text-ink-muted">{email}</p> : null}
-          </div>
-          <Link
-            to="/profile"
-            role="menuitem"
-            className="block px-3 py-2 text-sm text-ink hover:bg-surface-muted"
-            onClick={() => setOpen(false)}
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            role="menu"
+            {...popoverMotion}
+            className="absolute top-full right-0 z-20 mt-2 w-56 origin-top-right overflow-hidden rounded-lg border border-border bg-surface-raised py-1 shadow-lg shadow-black/10"
           >
-            Perfil
-          </Link>
-          <button
-            type="button"
-            role="menuitem"
-            disabled={loggingOut}
-            className="block w-full px-3 py-2 text-left text-sm text-danger hover:bg-danger/10 disabled:opacity-60"
-            onClick={onLogout}
-          >
-            Sair
-          </button>
-        </div>
-      ) : null}
+            <div className="border-b border-border px-3 py-2">
+              <p className="truncate text-sm font-medium text-ink">{name || 'Conta'}</p>
+              {email ? <p className="truncate text-xs text-ink-muted">{email}</p> : null}
+            </div>
+            <Link
+              to="/profile"
+              role="menuitem"
+              className="block px-3 py-2 text-sm text-ink transition-colors hover:bg-surface-muted"
+              onClick={() => setOpen(false)}
+            >
+              Perfil
+            </Link>
+            <button
+              type="button"
+              role="menuitem"
+              disabled={loggingOut}
+              className="block w-full px-3 py-2 text-left text-sm text-danger transition-colors hover:bg-danger/10 disabled:opacity-60"
+              onClick={onLogout}
+            >
+              Sair
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   )
 }

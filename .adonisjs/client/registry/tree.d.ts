@@ -44,12 +44,26 @@ export interface ApiDefinition {
     update: typeof routes['students.update']
     destroy: typeof routes['students.destroy']
   }
+  planTypes: {
+    index: typeof routes['plan_types.index']
+    store: typeof routes['plan_types.store']
+    show: typeof routes['plan_types.show']
+    update: typeof routes['plan_types.update']
+    destroy: typeof routes['plan_types.destroy']
+  }
   plans: {
     generateLessons: typeof routes['plans.generate_lessons']
+    billing: typeof routes['plans.billing']
+    billingPdf: typeof routes['plans.billing_pdf']
     index: typeof routes['plans.index']
     store: typeof routes['plans.store']
     show: typeof routes['plans.show']
     update: typeof routes['plans.update']
     destroy: typeof routes['plans.destroy']
+  }
+  planDiscounts: {
+    store: typeof routes['plan_discounts.store']
+    update: typeof routes['plan_discounts.update']
+    destroy: typeof routes['plan_discounts.destroy']
   }
 }

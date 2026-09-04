@@ -12,7 +12,10 @@ export default class StudentsController {
   async store({ auth, request, response, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(createStudentValidator)
-    const student = await user.related('students').create(payload)
+    const student = await user.related('students').create({
+      ...payload,
+      color: payload.color ?? 'accent',
+    })
 
     response.status(201)
     return serialize(StudentTransformer.transform(await this.findOwnedStudent(user, student.id)))

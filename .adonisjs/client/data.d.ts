@@ -6,7 +6,9 @@
 /// <reference path="./manifest.d.ts" />
 import type { InferData, InferVariants } from '@adonisjs/core/types/transformers'
 import type LessonTransformer from '#transformers/lesson_transformer'
+import type PlanDiscountTransformer from '#transformers/plan_discount_transformer'
 import type PlanTransformer from '#transformers/plan_transformer'
+import type PlanTypeTransformer from '#transformers/plan_type_transformer'
 import type StudentTransformer from '#transformers/student_transformer'
 import type UserTransformer from '#transformers/user_transformer'
 
@@ -15,9 +17,17 @@ export namespace Data {
   export namespace Lesson {
     export type Variants = InferVariants<LessonTransformer>
   }
+  export type PlanDiscount = InferData<PlanDiscountTransformer>
+  export namespace PlanDiscount {
+    export type Variants = InferVariants<PlanDiscountTransformer>
+  }
   export type Plan = InferData<PlanTransformer>
   export namespace Plan {
     export type Variants = InferVariants<PlanTransformer>
+  }
+  export type PlanType = InferData<PlanTypeTransformer>
+  export namespace PlanType {
+    export type Variants = InferVariants<PlanTypeTransformer>
   }
   export type Student = InferData<StudentTransformer>
   export namespace Student {

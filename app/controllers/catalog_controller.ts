@@ -1,7 +1,8 @@
-import { catalogPayload } from '#services/package_catalog'
+import { catalogPayload } from '#services/plan_types'
+import type { HttpContext } from '@adonisjs/core/http'
 
 export default class CatalogController {
-  async packages() {
-    return { data: catalogPayload() }
+  async packages({ auth }: HttpContext) {
+    return { data: await catalogPayload(auth.getUserOrFail()) }
   }
 }

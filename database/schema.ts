@@ -57,6 +57,52 @@ export class LessonSchema extends BaseModel {
   declare userId: number
 }
 
+export class PlanDiscountSchema extends BaseModel {
+  static $columns = ['amount', 'createdAt', 'id', 'name', 'notes', 'planId', 'serviceAt', 'updatedAt', 'userId'] as const
+  $columns = PlanDiscountSchema.$columns
+  @column()
+  declare amount: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column()
+  declare notes: string | null
+  @column()
+  declare planId: number
+  @column.date()
+  declare serviceAt: DateTime | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
+export class PlanTypeSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'label', 'lessons', 'price', 'slug', 'sortOrder', 'updatedAt', 'userId'] as const
+  $columns = PlanTypeSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare label: string
+  @column()
+  declare lessons: number
+  @column()
+  declare price: number
+  @column()
+  declare slug: string
+  @column()
+  declare sortOrder: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
 export class PlanSchema extends BaseModel {
   static $columns = ['createdAt', 'expiresAt', 'id', 'lessonsTotal', 'notes', 'package', 'paidAt', 'price', 'status', 'studentId', 'updatedAt', 'userId'] as const
   $columns = PlanSchema.$columns
@@ -71,7 +117,7 @@ export class PlanSchema extends BaseModel {
   @column()
   declare notes: string | null
   @column()
-  declare package: string
+  declare package: string | null
   @column.dateTime()
   declare paidAt: DateTime | null
   @column()
@@ -87,10 +133,12 @@ export class PlanSchema extends BaseModel {
 }
 
 export class StudentSchema extends BaseModel {
-  static $columns = ['birthdate', 'createdAt', 'description', 'id', 'instrument', 'level', 'name', 'phone', 'preferredTime', 'preferredWeekday', 'tags', 'updatedAt', 'userId'] as const
+  static $columns = ['birthdate', 'color', 'createdAt', 'description', 'id', 'instrument', 'level', 'name', 'phone', 'preferredTime', 'preferredWeekday', 'tags', 'updatedAt', 'userId'] as const
   $columns = StudentSchema.$columns
   @column.date()
   declare birthdate: DateTime | null
+  @column()
+  declare color: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()

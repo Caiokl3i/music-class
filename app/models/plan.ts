@@ -4,6 +4,7 @@ import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import Student from '#models/student'
 import Lesson from '#models/lesson'
+import PlanDiscount from '#models/plan_discount'
 import { remainingCredits as calculateRemainingCredits } from '#services/plan_credits'
 
 export default class Plan extends PlanSchema {
@@ -15,6 +16,9 @@ export default class Plan extends PlanSchema {
 
   @hasMany(() => Lesson)
   declare lessons: HasMany<typeof Lesson>
+
+  @hasMany(() => PlanDiscount)
+  declare discounts: HasMany<typeof PlanDiscount>
 
   remainingCredits(exceptLessonId?: number) {
     return calculateRemainingCredits(this, exceptLessonId)

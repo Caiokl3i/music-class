@@ -10,11 +10,11 @@ export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
 /**
  * Shared fields for plan create/update.
- * `lessonsTotal` and `price` come from PACKAGES in the controller.
+ * `lessonsTotal` and `price` come from the teacher's plan types.
  */
 const planFields = {
   studentId: vine.number().positive(),
-  package: vine.enum(PLAN_PACKAGES),
+  package: vine.string().trim().minLength(1).maxLength(64),
   status: vine.enum(PLAN_STATUSES).optional(),
   paidAt: vine.date().optional().nullable(),
   notes: vine.string().trim().optional().nullable(),

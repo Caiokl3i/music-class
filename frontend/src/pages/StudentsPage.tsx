@@ -11,15 +11,19 @@ import { PageHeader } from '@/components/Card'
 import { Avatar } from '@/components/Avatar'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
+import { DateTimeField } from '@/components/DateTimeField'
 import { Select } from '@/components/Select'
 import { TextArea } from '@/components/TextArea'
 import { Modal } from '@/components/Modal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
+import { StudentLevelBadge } from '@/components/StudentLevelBadge'
+import { StudentColorPicker } from '@/components/StudentColorPicker'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import { ageFromBirthdate } from '@/utils/format'
+import type { StudentColorTone } from '@/domain/student'
 
 const schema = z.object({
   name: z.string().min(1, 'Informe o nome'),
@@ -28,6 +32,7 @@ const schema = z.object({
   birthdate: z.string().optional(),
   description: z.string().optional(),
   level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
+  color: z.enum(['accent', 'success', 'warning', 'danger']),
   tags: z.string().optional(),
   preferredWeekday: z.string().optional(),
   preferredTime: z.string().optional(),
@@ -52,6 +57,8 @@ export function StudentsPage() {
     handleSubmit,
     reset,
     setError,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
@@ -90,6 +97,7 @@ export function StudentsPage() {
       birthdate: '',
       description: '',
       level: '',
+      color: 'accent',
       tags: '',
       preferredWeekday: '',
       preferredTime: '',
@@ -106,6 +114,7 @@ export function StudentsPage() {
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
       level: student.level ?? '',
+      color: student.color ?? 'accent',
       tags: student.tags ?? '',
       preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
       preferredTime: student.preferredTime ?? '',
@@ -204,8 +213,9 @@ export function StudentsPage() {
             <thead>
               <tr className="border-b border-border bg-surface-muted/50 text-ink-muted">
                 <th className="px-5 py-3 font-medium">Aluno</th>
-                <th className="hidden px-5 py-3 font-medium md:table-cell">Instrumento</th>
-                <th className="hidden px-5 py-3 font-medium md:table-cell">Aulas</th>
+                <th className="px-5 py-3 text-center font-medium">Nível</th>
+                <th className="hidden px-5 py-3 text-center font-medium md:table-cell">Instrumento</th>
+                <th className="hidden px-5 py-3 text-center font-medium md:table-cell">Aulas</th>
                 <th className="w-24 px-5 py-3" />
               </tr>
             </thead>
@@ -218,11 +228,11 @@ export function StudentsPage() {
                 >
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      <Avatar name={student.name} />
+                      <Avatar name={student.name} studentId={student.id} color={student.color} />
                       <div className="min-w-0">
                         <Link
                           to={`/students/${student.id}`}
-                          className="block truncate font-medium text-ink hover:underline"
+                          className="block truncate font-medium text-ink transition-colors hover:text-accent"
                           onClick={(event) => event.stopPropagation()}
                         >
                           {student.name}
@@ -232,13 +242,10 @@ export function StudentsPage() {
                             <Phone className="size-3" aria-hidden />
                             {student.phone}
                             {ageFromBirthdate(student.birthdate) !== null ? (
-                              <span>
-                                · {ageFromBirthdate(student.birthdate)} anos
-                              </span>
+                              <span>· {ageFromBirthdate(student.birthdate)} anos</span>
                             ) : null}
-                            {student.level ? <span> · {levelLabel(student.level)}</span> : null}
-                            {!student.level && tagsPreview(student.tags) ? (
-                              <span> · {tagsPreview(student.tags)}</span>
+                            {tagsPreview(student.tags) ? (
+                              <span>· {tagsPreview(student.tags)}</span>
                             ) : null}
                           </p>
                         ) : (
@@ -247,10 +254,7 @@ export function StudentsPage() {
                             {ageFromBirthdate(student.birthdate) !== null ? (
                               <span> · {ageFromBirthdate(student.birthdate)} anos</span>
                             ) : null}
-                            {student.level ? (
-                              <span> · {levelLabel(student.level)}</span>
-                            ) : null}
-                            {!student.level && tagsPreview(student.tags) ? (
+                            {tagsPreview(student.tags) ? (
                               <span> · {tagsPreview(student.tags)}</span>
                             ) : null}
                           </p>
@@ -258,10 +262,13 @@ export function StudentsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="hidden px-5 py-3 text-ink-muted md:table-cell">
+                  <td className="px-5 py-3 text-center">
+                    {student.level ? <StudentLevelBadge level={student.level} /> : <span className="text-ink-muted">—</span>}
+                  </td>
+                  <td className="hidden px-5 py-3 text-center text-ink-muted md:table-cell">
                     {student.instrument}
                   </td>
-                  <td className="hidden px-5 py-3 md:table-cell">
+                  <td className="hidden px-5 py-3 text-center md:table-cell">
                     {creditsCell(student.creditsRemaining)}
                   </td>
                   <td className="px-5 py-3" onClick={(event) => event.stopPropagation()}>
@@ -311,12 +318,18 @@ export function StudentsPage() {
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Input label="Nome" error={errors.name?.message} {...register('name')} />
           <Input label="Instrumento" error={errors.instrument?.message} {...register('instrument')} />
+          <StudentColorPicker
+            value={(watch('color') ?? 'accent') as StudentColorTone}
+            error={errors.color?.message}
+            onChange={(next) => setValue('color', next, { shouldValidate: true })}
+          />
           <Input label="Telefone" error={errors.phone?.message} {...register('phone')} />
-          <Input
+          <DateTimeField
             label="Data de nascimento"
-            type="date"
+            kind="date"
+            value={watch('birthdate')}
             error={errors.birthdate?.message}
-            {...register('birthdate')}
+            onChange={(next) => setValue('birthdate', next, { shouldValidate: true })}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
@@ -330,7 +343,7 @@ export function StudentsPage() {
               {...register('level')}
             />
             <Input
-              label="Tags"
+              label="Etiquetas"
               hint="Separe por vírgula"
               error={errors.tags?.message}
               {...register('tags')}
@@ -349,12 +362,13 @@ export function StudentsPage() {
               ]}
               {...register('preferredWeekday')}
             />
-            <Input
+            <DateTimeField
               label="Horário"
-              type="time"
+              kind="time"
               hint="Padrão 14:00"
+              value={watch('preferredTime')}
               error={errors.preferredTime?.message}
-              {...register('preferredTime')}
+              onChange={(next) => setValue('preferredTime', next, { shouldValidate: true })}
             />
           </div>
           <TextArea label="Observações" error={errors.description?.message} {...register('description')} />
@@ -371,12 +385,6 @@ export function StudentsPage() {
       />
     </div>
   )
-}
-
-function levelLabel(level: Student['level']) {
-  if (level === 'beginner') return 'Iniciante'
-  if (level === 'intermediate') return 'Intermediário'
-  return null
 }
 
 function tagsPreview(tags: string | null) {

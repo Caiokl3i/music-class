@@ -28,4 +28,21 @@ test.group('Catalog', (group) => {
       },
     })
   })
+
+  test('includes custom plan types in the catalog', async ({ client }) => {
+    const teacher = await createTeacher()
+    await client.post('/api/v1/plan-types').loginAs(teacher).json({
+      label: 'Aula experimental',
+      lessons: 1,
+      price: 20,
+    })
+
+    const response = await client.get('/api/v1/packages').loginAs(teacher)
+    response.assertStatus(200)
+    response.assertBodyContains({
+      data: {
+        packages: [{ value: 'aula_experimental', lessons: 1, price: 20, label: 'Aula experimental' }],
+      },
+    })
+  })
 })

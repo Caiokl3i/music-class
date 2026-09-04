@@ -8,7 +8,9 @@ export function Card({
   className?: string
 }) {
   return (
-    <div className={`rounded-lg border border-border bg-surface-raised p-5 shadow-sm ${className}`}>
+    <div
+      className={`rounded-lg border border-border bg-surface-raised p-5 shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-border hover:shadow-md ${className}`}
+    >
       {children}
     </div>
   )

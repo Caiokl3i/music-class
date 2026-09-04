@@ -8,6 +8,8 @@ import {
 } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { CheckCircle2, AlertCircle, X } from 'lucide-react'
+import { toastMotion } from '@/utils/motion'
+
 
 type ToastKind = 'success' | 'error'
 
@@ -61,10 +63,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           {toasts.map((toast) => (
             <motion.div
               key={toast.id}
-              initial={{ opacity: 0, y: 12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.98 }}
-              transition={{ duration: 0.2 }}
+              layout
+              {...toastMotion}
               className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-border bg-surface-raised px-4 py-3 shadow-lg shadow-black/10"
               role="status"
             >

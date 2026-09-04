@@ -1,6 +1,7 @@
-import { useEffect, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { overlayMotion, panelMotion } from '@/utils/motion'
 import { X } from 'lucide-react'
+import { useEffect, type ReactNode } from 'react'
 
 type ModalProps = {
   open: boolean
@@ -33,20 +34,14 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
             type="button"
             aria-label="Fechar"
             className="absolute inset-0 bg-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            {...overlayMotion}
             onClick={onClose}
           />
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.2 }}
+            {...panelMotion}
             className={`relative z-10 flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl shadow-black/10 ${
               size === 'lg' ? 'max-w-2xl' : 'max-w-lg'
             }`}
@@ -58,7 +53,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: M
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg p-2 text-ink-muted hover:bg-surface-hover hover:text-ink"
+                className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
                 aria-label="Fechar modal"
               >
                 <X className="size-4" />

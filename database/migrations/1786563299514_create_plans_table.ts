@@ -20,7 +20,7 @@ export default class extends BaseSchema {
         .references('id')
         .inTable('students')
         .onDelete('CASCADE')
-      table.enum('package', ['single', 'pack_4', 'pack_8']).notNullable()
+      table.string('package', 64).notNullable()
       table.integer('lessons_total').notNullable()
       table.decimal('price', 8, 2).notNullable()
       table.enum('status', ['pending', 'paid', 'cancelled']).notNullable()

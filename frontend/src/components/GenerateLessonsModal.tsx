@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
+import { DateTimeField } from '@/components/DateTimeField'
 import { Modal } from '@/components/Modal'
 import * as plansService from '@/services/plans.service'
 import type { Plan } from '@/types/api'
-import { applyPreferredTime, preferredSlot, weeklySlots } from '@/domain/schedule'
+import { applyPreferredTime, nextDateOnIsoWeekday, preferredSlot, weeklySlots } from '@/domain/schedule'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/utils/errors'
 import {
@@ -21,11 +21,9 @@ function defaultFirstSlot(
     return toDatetimeLocalFromDate(preferredSlot({ preferredWeekday, preferredTime }, new Date()))
   }
 
-  const base = new Date()
-  const day = base.getDay()
-  const daysUntilTuesday = (2 - day + 7) % 7 || 7
-  base.setDate(base.getDate() + daysUntilTuesday)
-  return toDatetimeLocalFromDate(applyPreferredTime(base, preferredTime))
+  // Terça (ISO 2) no horário de Brasília, se não houver preferência.
+  const tuesday = nextDateOnIsoWeekday(new Date(), 2)
+  return toDatetimeLocalFromDate(applyPreferredTime(tuesday, preferredTime))
 }
 
 export function GenerateLessonsModal({
@@ -99,11 +97,10 @@ export function GenerateLessonsModal({
         <p className="text-sm text-ink-muted">
           Cria as {plan?.lessonsSchedulable ?? 0} aula(s) que ainda faltam marcar, toda semana no mesmo horário.
         </p>
-        <Input
+        <DateTimeField
           label="Primeira aula"
-          type="datetime-local"
           value={firstAt}
-          onChange={(event) => setFirstAt(event.target.value)}
+          onChange={setFirstAt}
         />
         {preview.length === 0 ? (
           <p className="text-sm text-warning">Nenhuma data cabe na validade deste pacote.</p>

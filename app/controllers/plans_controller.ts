@@ -1,14 +1,20 @@
 import { DateTime } from 'luxon'
 import PlanTransformer from '#transformers/plan_transformer'
 import {
-  PACKAGES,
   createPlanValidator,
   updatePlanValidator,
   generatePlanLessonsValidator,
   type PlanStatus,
 } from '#validators/plan'
+import { billingQueryValidator } from '#validators/plan_discount'
+import { resolvePlanType } from '#services/plan_types'
 import { assertLessonsTotalNotBelowActive, expiresAtFromPaidAt } from '#services/plan_credits'
 import { generatePlanLessons } from '#services/lesson_generate'
+import {
+  billingFilename,
+  buildBillingPdf,
+  buildBillingSummary,
+} from '#services/billing_message'
 import LessonTransformer from '#transformers/lesson_transformer'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
@@ -30,7 +36,7 @@ export default class PlansController {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(createPlanValidator)
     const student = await this.findOwnedStudent(user, payload.studentId)
-    const catalog = PACKAGES[payload.package]
+    const catalog = await resolvePlanType(user, payload.package)
     const status: PlanStatus = payload.status ?? 'pending'
     const paidAt = this.resolvePaidAt(status, payload.paidAt)
 
@@ -67,7 +73,7 @@ export default class PlansController {
     }
 
     if (payload.package) {
-      const catalog = PACKAGES[payload.package]
+      const catalog = await resolvePlanType(user, payload.package)
       await assertLessonsTotalNotBelowActive(plan, catalog.lessons)
       plan.package = payload.package
       plan.lessonsTotal = catalog.lessons
@@ -109,6 +115,26 @@ export default class PlansController {
     return serialize(LessonTransformer.transform(lessons))
   }
 
+  async billing({ auth, params, request, serialize }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const payload = await request.validateUsing(billingQueryValidator)
+    const summary = await this.buildOwnedBilling(user, params.id, payload)
+    return serialize(summary)
+  }
+
+  async billingPdf({ auth, params, request, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const payload = await request.validateUsing(billingQueryValidator)
+    const summary = await this.buildOwnedBilling(user, params.id, payload)
+    const pdf = await buildBillingPdf(summary)
+
+    return response
+      .header('Content-Type', 'application/pdf')
+      .header('Content-Disposition', `attachment; filename="${billingFilename(summary)}"`)
+      .header('Cache-Control', 'no-store')
+      .send(pdf)
+  }
+
   async destroy({ auth, params, response }: HttpContext) {
     const plan = await this.findOwnedPlan(auth.getUserOrFail(), params.id)
     await plan.delete()
@@ -124,6 +150,7 @@ export default class PlansController {
     return user
       .related('plans')
       .query()
+      .preload('discounts', (query) => query.orderBy('serviceAt', 'asc').orderBy('id', 'asc'))
       .withCount('lessons', (query) => {
         query.where('status', 'done').as('done_lessons_count')
       })
@@ -134,6 +161,27 @@ export default class PlansController {
 
   private findOwnedPlan(user: User, id: number | string) {
     return this.plansQuery(user).where('id', id).firstOrFail()
+  }
+
+  private async buildOwnedBilling(
+    user: User,
+    planId: number | string,
+    payload: { month?: string; timezone?: string }
+  ) {
+    const plan = await this.plansQuery(user)
+      .where('id', planId)
+      .preload('student')
+      .preload('lessons')
+      .firstOrFail()
+
+    return buildBillingSummary({
+      plan,
+      lessons: plan.lessons,
+      discounts: plan.discounts,
+      month: payload.month,
+      timezone: payload.timezone,
+      studentName: plan.student?.name ?? null,
+    })
   }
 
   private resolvePaidAt(

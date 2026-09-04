@@ -24,8 +24,18 @@ const FALLBACK: Catalog = {
   lowCreditThreshold: 1,
 }
 
+function fallbackOption(value: string): PackageOption {
+  return {
+    value,
+    lessons: 0,
+    price: 0,
+    label: value || 'Pacote',
+  }
+}
+
 type CatalogContextValue = Catalog & {
   loading: boolean
+  reload: () => Promise<void>
   labelFor: (value: PlanPackage | null | undefined) => string
   optionFor: (value: PlanPackage) => PackageOption
 }
@@ -61,11 +71,11 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     return {
       ...catalog,
       loading,
+      reload: load,
       labelFor: (value) => (value ? map.get(value)?.label ?? value : 'Pacote'),
-      optionFor: (value) =>
-        map.get(value) ?? FALLBACK_PACKAGES.find((item) => item.value === value)!,
+      optionFor: (value) => map.get(value) ?? fallbackOption(value),
     }
-  }, [catalog, loading])
+  }, [catalog, loading, load])
 
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>
 }

@@ -7,6 +7,7 @@ import { hasMany } from '@adonisjs/lucid/orm'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import Student from '#models/student'
 import Plan from '#models/plan'
+import PlanType from '#models/plan_type'
 import Lesson from '#models/lesson'
 
 export default class User extends compose(UserSchema, withAuthFinder(hash)) {
@@ -18,6 +19,9 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
 
   @hasMany(() => Plan)
   declare plans: HasMany<typeof Plan>
+
+  @hasMany(() => PlanType)
+  declare planTypes: HasMany<typeof PlanType>
 
   @hasMany(() => Lesson)
   declare lessons: HasMany<typeof Lesson>

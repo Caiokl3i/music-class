@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 import { lessonEnd } from '#services/lesson_schedule'
-import { PACKAGES, type PlanPackage } from '#services/package_catalog'
+import { packageLabelMap } from '#services/plan_types'
 import type User from '#models/user'
 import type Lesson from '#models/lesson'
 import type Plan from '#models/plan'
@@ -75,18 +75,19 @@ export function inMonthRange(value: DateTime | null | undefined, start: DateTime
 
 export async function buildMonthCsv(user: User, query: { month?: string; timezone?: string }) {
   const window = monthWindow(query.month, query.timezone)
-  const [lessons, plans] = await Promise.all([
+  const [lessons, plans, labels] = await Promise.all([
     user.related('lessons').query().preload('student').preload('plan').orderBy('scheduledAt', 'asc'),
     user.related('plans').query().preload('student').orderBy('id', 'asc'),
+    packageLabelMap(user),
   ])
 
   const rows = [
     ...lessons
       .filter((lesson) => inMonthRange(lesson.scheduledAt, window.start, window.end))
-      .map((lesson) => lessonRow(lesson, window.zone)),
+      .map((lesson) => lessonRow(lesson, window.zone, labels)),
     ...plans
       .filter((plan) => inMonthRange(plan.paidAt ?? plan.createdAt, window.start, window.end))
-      .map((plan) => planRow(plan, window.zone)),
+      .map((plan) => planRow(plan, window.zone, labels)),
   ].sort((left, right) => {
     if (left.sort !== right.sort) {
       return left.sort - right.sort
@@ -102,7 +103,7 @@ export async function buildMonthCsv(user: User, query: { month?: string; timezon
   }
 }
 
-function lessonRow(lesson: Lesson, zone: string) {
+function lessonRow(lesson: Lesson, zone: string, labels: Map<string, string>) {
   const student = lesson.$preloaded.student as Student | undefined
   const plan = lesson.$preloaded.plan as Plan | undefined
 
@@ -114,7 +115,7 @@ function lessonRow(lesson: Lesson, zone: string) {
       formatWindow(lesson.scheduledAt, lessonEnd(lesson.scheduledAt, lesson.endsAt), zone),
       student?.name ?? '',
       student?.instrument ?? '',
-      packageLabel(plan?.package),
+      packageLabel(plan?.package, labels),
       LESSON_STATUS_LABEL[lesson.status] ?? lesson.status,
       '',
       lesson.description,
@@ -122,7 +123,7 @@ function lessonRow(lesson: Lesson, zone: string) {
   }
 }
 
-function planRow(plan: Plan, zone: string) {
+function planRow(plan: Plan, zone: string, labels: Map<string, string>) {
   const student = plan.$preloaded.student as Student | undefined
   const when = plan.paidAt ?? plan.createdAt
 
@@ -134,7 +135,7 @@ function planRow(plan: Plan, zone: string) {
       formatStamp(when, zone),
       student?.name ?? '',
       student?.instrument ?? '',
-      packageLabel(plan.package),
+      packageLabel(plan.package, labels),
       PLAN_STATUS_LABEL[plan.status] ?? plan.status,
       formatCsvAmount(Number(plan.price)),
       plan.notes,
@@ -155,9 +156,9 @@ function formatWindow(start: DateTime, end: DateTime, zone: string) {
   return `${from}–${formatStamp(end, zone)}`
 }
 
-function packageLabel(value: string | undefined) {
-  if (value && value in PACKAGES) {
-    return PACKAGES[value as PlanPackage].label
+function packageLabel(value: string | null | undefined, labels: Map<string, string>) {
+  if (!value) {
+    return ''
   }
-  return value ?? ''
+  return labels.get(value) ?? value
 }

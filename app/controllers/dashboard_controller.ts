@@ -9,12 +9,14 @@ import {
 } from '#services/plan_credits'
 import { EXPIRING_SOON_DAYS, LOW_CREDIT_THRESHOLD } from '#services/package_catalog'
 import { buildMonthCsv } from '#services/month_export'
+import { netPriceFromPlan } from '#services/plan_pricing'
 import { dashboardQueryValidator } from '#validators/dashboard'
 import { exportQueryValidator } from '#validators/export'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 import type Lesson from '#models/lesson'
 import type Student from '#models/student'
+import type PlanDiscount from '#models/plan_discount'
 
 export default class DashboardController {
   async show({ auth, request, serialize }: HttpContext) {
@@ -37,6 +39,7 @@ export default class DashboardController {
           .related('plans')
           .query()
           .preload('student')
+          .preload('discounts')
           .withCount('lessons', (query) => {
             query.where('status', 'done').as('done_lessons_count')
           })
@@ -63,6 +66,8 @@ export default class DashboardController {
         studentId: student.id,
         studentName: student.name,
         studentInstrument: student.instrument,
+        studentLevel: student.level ?? null,
+        studentColor: student.color ?? 'accent',
         birthdate: student.birthdate?.toISODate(),
       }))
 
@@ -80,10 +85,10 @@ export default class DashboardController {
       scheduledCount,
       doneCount,
       birthdays: birthdays,
-      revenue: paidPlans.reduce((sum, plan) => sum + Number(plan.price), 0),
-      revenueThisMonth: paidThisMonth.reduce((sum, plan) => sum + Number(plan.price), 0),
+      revenue: paidPlans.reduce((sum, plan) => sum + this.netPrice(plan), 0),
+      revenueThisMonth: paidThisMonth.reduce((sum, plan) => sum + this.netPrice(plan), 0),
       pendingPlans: pendingPlans.length,
-      pendingAmount: pendingPlans.reduce((sum, plan) => sum + Number(plan.price), 0),
+      pendingAmount: pendingPlans.reduce((sum, plan) => sum + this.netPrice(plan), 0),
       unpaidPlans: this.alerts(pendingPlans),
       lowCredits: this.alerts(
         paidPlans.filter((plan) => {
@@ -138,6 +143,11 @@ export default class DashboardController {
     return usableCreditsFromCount(plan, lessonsDoneFromExtras(plan))
   }
 
+  private netPrice(plan: Plan) {
+    const discounts = (plan.$preloaded.discounts as PlanDiscount[] | undefined) ?? []
+    return netPriceFromPlan(Number(plan.price), discounts)
+  }
+
   private inRange(value: DateTime | null, start: DateTime, end: DateTime) {
     return Boolean(value && value >= start && value <= end)
   }
@@ -149,8 +159,9 @@ export default class DashboardController {
         planId: plan.id,
         studentId: plan.studentId,
         studentName: student?.name ?? null,
+        studentLevel: student?.level ?? null,
         package: plan.package,
-        price: Number(plan.price),
+        price: this.netPrice(plan),
         status: plan.status,
         lessonsRemaining: this.remaining(plan),
         lessonsTotal: plan.lessonsTotal,

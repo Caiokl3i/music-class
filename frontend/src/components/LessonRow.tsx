@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/Button'
 import { LessonStatusBadge } from '@/components/StatusBadges'
+import { StudentLevelBadge } from '@/components/StudentLevelBadge'
 import { formatDateTimeRange } from '@/utils/format'
 import type { Lesson } from '@/types/api'
 
@@ -37,14 +38,14 @@ export function LessonRow({
           </p>
           <LessonStatusBadge status={lesson.status} />
         </div>
-        <p className="mt-1 text-sm text-ink-muted">
+        <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">
           {showStudent ? (
-            <Link to={`/students/${lesson.studentId}`} className="font-medium text-accent hover:underline">
+            <Link to={`/students/${lesson.studentId}`} className="font-medium text-accent transition-opacity hover:opacity-80">
               {name}
             </Link>
           ) : null}
-          {showStudent && planLabel ? ' · ' : null}
-          {planLabel}
+          {showStudent ? <StudentLevelBadge level={lesson.studentLevel} /> : null}
+          {showStudent && planLabel ? <span>· {planLabel}</span> : planLabel ? <span>{planLabel}</span> : null}
         </p>
         {lesson.description ? <p className="mt-1 text-sm text-ink">{lesson.description}</p> : null}
       </div>

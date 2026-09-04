@@ -1,5 +1,5 @@
 import { api } from '@/services/api'
-import type { ApiData, CreateStudentInput, Student, UpdateStudentInput } from '@/types/api'
+import type { ApiData, CreateStudentInput, Student, StudentColor, UpdateStudentInput } from '@/types/api'
 
 export async function listStudents() {
   const { data } = await api.get<ApiData<Student[]>>('/students')
@@ -32,6 +32,7 @@ export function studentFormPayload(values: {
   birthdate?: string
   description?: string
   level?: 'beginner' | 'intermediate' | '' | null
+  color?: StudentColor
   tags?: string
   preferredWeekday?: string
   preferredTime?: string
@@ -43,6 +44,7 @@ export function studentFormPayload(values: {
     birthdate: values.birthdate || null,
     description: values.description || null,
     level: values.level || null,
+    color: values.color ?? 'accent',
     tags: values.tags || null,
     preferredWeekday: values.preferredWeekday ? Number(values.preferredWeekday) : null,
     preferredTime: values.preferredTime ? values.preferredTime.slice(0, 5) : null,

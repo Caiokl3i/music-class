@@ -1,3 +1,5 @@
+import { resolveStudentColor, STUDENT_AVATAR_TONE, type StudentColorTone } from '@/domain/student'
+
 function initialsFrom(name: string | null | undefined) {
   const parts = (name ?? '')
     .split(' ')
@@ -9,10 +11,15 @@ function initialsFrom(name: string | null | undefined) {
 
 export function Avatar({
   name,
+  studentId,
+  color,
   size = 'md',
   className = '',
 }: {
   name?: string | null
+  /** Fallback estável quando a cor salva não veio na resposta. */
+  studentId?: number | null
+  color?: StudentColorTone | string | null
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }) {
@@ -22,9 +29,14 @@ export function Avatar({
     lg: 'size-14 text-lg',
   }
 
+  const tone =
+    color || studentId != null
+      ? STUDENT_AVATAR_TONE[resolveStudentColor(color, studentId)]
+      : 'bg-accent-soft text-accent'
+
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-accent-soft font-medium text-accent ${sizes[size]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-medium ${tone} ${sizes[size]} ${className}`}
       aria-hidden
     >
       {initialsFrom(name)}

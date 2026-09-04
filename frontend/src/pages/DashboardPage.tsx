@@ -25,12 +25,16 @@ import { Card, PageHeader, SectionHeader } from '@/components/Card'
 import { Avatar } from '@/components/Avatar'
 import { Skeleton } from '@/components/Skeleton'
 import { Button } from '@/components/Button'
+import { DateTimeField } from '@/components/DateTimeField'
+import { Modal } from '@/components/Modal'
 import { LESSON_STATUS } from '@/domain/status'
 import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage } from '@/utils/errors'
 import {
+  APP_TIMEZONE,
+  brazilTodayParts,
   formatCurrency,
   formatDate,
   formatDateTime,
@@ -47,13 +51,14 @@ export function DashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
+  const [exportModalOpen, setExportModalOpen] = useState(false)
   const [month, setMonth] = useState(() => currentMonthValue())
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       setData(
-        await dashboardService.getDashboard(Intl.DateTimeFormat().resolvedOptions().timeZone),
+        await dashboardService.getDashboard(APP_TIMEZONE),
       )
     } catch (error) {
       toast.error(getErrorMessage(error, 'Não foi possível carregar o painel.'))
@@ -82,11 +87,9 @@ export function DashboardPage() {
   async function exportMonth() {
     setExporting(true)
     try {
-      await dashboardService.downloadMonthCsv(
-        month,
-        Intl.DateTimeFormat().resolvedOptions().timeZone,
-      )
+      await dashboardService.downloadMonthCsv(month, APP_TIMEZONE)
       toast.success('CSV do mês baixado.')
+      setExportModalOpen(false)
     } catch (error) {
       toast.error(getErrorMessage(error, 'Não foi possível exportar o mês.'))
     } finally {
@@ -99,29 +102,15 @@ export function DashboardPage() {
       <PageHeader
         description={`Olá, ${greeting}. Resumo das suas aulas de hoje.`}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-raised px-3 py-1.5 text-sm text-ink">
-              <CalendarDays className="size-4 text-ink-muted" aria-hidden />
-              <span className="sr-only">Mês do CSV</span>
-              <input
-                id="export-month"
-                type="month"
-                value={month}
-                onChange={(event) => setMonth(event.target.value)}
-                className="bg-transparent text-sm text-ink outline-none"
-              />
-            </label>
-            <Button
-              id="export-csv"
-              variant="secondary"
-              size="sm"
-              loading={exporting}
-              onClick={() => void exportMonth()}
-            >
-              <Download />
-              Exportar CSV
-            </Button>
-          </div>
+          <Button
+            id="export-csv"
+            variant="secondary"
+            size="sm"
+            onClick={() => setExportModalOpen(true)}
+          >
+            <Download />
+            Exportar CSV
+          </Button>
         }
       />
 
@@ -135,6 +124,41 @@ export function DashboardPage() {
           onStatus={setStatus}
         />
       )}
+
+      <Modal
+        open={exportModalOpen}
+        title="Exportar CSV"
+        onClose={() => {
+          if (!exporting) setExportModalOpen(false)
+        }}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setExportModalOpen(false)}
+              disabled={exporting}
+            >
+              Fechar
+            </Button>
+            <Button loading={exporting} onClick={() => void exportMonth()}>
+              <Download />
+              Baixar
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-ink-muted">
+            Escolha o mês. O arquivo traz as aulas e os pacotes desse período.
+          </p>
+          <DateTimeField
+            label="Mês"
+            kind="month"
+            value={month}
+            onChange={setMonth}
+          />
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -271,11 +295,15 @@ function LoadedDashboard({
           <ul className="divide-y divide-border">
             {data.birthdays.map((birthday) => (
               <li key={birthday.studentId} className="flex items-center gap-3 py-3">
-                <Avatar name={birthday.studentName} />
+                <Avatar
+                  name={birthday.studentName}
+                  studentId={birthday.studentId}
+                  color={birthday.studentColor}
+                />
                 <div className="min-w-0 flex-1">
                   <Link
                     to={`/students/${birthday.studentId}`}
-                    className="block truncate text-sm font-medium text-ink hover:underline"
+                    className="truncate text-sm font-medium text-ink transition-colors hover:text-accent"
                   >
                     {birthday.studentName}
                   </Link>
@@ -301,7 +329,7 @@ function LoadedDashboard({
             actions={
               <Link
                 to="/lessons"
-                className="text-sm font-medium text-accent hover:underline"
+                className="text-sm font-medium text-accent transition-opacity hover:opacity-80"
               >
                 Ver agenda <ArrowRight className="size-3.5" />
               </Link>
@@ -344,11 +372,15 @@ function LoadedDashboard({
               <ul className="divide-y divide-border border-t border-border">
                 {data.upcoming.map((lesson) => (
                   <li key={lesson.id} className="flex items-center gap-3 py-3">
-                    <Avatar name={lesson.studentName} />
+                    <Avatar
+                      name={lesson.studentName}
+                      studentId={lesson.studentId}
+                      color={lesson.studentColor}
+                    />
                     <div className="min-w-0 flex-1">
                       <Link
                         to={`/students/${lesson.studentId}`}
-                        className="block truncate text-sm font-medium text-ink hover:underline"
+                        className="truncate text-sm font-medium text-ink transition-colors hover:text-accent"
                       >
                         {lesson.studentName ?? `Aluno #${lesson.studentId}`}
                       </Link>
@@ -366,7 +398,7 @@ function LoadedDashboard({
               </ul>
               <Link
                 to="/lessons"
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-opacity hover:opacity-80"
               >
                 Ver todas as aulas <ArrowRight className="size-4" />
               </Link>
@@ -383,7 +415,7 @@ function LoadedDashboard({
           actions={
             <Link
               to="/students"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-opacity hover:opacity-80"
             >
               Ver todos os alunos <ArrowRight className="size-4" />
             </Link>
@@ -401,7 +433,7 @@ function LoadedDashboard({
                 <ActivityIcon status={lesson.status} />
                 <Link
                   to={`/students/${lesson.studentId}`}
-                  className="block truncate text-sm font-medium text-ink hover:underline"
+                  className="block truncate text-sm font-medium text-ink transition-colors hover:text-accent"
                 >
                   {lesson.studentName ?? `Aluno #${lesson.studentId}`}
                 </Link>
@@ -425,8 +457,8 @@ function LoadedDashboard({
 }
 
 function currentMonthValue() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const parts = brazilTodayParts()
+  return `${parts.year}-${String(parts.month).padStart(2, '0')}`
 }
 
 function unpaidNote(item: PlanAlert) {
@@ -463,7 +495,7 @@ function AlertRow({
       <div className="min-w-0 flex-1">
         <Link
           to={`/students/${item.studentId}`}
-          className="block truncate text-sm font-medium text-ink hover:underline"
+          className="truncate text-sm font-medium text-ink transition-colors hover:text-accent"
         >
           {item.studentName ?? `Aluno #${item.studentId}`}
         </Link>
@@ -552,11 +584,11 @@ function LessonListRow({
 }) {
   return (
     <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-3">
-      <Avatar name={lesson.studentName} />
+      <Avatar name={lesson.studentName} studentId={lesson.studentId} color={lesson.studentColor} />
       <div className="min-w-0 flex-1">
         <Link
           to={`/students/${lesson.studentId}`}
-          className="block truncate text-sm font-medium text-ink hover:underline"
+          className="truncate text-sm font-medium text-ink transition-colors hover:text-accent"
         >
           {lesson.studentName ?? `Aluno #${lesson.studentId}`}
         </Link>

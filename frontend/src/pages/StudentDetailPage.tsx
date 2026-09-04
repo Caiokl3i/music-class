@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   CalendarDays,
   CalendarPlus,
-  ChevronDown,
   ChevronRight,
   Clock,
   FileText,
@@ -21,10 +20,19 @@ import {
   Trash2,
   UserRound,
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import * as studentsService from '@/services/students.service'
 import * as plansService from '@/services/plans.service'
 import * as lessonsService from '@/services/lessons.service'
-import type { Lesson, LessonStatus, Plan, PlanPackage, PlanStatus, Student } from '@/types/api'
+import type {
+  Lesson,
+  LessonStatus,
+  Plan,
+  PlanDiscount,
+  PlanPackage,
+  PlanStatus,
+  Student,
+} from '@/types/api'
 import { PageHeader, Card, SectionHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -32,10 +40,15 @@ import { Skeleton } from '@/components/Skeleton'
 import { Modal } from '@/components/Modal'
 import { Select } from '@/components/Select'
 import { Input } from '@/components/Input'
+import { DateTimeField } from '@/components/DateTimeField'
 import { TextArea } from '@/components/TextArea'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { LessonStatusBadge, PlanStatusBadge } from '@/components/StatusBadges'
+import { StudentLevelBadge } from '@/components/StudentLevelBadge'
+import { StudentColorPicker } from '@/components/StudentColorPicker'
 import { GenerateLessonsModal } from '@/components/GenerateLessonsModal'
+import { BillingModal } from '@/components/BillingModal'
+import { PlanDiscountModal } from '@/components/PlanDiscountModal'
 import { CreditBar } from '@/components/CreditBar'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
@@ -57,6 +70,8 @@ import {
   planHoldsCredits,
   planIsExpired,
 } from '@/domain/status'
+import { collapseMotion, fadeInMotion } from '@/utils/motion'
+import type { StudentColorTone } from '@/domain/student'
 import {
   WEEKDAY_OPTIONS,
   addMinutesToDatetimeLocal,
@@ -73,7 +88,7 @@ const lessonSchema = z
     status: z.enum(['scheduled', 'done', 'cancelled', 'no_show']),
     description: z.string().optional(),
   })
-  .refine((values) => new Date(values.endsAt) > new Date(values.scheduledAt), {
+  .refine((values) => values.endsAt > values.scheduledAt, {
     message: 'O fim precisa ser depois do início',
     path: ['endsAt'],
   })
@@ -84,13 +99,13 @@ const repositionSchema = z
     endsAt: z.string().min(1, 'Informe o fim'),
     description: z.string().optional(),
   })
-  .refine((values) => new Date(values.endsAt) > new Date(values.scheduledAt), {
+  .refine((values) => values.endsAt > values.scheduledAt, {
     message: 'O fim precisa ser depois do início',
     path: ['endsAt'],
   })
 
 const planSchema = z.object({
-  package: z.enum(['single', 'pack_4', 'pack_8']),
+  package: z.string().min(1, 'Selecione o pacote'),
   status: z.enum(['pending', 'paid', 'cancelled']),
   notes: z.string().optional(),
 })
@@ -102,6 +117,7 @@ const studentSchema = z.object({
   birthdate: z.string().optional(),
   description: z.string().optional(),
   level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
+  color: z.enum(['accent', 'success', 'warning', 'danger']),
   tags: z.string().optional(),
   preferredWeekday: z.string().optional(),
   preferredTime: z.string().optional(),
@@ -137,6 +153,16 @@ export function StudentDetailPage() {
   const [repositionModalOpen, setRepositionModalOpen] = useState(false)
   const [repositioningLesson, setRepositioningLesson] = useState<Lesson | null>(null)
   const [savingReposition, setSavingReposition] = useState(false)
+  const [billingPlan, setBillingPlan] = useState<Plan | null>(null)
+  const [discountPlan, setDiscountPlan] = useState<Plan | null>(null)
+  const [editingDiscount, setEditingDiscount] = useState<PlanDiscount | null>(null)
+  const [deletingDiscount, setDeletingDiscount] = useState<{
+    plan: Plan
+    discount: PlanDiscount
+  } | null>(null)
+  const [deletingDiscountLoading, setDeletingDiscountLoading] = useState(false)
+  const [scheduleFlash, setScheduleFlash] = useState(false)
+  const scheduleFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const lessonForm = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
@@ -150,11 +176,12 @@ export function StudentDetailPage() {
 
   const planForm = useForm<PlanFormValues>({
     resolver: zodResolver(planSchema),
-    defaultValues: { package: 'pack_4', status: 'paid', notes: '' },
+    defaultValues: { package: '', status: 'paid', notes: '' },
   })
 
   const studentForm = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
+    defaultValues: { color: 'accent' },
   })
 
   const selectedPackage = planForm.watch('package') as PlanPackage
@@ -206,10 +233,27 @@ export function StudentDetailPage() {
     return toDatetimeLocalFromDate(preferredSlot(student ?? {}, new Date()))
   }
 
+  function flashScheduleBlocked() {
+    setScheduleFlash(false)
+    requestAnimationFrame(() => {
+      setScheduleFlash(true)
+      if (scheduleFlashTimer.current) clearTimeout(scheduleFlashTimer.current)
+      scheduleFlashTimer.current = setTimeout(() => setScheduleFlash(false), 750)
+    })
+  }
+
   function openCreateLesson() {
     if (availablePlans.length === 0) {
-      toast.error('Crie um pacote com aulas para agendar.')
-      openCreatePlan()
+      if (plans.length === 0) {
+        toast.error('Crie um pacote com aulas para agendar.')
+        openCreatePlan()
+        return
+      }
+
+      flashScheduleBlocked()
+      toast.error(
+        'Pacote sem vaga: as aulas já estão marcadas ou feitas. Cancele uma aula ou venda outro pacote.',
+      )
       return
     }
     setEditingLesson(null)
@@ -258,7 +302,7 @@ export function StudentDetailPage() {
   }
 
   function openCreatePlan() {
-    planForm.reset({ package: 'pack_4', status: 'paid', notes: '' })
+    planForm.reset({ package: packages[0]?.value ?? '', status: 'paid', notes: '' })
     setPlanModalOpen(true)
   }
 
@@ -271,6 +315,7 @@ export function StudentDetailPage() {
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
       level: student.level ?? '',
+      color: student.color ?? 'accent',
       tags: student.tags ?? '',
       preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
       preferredTime: student.preferredTime ?? '',
@@ -413,6 +458,24 @@ export function StudentDetailPage() {
     }
   }
 
+  async function confirmDeleteDiscount() {
+    if (!deletingDiscount) return
+    setDeletingDiscountLoading(true)
+    try {
+      await plansService.deletePlanDiscount(
+        deletingDiscount.plan.id,
+        deletingDiscount.discount.id,
+      )
+      toast.success('Desconto removido.')
+      setDeletingDiscount(null)
+      await load()
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível remover o desconto.'))
+    } finally {
+      setDeletingDiscountLoading(false)
+    }
+  }
+
   if (loading || !student) {
     return (
       <div className="space-y-4">
@@ -433,6 +496,7 @@ export function StudentDetailPage() {
           <>
             {student.name}
             <Badge tone="success">Ativo</Badge>
+            <StudentLevelBadge level={student.level} />
           </>
         }
         description={`${student.instrument} • ${student.creditsRemaining} aula(s) a fazer`}
@@ -446,7 +510,10 @@ export function StudentDetailPage() {
               <Plus className="size-4" aria-hidden />
               Pacote
             </Button>
-            <Button onClick={openCreateLesson}>
+            <Button
+              onClick={openCreateLesson}
+              className={scheduleFlash ? 'animate-schedule-flash' : undefined}
+            >
               <Plus className="size-4" aria-hidden />
               Agendar
             </Button>
@@ -455,14 +522,17 @@ export function StudentDetailPage() {
       />
 
       {isLowCredit(student.creditsRemaining, lowCreditThreshold) ? (
-        <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent">
+        <motion.div
+          {...fadeInMotion}
+          className="mb-4 flex items-start gap-2.5 rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent"
+        >
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
           <p>
             {student.creditsRemaining === 0
               ? 'Todas as aulas deste aluno já foram feitas. Venda um novo pacote.'
               : 'Resta 1 aula a fazer. Hora de vender o próximo pacote.'}
           </p>
-        </div>
+        </motion.div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -487,13 +557,9 @@ export function StudentDetailPage() {
               {formatPreferredSchedule(student.preferredWeekday, student.preferredTime) || '—'}
             </InfoRow>
             <InfoRow icon={<Info className="size-4" />} label="Nível">
-              {student.level === 'beginner'
-                ? 'Iniciante'
-                : student.level === 'intermediate'
-                  ? 'Intermediário'
-                  : '—'}
+              {student.level ? <StudentLevelBadge level={student.level} /> : '—'}
             </InfoRow>
-            <InfoRow icon={<FileText className="size-4" />} label="Tags">
+            <InfoRow icon={<FileText className="size-4" />} label="Etiquetas">
               {student.tags
                 ? student.tags
                     .split(',')
@@ -548,17 +614,22 @@ export function StudentDetailPage() {
                         <p className="font-medium text-ink">{labelFor(plan.package)}</p>
                         <p className="mt-0.5 text-xs text-ink-muted">
                           {plan.lessonsDone}/{plan.lessonsTotal} aulas feitas ·{' '}
-                          {formatCurrency(Number(plan.price))}
+                          {formatCurrency(Number(plan.netPrice ?? plan.price))}
+                          {(plan.discountTotal ?? 0) > 0
+                            ? ` (líquido; lista ${formatCurrency(Number(plan.price))})`
+                            : ''}
                           {plan.expiresAt ? ` · válido até ${formatDate(plan.expiresAt)}` : ''}
                         </p>
                       </div>
                       <span className="flex shrink-0 items-center gap-2">
                         <PlanStatusBadge status={plan.status} />
-                        {open ? (
-                          <ChevronDown className="size-4 text-ink-muted" aria-hidden />
-                        ) : (
+                        <motion.span
+                          animate={{ rotate: open ? 90 : 0 }}
+                          transition={{ duration: 0.18 }}
+                          className="inline-flex"
+                        >
                           <ChevronRight className="size-4 text-ink-muted" aria-hidden />
-                        )}
+                        </motion.span>
                       </span>
                     </button>
 
@@ -568,8 +639,14 @@ export function StudentDetailPage() {
                       total={plan.lessonsTotal}
                     />
 
-                    {open ? (
-                      <div className="mt-3 space-y-2 border-t border-border pt-3">
+                    <AnimatePresence initial={false}>
+                      {open ? (
+                        <motion.div
+                          key="plan-details"
+                          {...collapseMotion}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-3 space-y-2 border-t border-border pt-3">
                         {expired && plan.lessonsRemaining > 0 ? (
                           <p className="text-xs text-warning">
                             Pacote vencido. Não agenda mais aulas novas.
@@ -586,26 +663,101 @@ export function StudentDetailPage() {
                         {plan.notes ? (
                           <p className="text-sm text-ink-muted whitespace-pre-wrap">{plan.notes}</p>
                         ) : null}
-                        {canMarkPaid || canGenerate ? (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {canMarkPaid ? (
-                              <Button size="sm" variant="secondary" onClick={() => markPaid(plan)}>
-                                Marcar pago
-                              </Button>
-                            ) : null}
-                            {canGenerate ? (
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => setGeneratingPlan(plan)}
-                              >
-                                Gerar aulas
-                              </Button>
-                            ) : null}
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-medium text-ink">Descontos de troca</p>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setDiscountPlan(plan)
+                                setEditingDiscount(null)
+                              }}
+                            >
+                              <Plus className="size-4" aria-hidden />
+                              Adicionar
+                            </Button>
                           </div>
-                        ) : null}
-                      </div>
-                    ) : null}
+                          {(plan.discounts ?? []).length === 0 ? (
+                            <p className="text-xs text-ink-muted">Nenhum desconto neste pacote.</p>
+                          ) : (
+                            <ul className="space-y-1.5">
+                              {(plan.discounts ?? []).map((discount) => (
+                                <li
+                                  key={discount.id}
+                                  className="flex items-start justify-between gap-2 rounded-md border border-border bg-surface-muted px-2.5 py-2 text-sm"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-ink">{discount.name}</p>
+                                    <p className="text-xs text-ink-muted">
+                                      {formatCurrency(Number(discount.amount))}
+                                      {discount.serviceAt
+                                        ? ` · ${formatDate(discount.serviceAt)}`
+                                        : ''}
+                                    </p>
+                                  </div>
+                                  <span className="flex shrink-0 gap-1">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="size-8"
+                                      aria-label="Editar desconto"
+                                      onClick={() => {
+                                        setDiscountPlan(plan)
+                                        setEditingDiscount(discount)
+                                      }}
+                                    >
+                                      <Pencil className="size-3.5" aria-hidden />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="size-8"
+                                      aria-label="Remover desconto"
+                                      onClick={() => setDeletingDiscount({ plan, discount })}
+                                    >
+                                      <Trash2 className="size-3.5" aria-hidden />
+                                    </Button>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {(plan.discountTotal ?? 0) > 0 ? (
+                            <p className="text-xs text-ink-muted">
+                              Pacote {formatCurrency(Number(plan.price))} − descontos{' '}
+                              {formatCurrency(Number(plan.discountTotal))} ={' '}
+                              <span className="font-medium text-ink">
+                                {formatCurrency(Number(plan.netPrice))}
+                              </span>
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <Button size="sm" variant="secondary" onClick={() => setBillingPlan(plan)}>
+                            Gerar cobrança
+                          </Button>
+                          {canMarkPaid ? (
+                            <Button size="sm" variant="secondary" onClick={() => markPaid(plan)}>
+                              Marcar pago
+                            </Button>
+                          ) : null}
+                          {canGenerate ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setGeneratingPlan(plan)}
+                            >
+                              Gerar aulas
+                            </Button>
+                          ) : null}
+                        </div>
+                          </div>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
                   </li>
                 )
               })}
@@ -619,11 +771,15 @@ export function StudentDetailPage() {
             title="Aulas"
             description={
               availablePlans.length === 0 && plans.length > 0
-                ? 'Sem aulas para marcar neste pacote.'
+                ? 'Pacote cheio: todas as vagas já estão em aulas feitas ou agendadas. Cancele uma para liberar, ou venda outro pacote.'
                 : undefined
             }
             actions={
-              <Button size="sm" onClick={openCreateLesson}>
+              <Button
+                size="sm"
+                onClick={openCreateLesson}
+                className={scheduleFlash ? 'animate-schedule-flash' : undefined}
+              >
                 <CalendarPlus className="size-4" aria-hidden />
                 Agendar
               </Button>
@@ -699,32 +855,31 @@ export function StudentDetailPage() {
             {...lessonForm.register('planId')}
           />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <DateTimeField
               label="Início"
-              type="datetime-local"
+              value={lessonForm.watch('scheduledAt')}
               error={lessonForm.formState.errors.scheduledAt?.message}
-              {...lessonForm.register('scheduledAt', {
-                onChange: (event) => {
-                  const next = event.target.value
-                  lessonForm.setValue(
-                    'endsAt',
-                    moveDatetimeLocalKeepingDuration(
-                      previousStart.current,
-                      lessonForm.getValues('endsAt'),
-                      next,
-                      lessonDurationMinutes,
-                    ),
-                  )
-                  previousStart.current = next
-                },
-              })}
+              onChange={(next) => {
+                lessonForm.setValue('scheduledAt', next, { shouldValidate: true })
+                lessonForm.setValue(
+                  'endsAt',
+                  moveDatetimeLocalKeepingDuration(
+                    previousStart.current,
+                    lessonForm.getValues('endsAt'),
+                    next,
+                    lessonDurationMinutes,
+                  ),
+                  { shouldValidate: true },
+                )
+                previousStart.current = next
+              }}
             />
-            <Input
+            <DateTimeField
               label="Fim"
-              type="datetime-local"
               hint="Padrão: 1 hora"
+              value={lessonForm.watch('endsAt')}
               error={lessonForm.formState.errors.endsAt?.message}
-              {...lessonForm.register('endsAt')}
+              onChange={(next) => lessonForm.setValue('endsAt', next, { shouldValidate: true })}
             />
           </div>
           <Select
@@ -773,32 +928,31 @@ export function StudentDetailPage() {
       >
         <form className="space-y-4" onSubmit={repositionForm.handleSubmit(onSubmitReposition)}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <DateTimeField
               label="Início"
-              type="datetime-local"
+              value={repositionForm.watch('scheduledAt')}
               error={repositionForm.formState.errors.scheduledAt?.message}
-              {...repositionForm.register('scheduledAt', {
-                onChange: (event) => {
-                  const next = event.target.value
-                  repositionForm.setValue(
-                    'endsAt',
-                    moveDatetimeLocalKeepingDuration(
-                      repositionStart.current,
-                      repositionForm.getValues('endsAt'),
-                      next,
-                      lessonDurationMinutes,
-                    ),
-                  )
-                  repositionStart.current = next
-                },
-              })}
+              onChange={(next) => {
+                repositionForm.setValue('scheduledAt', next, { shouldValidate: true })
+                repositionForm.setValue(
+                  'endsAt',
+                  moveDatetimeLocalKeepingDuration(
+                    repositionStart.current,
+                    repositionForm.getValues('endsAt'),
+                    next,
+                    lessonDurationMinutes,
+                  ),
+                  { shouldValidate: true },
+                )
+                repositionStart.current = next
+              }}
             />
-            <Input
+            <DateTimeField
               label="Fim"
-              type="datetime-local"
               hint="Padrão: 1 hora"
+              value={repositionForm.watch('endsAt')}
               error={repositionForm.formState.errors.endsAt?.message}
-              {...repositionForm.register('endsAt')}
+              onChange={(next) => repositionForm.setValue('endsAt', next, { shouldValidate: true })}
             />
           </div>
           <TextArea
@@ -834,9 +988,12 @@ export function StudentDetailPage() {
             }))}
             {...planForm.register('package')}
           />
-          <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">
-            {optionFor(selectedPackage).lessons} aula(s) por {formatCurrency(optionFor(selectedPackage).price)}
-          </p>
+          {selectedPackage ? (
+            <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">
+              {optionFor(selectedPackage).lessons} aula(s) por{' '}
+              {formatCurrency(optionFor(selectedPackage).price)}
+            </p>
+          ) : null}
           <Select
             label="Pagamento"
             error={planForm.formState.errors.status?.message}
@@ -877,12 +1034,18 @@ export function StudentDetailPage() {
             error={studentForm.formState.errors.instrument?.message}
             {...studentForm.register('instrument')}
           />
+          <StudentColorPicker
+            value={(studentForm.watch('color') ?? 'accent') as StudentColorTone}
+            error={studentForm.formState.errors.color?.message}
+            onChange={(next) => studentForm.setValue('color', next, { shouldValidate: true })}
+          />
           <Input label="Telefone" error={studentForm.formState.errors.phone?.message} {...studentForm.register('phone')} />
-          <Input
+          <DateTimeField
             label="Data de nascimento"
-            type="date"
+            kind="date"
+            value={studentForm.watch('birthdate')}
             error={studentForm.formState.errors.birthdate?.message}
-            {...studentForm.register('birthdate')}
+            onChange={(next) => studentForm.setValue('birthdate', next, { shouldValidate: true })}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
@@ -896,7 +1059,7 @@ export function StudentDetailPage() {
               {...studentForm.register('level')}
             />
             <Input
-              label="Tags"
+              label="Etiquetas"
               hint="Separe por vírgula"
               error={studentForm.formState.errors.tags?.message}
               {...studentForm.register('tags')}
@@ -915,12 +1078,13 @@ export function StudentDetailPage() {
               ]}
               {...studentForm.register('preferredWeekday')}
             />
-            <Input
+            <DateTimeField
               label="Horário"
-              type="time"
+              kind="time"
               hint="Padrão 14:00"
+              value={studentForm.watch('preferredTime')}
               error={studentForm.formState.errors.preferredTime?.message}
-              {...studentForm.register('preferredTime')}
+              onChange={(next) => studentForm.setValue('preferredTime', next, { shouldValidate: true })}
             />
           </div>
           <TextArea
@@ -940,6 +1104,24 @@ export function StudentDetailPage() {
         onGenerated={load}
       />
 
+      <BillingModal
+        open={Boolean(billingPlan)}
+        plan={billingPlan}
+        student={student}
+        onClose={() => setBillingPlan(null)}
+      />
+
+      <PlanDiscountModal
+        open={Boolean(discountPlan)}
+        plan={discountPlan}
+        discount={editingDiscount}
+        onClose={() => {
+          setDiscountPlan(null)
+          setEditingDiscount(null)
+        }}
+        onSaved={load}
+      />
+
       <ConfirmDialog
         open={Boolean(deletingLesson)}
         title="Excluir aula?"
@@ -947,6 +1129,19 @@ export function StudentDetailPage() {
         loading={deleteLoading}
         onCancel={() => setDeletingLesson(null)}
         onConfirm={confirmDeleteLesson}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deletingDiscount)}
+        title="Remover desconto?"
+        description={
+          deletingDiscount
+            ? `Remove “${deletingDiscount.discount.name}” (${formatCurrency(Number(deletingDiscount.discount.amount))}) deste pacote.`
+            : 'Remove este desconto do pacote.'
+        }
+        loading={deletingDiscountLoading}
+        onCancel={() => setDeletingDiscount(null)}
+        onConfirm={confirmDeleteDiscount}
       />
     </div>
   )

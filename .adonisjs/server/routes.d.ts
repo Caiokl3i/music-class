@@ -20,7 +20,17 @@ export type ScannedRoutes = {
     'students.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'students.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'students.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.index': { paramsTuple?: []; params?: {} }
+    'plan_types.store': { paramsTuple?: []; params?: {} }
+    'plan_types.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.generate_lessons': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plans.billing': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plans.billing_pdf': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_discounts.store': { paramsTuple: [ParamValue]; params: {'planId': ParamValue} }
+    'plan_discounts.update': { paramsTuple: [ParamValue,ParamValue]; params: {'planId': ParamValue,'id': ParamValue} }
+    'plan_discounts.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'planId': ParamValue,'id': ParamValue} }
     'plans.index': { paramsTuple?: []; params?: {} }
     'plans.store': { paramsTuple?: []; params?: {} }
     'plans.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -41,6 +51,10 @@ export type ScannedRoutes = {
     'lessons.index_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'students.index': { paramsTuple?: []; params?: {} }
     'students.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.index': { paramsTuple?: []; params?: {} }
+    'plan_types.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plans.billing': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plans.billing_pdf': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.index': { paramsTuple?: []; params?: {} }
     'plans.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.index': { paramsTuple?: []; params?: {} }
@@ -54,6 +68,10 @@ export type ScannedRoutes = {
     'lessons.index_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'students.index': { paramsTuple?: []; params?: {} }
     'students.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.index': { paramsTuple?: []; params?: {} }
+    'plan_types.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plans.billing': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plans.billing_pdf': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.index': { paramsTuple?: []; params?: {} }
     'plans.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.index': { paramsTuple?: []; params?: {} }
@@ -65,7 +83,9 @@ export type ScannedRoutes = {
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'lessons.store_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'students.store': { paramsTuple?: []; params?: {} }
+    'plan_types.store': { paramsTuple?: []; params?: {} }
     'plans.generate_lessons': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_discounts.store': { paramsTuple: [ParamValue]; params: {'planId': ParamValue} }
     'plans.store': { paramsTuple?: []; params?: {} }
     'lessons.reposition': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.store': { paramsTuple?: []; params?: {} }
@@ -73,17 +93,22 @@ export type ScannedRoutes = {
   PATCH: {
     'profile.profile.update': { paramsTuple?: []; params?: {} }
     'students.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_discounts.update': { paramsTuple: [ParamValue,ParamValue]; params: {'planId': ParamValue,'id': ParamValue} }
     'plans.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   PUT: {
     'profile.profile.update_password': { paramsTuple?: []; params?: {} }
     'students.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'plans.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   DELETE: {
     'students.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_types.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'plan_discounts.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'planId': ParamValue,'id': ParamValue} }
     'plans.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'lessons.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }

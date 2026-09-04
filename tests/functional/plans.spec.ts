@@ -1,8 +1,8 @@
 import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
 import testUtils from '@adonisjs/core/services/test_utils'
-import User from '#models/user'
 import Plan from '#models/plan'
+import { createTeacher } from '#tests/helpers'
 
 test.group('Plans', (group) => {
   group.each.setup(() => testUtils.db().truncate())
@@ -93,13 +93,52 @@ test.group('Plans', (group) => {
 
   test('rejects invalid payloads', async ({ client }) => {
     const teacher = await createTeacher()
-
-    const response = await client.post('/api/v1/plans').loginAs(teacher).json({
-      studentId: 1,
-      package: 'invalid',
+    const student = await teacher.related('students').create({
+      name: 'Ana',
+      instrument: 'piano',
     })
 
-    response.assertStatus(422)
+    const missing = await client.post('/api/v1/plans').loginAs(teacher).json({
+      studentId: student.id,
+    })
+    missing.assertStatus(422)
+
+    const unknown = await client.post('/api/v1/plans').loginAs(teacher).json({
+      studentId: student.id,
+      package: 'invalid',
+    })
+    unknown.assertStatus(422)
+    unknown.assertBodyContains({ code: 'E_PLAN_TYPE_UNKNOWN' })
+  })
+
+  test('creates a plan from a custom plan type', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({
+      name: 'Ana',
+      instrument: 'piano',
+    })
+    const type = await client.post('/api/v1/plan-types').loginAs(teacher).json({
+      label: 'Aula experimental',
+      lessons: 1,
+      price: 20,
+    })
+    type.assertStatus(201)
+
+    const response = await client.post('/api/v1/plans').loginAs(teacher).json({
+      studentId: student.id,
+      package: type.body().data.slug,
+      status: 'paid',
+    })
+
+    response.assertStatus(201)
+    response.assertBodyContains({
+      data: {
+        package: type.body().data.slug,
+        lessonsTotal: 1,
+        status: 'paid',
+      },
+    })
+    assert.equal(Number(response.body().data.price), 20)
   })
 
   test('lists only the authenticated teacher plans', async ({ client }) => {
@@ -464,11 +503,3 @@ test.group('Plans', (group) => {
     assert.lengthOf(lessons.body().data, 1)
   })
 })
-
-function createTeacher(overrides: { email?: string; fullName?: string } = {}) {
-  return User.create({
-    fullName: overrides.fullName ?? 'Teacher',
-    email: overrides.email ?? 'teacher@example.com',
-    password: 'password123',
-  })
-}

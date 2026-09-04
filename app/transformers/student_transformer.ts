@@ -17,6 +17,7 @@ export default class StudentTransformer extends BaseTransformer<Student> {
         'phone',
         'description',
         'level',
+        'color',
         'tags',
         'preferredWeekday',
         'preferredTime',

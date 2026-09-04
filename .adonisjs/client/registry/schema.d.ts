@@ -199,6 +199,66 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/students_controller').default['destroy']>>>
     }
   }
+  'plan_types.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/plan-types'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['index']>>>
+    }
+  }
+  'plan_types.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/plan-types'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/plan_type').createPlanTypeValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/plan_type').createPlanTypeValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'plan_types.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/plan-types/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['show']>>>
+    }
+  }
+  'plan_types.update': {
+    methods: ["PUT","PATCH"]
+    pattern: '/api/v1/plan-types/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/plan_type').updatePlanTypeValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/plan_type').updatePlanTypeValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'plan_types.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/plan-types/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_types_controller').default['destroy']>>>
+    }
+  }
   'plans.generate_lessons': {
     methods: ["POST"]
     pattern: '/api/v1/plans/:id/lessons/generate'
@@ -209,6 +269,66 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/plan').generatePlanLessonsValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['generateLessons']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['generateLessons']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'plans.billing': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/plans/:id/billing'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/plan_discount').billingQueryValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['billing']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['billing']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'plans.billing_pdf': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/plans/:id/billing.pdf'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/plan_discount').billingQueryValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['billingPdf']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['billingPdf']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'plan_discounts.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/plans/:planId/discounts'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/plan_discount').createPlanDiscountValidator)>>
+      paramsTuple: [ParamValue]
+      params: { planId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/plan_discount').createPlanDiscountValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_discounts_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_discounts_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'plan_discounts.update': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/plans/:planId/discounts/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/plan_discount').updatePlanDiscountValidator)>>
+      paramsTuple: [ParamValue, ParamValue]
+      params: { planId: ParamValue; id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/plan_discount').updatePlanDiscountValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_discounts_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_discounts_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'plan_discounts.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/plans/:planId/discounts/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { planId: ParamValue; id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/plan_discounts_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plan_discounts_controller').default['destroy']>>>
     }
   }
   'plans.index': {

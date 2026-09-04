@@ -14,7 +14,7 @@ export function NotFoundPage() {
         O endereço que você acessou não existe ou foi movido.
       </p>
       <Link to="/" className="mt-6">
-        <Button>Voltar ao dashboard</Button>
+        <Button>Voltar ao painel</Button>
       </Link>
     </div>
   )

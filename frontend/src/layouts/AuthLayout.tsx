@@ -1,8 +1,12 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { motion } from 'motion/react'
 import { Music2 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { pageMotion } from '@/utils/motion'
 
 export function AuthLayout() {
+  const location = useLocation()
+
   return (
     <div className="relative flex min-h-dvh items-center justify-center bg-sidebar p-4">
       <div className="absolute top-4 right-4 z-20">
@@ -15,7 +19,7 @@ export function AuthLayout() {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-md">
+      <motion.div className="relative z-10 w-full max-w-md" {...pageMotion} key={location.pathname}>
         <Link to="/login" className="mb-8 flex items-center justify-center gap-3">
           <span className="flex size-12 items-center justify-center rounded-lg bg-accent-strong text-white">
             <Music2 className="size-6" aria-hidden />
@@ -28,7 +32,7 @@ export function AuthLayout() {
         <p className="mt-6 text-center text-sm text-sidebar-ink/60">
           Organize alunos, pacotes e aulas particulares.
         </p>
-      </div>
+      </motion.div>
     </div>
   )
 }

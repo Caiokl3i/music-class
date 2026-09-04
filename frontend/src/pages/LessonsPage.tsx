@@ -4,16 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
   format,
-  isSameDay,
-  isSameMonth,
-  parseISO,
-  startOfMonth,
-  startOfWeek,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CalendarDays, ChevronLeft, ChevronRight, List, Plus } from 'lucide-react'
@@ -24,7 +15,7 @@ import type { Lesson, LessonStatus, Plan, Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Select } from '@/components/Select'
-import { Input } from '@/components/Input'
+import { DateTimeField } from '@/components/DateTimeField'
 import { TextArea } from '@/components/TextArea'
 import { Modal } from '@/components/Modal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -35,7 +26,10 @@ import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import {
+  brazilDateKey,
+  brazilTodayParts,
   formatTimeRange,
+  fromBrazilWallTime,
   fromDatetimeLocalValue,
   toDatetimeLocalFromDate,
   toDatetimeLocalValue,
@@ -46,6 +40,12 @@ import {
   preferredSlot,
 } from '@/domain/schedule'
 import { bookablePlans } from '@/domain/status'
+import {
+  STUDENT_CALENDAR_CHIP,
+  STUDENT_DOT,
+  levelLabel,
+  resolveStudentColor,
+} from '@/domain/student'
 
 const schema = z
   .object({
@@ -56,7 +56,7 @@ const schema = z
     status: z.enum(['scheduled', 'done', 'cancelled', 'no_show']),
     description: z.string().optional(),
   })
-  .refine((values) => new Date(values.endsAt) > new Date(values.scheduledAt), {
+  .refine((values) => values.endsAt > values.scheduledAt, {
     message: 'O fim precisa ser depois do início',
     path: ['endsAt'],
   })
@@ -64,18 +64,41 @@ const schema = z
 type FormValues = z.infer<typeof schema>
 type ViewMode = 'list' | 'calendar'
 
-const STUDENT_TONES = ['accent', 'success', 'warning', 'danger'] as const
-type StudentTone = (typeof STUDENT_TONES)[number]
-
-const STUDENT_TONE_CLASSES: Record<StudentTone, string> = {
-  accent: 'bg-accent-soft text-accent',
-  success: 'bg-success/10 text-success',
-  warning: 'bg-warning/10 text-warning',
-  danger: 'bg-danger/10 text-danger',
+function brazilMonthAnchor(from = new Date()) {
+  const parts = brazilTodayParts(from)
+  return fromBrazilWallTime(parts.year, parts.month, 1, 12, 0)
 }
 
-function toneForStudentId(studentId: number) {
-  return STUDENT_TONES[studentId % STUDENT_TONES.length]
+function shiftBrazilMonth(monthDate: Date, delta: number) {
+  const parts = brazilTodayParts(monthDate)
+  return fromBrazilWallTime(parts.year, parts.month + delta, 1, 12, 0)
+}
+
+function brazilCalendarDays(monthDate: Date) {
+  const parts = brazilTodayParts(monthDate)
+  const firstWeekday = new Date(parts.year, parts.month - 1, 1).getDay()
+  const daysInMonth = new Date(parts.year, parts.month, 0).getDate()
+  const lastWeekday = new Date(parts.year, parts.month - 1, daysInMonth).getDay()
+  const leading = firstWeekday
+  const trailing = 6 - lastWeekday
+  const days: Date[] = []
+
+  for (let day = 1 - leading; day <= daysInMonth + trailing; day += 1) {
+    days.push(fromBrazilWallTime(parts.year, parts.month, day, 12, 0))
+  }
+
+  return days
+}
+
+function sameBrazilMonth(a: Date, b: Date) {
+  const left = brazilTodayParts(a)
+  const right = brazilTodayParts(b)
+  return left.year === right.year && left.month === right.month
+}
+
+function brazilMonthLabel(monthDate: Date) {
+  const parts = brazilTodayParts(monthDate)
+  return format(new Date(parts.year, parts.month - 1, 1), 'MMMM yyyy', { locale: ptBR })
 }
 
 export function LessonsPage() {
@@ -84,7 +107,7 @@ export function LessonsPage() {
   const { labelFor, lessonDurationMinutes } = useCatalog()
   const previousStart = useRef('')
   const [view, setView] = useState<ViewMode>('calendar')
-  const [month, setMonth] = useState(() => startOfMonth(new Date()))
+  const [month, setMonth] = useState(() => brazilMonthAnchor())
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
@@ -134,6 +157,23 @@ export function LessonsPage() {
     if (!filterStudentId) return lessons
     return lessons.filter((lesson) => lesson.studentId === Number(filterStudentId))
   }, [lessons, filterStudentId])
+
+  const calendarLegend = useMemo(() => {
+    const byId = new Map<number, { id: number; name: string; level: Student['level'] }>()
+    for (const lesson of filteredLessons) {
+      if (byId.has(lesson.studentId)) continue
+      const fromList = studentsMap.get(lesson.studentId)
+      byId.set(lesson.studentId, {
+        id: lesson.studentId,
+        name:
+          lesson.studentName ??
+          fromList?.name ??
+          `Aluno #${lesson.studentId}`,
+        level: lesson.studentLevel ?? fromList?.level ?? null,
+      })
+    }
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+  }, [filteredLessons, studentsMap])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -259,11 +299,7 @@ export function LessonsPage() {
     }
   }
 
-  const calendarDays = useMemo(() => {
-    const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 })
-    const end = endOfWeek(endOfMonth(month), { weekStartsOn: 0 })
-    return eachDayOfInterval({ start, end })
-  }, [month])
+  const calendarDays = useMemo(() => brazilCalendarDays(month), [month])
 
   return (
     <div>
@@ -275,8 +311,8 @@ export function LessonsPage() {
               <button
                 type="button"
                 onClick={() => setView('list')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                  view === 'list' ? 'bg-accent-soft text-accent' : 'text-ink-muted'
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
+                  view === 'list' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 <List className="size-3.5" />
@@ -285,8 +321,8 @@ export function LessonsPage() {
               <button
                 type="button"
                 onClick={() => setView('calendar')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                  view === 'calendar' ? 'bg-accent-soft text-accent' : 'text-ink-muted'
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
+                  view === 'calendar' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 <CalendarDays className="size-3.5" />
@@ -308,7 +344,12 @@ export function LessonsPage() {
           onChange={(event) => setFilterStudentId(event.target.value)}
           options={[
             { value: '', label: 'Todos os alunos' },
-            ...students.map((student) => ({ value: student.id, label: student.name })),
+            ...students.map((student) => ({
+              value: student.id,
+              label: levelLabel(student.level)
+                ? `${student.name} · ${levelLabel(student.level)}`
+                : student.name,
+            })),
           ]}
         />
       </div>
@@ -335,13 +376,15 @@ export function LessonsPage() {
           onAction={() => openCreate()}
         />
       ) : view === 'list' ? (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-surface-raised px-4 sm:px-5">
+        <ul className="animate-fade-in divide-y divide-border rounded-lg border border-border bg-surface-raised px-4 sm:px-5">
           {filteredLessons.map((lesson) => (
             <LessonRow
               key={lesson.id}
               lesson={{
                 ...lesson,
                 studentName: lesson.studentName ?? studentsMap.get(lesson.studentId)?.name ?? null,
+                studentLevel:
+                  lesson.studentLevel ?? studentsMap.get(lesson.studentId)?.level ?? null,
               }}
               planLabel={labelFor(lesson.planPackage)}
               onComplete={(item) => quickStatus(item, 'done')}
@@ -353,18 +396,37 @@ export function LessonsPage() {
           ))}
         </ul>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface-raised">
+        <div className="animate-fade-in overflow-hidden rounded-lg border border-border bg-surface-raised">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <Button variant="ghost" size="sm" onClick={() => setMonth((m) => addMonths(m, -1))} aria-label="Mês anterior">
+            <Button variant="ghost" size="sm" onClick={() => setMonth((m) => shiftBrazilMonth(m, -1))} aria-label="Mês anterior">
               <ChevronLeft className="size-4" />
             </Button>
             <p className="text-sm font-semibold capitalize text-ink">
-              {format(month, 'MMMM yyyy', { locale: ptBR })}
+              {brazilMonthLabel(month)}
             </p>
-            <Button variant="ghost" size="sm" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Próximo mês">
+            <Button variant="ghost" size="sm" onClick={() => setMonth((m) => shiftBrazilMonth(m, 1))} aria-label="Próximo mês">
               <ChevronRight className="size-4" />
             </Button>
           </div>
+          {calendarLegend.length > 0 ? (
+            <div className="flex flex-wrap gap-2 border-b border-border px-4 py-2.5">
+              {calendarLegend.map((item) => (
+                <span
+                  key={item.id}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-surface-muted px-2 py-1 text-xs text-ink"
+                >
+                  <span
+                    className={`size-2.5 shrink-0 rounded-full ${STUDENT_DOT[resolveStudentColor(item.color, item.id)]}`}
+                    aria-hidden
+                  />
+                  <span className="font-medium">{item.name.split(' ')[0]}</span>
+                  {levelLabel(item.level) ? (
+                    <span className="text-ink-muted">· {levelLabel(item.level)}</span>
+                  ) : null}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className="grid grid-cols-7 border-b border-border bg-surface-muted text-center text-xs font-medium uppercase tracking-wide text-ink-muted">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
               <div key={day} className="px-1 py-2">
@@ -374,13 +436,14 @@ export function LessonsPage() {
           </div>
           <div className="grid grid-cols-7 auto-rows-[minmax(88px,1fr)]">
             {calendarDays.map((day) => {
-              const dayLessons = filteredLessons.filter((lesson) =>
-                isSameDay(parseISO(lesson.scheduledAt), day),
+              const dayKey = brazilDateKey(day)
+              const dayLessons = filteredLessons.filter(
+                (lesson) => brazilDateKey(lesson.scheduledAt) === dayKey,
               )
-              const inMonth = isSameMonth(day, month)
+              const inMonth = sameBrazilMonth(day, month)
               return (
                 <button
-                  key={day.toISOString()}
+                  key={dayKey ?? day.toISOString()}
                   type="button"
                   onClick={() => openCreate(day)}
                   className={`flex min-h-[88px] flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft ${
@@ -388,7 +451,7 @@ export function LessonsPage() {
                   }`}
                 >
                   <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-ink-muted'}`}>
-                    {format(day, 'd')}
+                    {brazilTodayParts(day).day}
                   </span>
                   <div className="flex flex-col gap-1 overflow-hidden">
                     {dayLessons.slice(0, 3).map((lesson) => (
@@ -399,7 +462,14 @@ export function LessonsPage() {
                           event.stopPropagation()
                           openEdit(lesson)
                         }}
-                        className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${STUDENT_TONE_CLASSES[toneForStudentId(lesson.studentId)]}`}
+                        className={`truncate rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                          STUDENT_CALENDAR_CHIP[
+                            resolveStudentColor(
+                              lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
+                              lesson.studentId,
+                            )
+                          ]
+                        }`}
                       >
                         {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
                         {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
@@ -436,7 +506,12 @@ export function LessonsPage() {
             label="Aluno"
             placeholder="Selecione"
             error={errors.studentId?.message}
-            options={students.map((student) => ({ value: student.id, label: student.name }))}
+            options={students.map((student) => ({
+              value: student.id,
+              label: levelLabel(student.level)
+                ? `${student.name} · ${levelLabel(student.level)}`
+                : student.name,
+            }))}
             {...register('studentId', {
               onChange: (event) => {
                 setValue('planId', '')
@@ -465,7 +540,7 @@ export function LessonsPage() {
               Este aluno não tem vaga em pacote.{' '}
               <button
                 type="button"
-                className="font-medium text-accent hover:underline"
+                className="font-medium text-accent transition-opacity hover:opacity-80"
                 onClick={() => navigate(`/students/${formStudentId}`)}
               >
                 Abrir ficha
@@ -473,32 +548,31 @@ export function LessonsPage() {
             </p>
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <DateTimeField
               label="Início"
-              type="datetime-local"
+              value={watch('scheduledAt')}
               error={errors.scheduledAt?.message}
-              {...register('scheduledAt', {
-                onChange: (event) => {
-                  const next = event.target.value
-                  setValue(
-                    'endsAt',
-                    moveDatetimeLocalKeepingDuration(
-                      previousStart.current,
-                      getValues('endsAt'),
-                      next,
-                      lessonDurationMinutes,
-                    ),
-                  )
-                  previousStart.current = next
-                },
-              })}
+              onChange={(next) => {
+                setValue('scheduledAt', next, { shouldValidate: true })
+                setValue(
+                  'endsAt',
+                  moveDatetimeLocalKeepingDuration(
+                    previousStart.current,
+                    getValues('endsAt'),
+                    next,
+                    lessonDurationMinutes,
+                  ),
+                  { shouldValidate: true },
+                )
+                previousStart.current = next
+              }}
             />
-            <Input
+            <DateTimeField
               label="Fim"
-              type="datetime-local"
               hint="Padrão: 1 hora"
+              value={watch('endsAt')}
               error={errors.endsAt?.message}
-              {...register('endsAt')}
+              onChange={(next) => setValue('endsAt', next, { shouldValidate: true })}
             />
           </div>
           <Select

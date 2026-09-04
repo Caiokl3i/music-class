@@ -16,6 +16,7 @@ export type Student = {
   phone: string | null
   description: string | null
   level: 'beginner' | 'intermediate' | null
+  color: StudentColor
   tags: string | null
   preferredWeekday: number | null
   preferredTime: string | null
@@ -25,7 +26,9 @@ export type Student = {
   activePlansCount: number
 }
 
-export type PlanPackage = 'single' | 'pack_4' | 'pack_8'
+export type StudentColor = 'accent' | 'success' | 'warning' | 'danger'
+
+export type PlanPackage = string
 export type PlanStatus = 'pending' | 'paid' | 'cancelled'
 
 export type Plan = {
@@ -44,6 +47,49 @@ export type Plan = {
   lessonsDone: number
   lessonsRemaining: number
   lessonsSchedulable: number
+  discounts: PlanDiscount[]
+  discountTotal: number
+  netPrice: number
+}
+
+export type PlanDiscount = {
+  id: number
+  userId: number
+  planId: number
+  name: string
+  amount: number
+  serviceAt: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string | null
+}
+
+export type BillingLessonLine = {
+  id: number
+  scheduledAt: string
+  dateLabel: string
+}
+
+export type BillingDiscountLine = {
+  id: number
+  name: string
+  amount: number
+  serviceAt: string | null
+  dateLabel: string | null
+}
+
+export type BillingSummary = {
+  planId: number
+  studentName: string | null
+  month: string | null
+  monthLabel: string | null
+  unitPrice: number
+  lessons: BillingLessonLine[]
+  lessonsSubtotal: number
+  discounts: BillingDiscountLine[]
+  discountTotal: number
+  total: number
+  text: string
 }
 
 export type LessonStatus = 'scheduled' | 'done' | 'cancelled' | 'no_show'
@@ -61,14 +107,29 @@ export type Lesson = {
   updatedAt: string | null
   studentName: string | null
   studentInstrument: string | null
+  studentLevel: 'beginner' | 'intermediate' | null
+  studentColor: StudentColor | null
   planPackage: PlanPackage | null
 }
 
 export type PackageOption = {
+  id?: number
   value: PlanPackage
   lessons: number
   price: number
   label: string
+}
+
+export type PlanType = {
+  id: number
+  userId: number
+  slug: string
+  label: string
+  lessons: number
+  price: number
+  sortOrder: number
+  createdAt: string
+  updatedAt: string | null
 }
 
 export type Catalog = {
@@ -82,6 +143,7 @@ export type PlanAlert = {
   planId: number
   studentId: number
   studentName: string | null
+  studentLevel: 'beginner' | 'intermediate' | null
   package: PlanPackage
   price: number
   status: PlanStatus
@@ -99,6 +161,8 @@ export type Dashboard = {
     studentId: number
     studentName: string
     studentInstrument: string | null
+    studentLevel: 'beginner' | 'intermediate' | null
+    studentColor: StudentColor | null
     birthdate: string | null
   }>
   revenue: number
@@ -136,6 +200,7 @@ export type CreateStudentInput = {
   phone?: string | null
   description?: string | null
   level?: 'beginner' | 'intermediate' | null
+  color?: StudentColor
   tags?: string | null
   preferredWeekday?: number | null
   preferredTime?: string | null
@@ -152,6 +217,23 @@ export type CreatePlanInput = {
 }
 
 export type UpdatePlanInput = Partial<CreatePlanInput>
+
+export type CreatePlanDiscountInput = {
+  name: string
+  amount: number
+  serviceAt?: string | null
+  notes?: string | null
+}
+
+export type UpdatePlanDiscountInput = Partial<CreatePlanDiscountInput>
+
+export type CreatePlanTypeInput = {
+  label: string
+  lessons: number
+  price: number
+}
+
+export type UpdatePlanTypeInput = Partial<CreatePlanTypeInput>
 
 export type CreateLessonInput = {
   studentId: number

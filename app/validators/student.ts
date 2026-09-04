@@ -1,5 +1,9 @@
 import vine from '@vinejs/vine'
 
+export const STUDENT_COLORS = ['accent', 'success', 'warning', 'danger'] as const
+
+export type StudentColor = (typeof STUDENT_COLORS)[number]
+
 /**
  * Shared fields for student create/update.
  */
@@ -10,6 +14,7 @@ const studentFields = {
   phone: vine.string().trim().maxLength(30).optional().nullable(),
   description: vine.string().trim().optional().nullable(),
   level: vine.enum(['beginner', 'intermediate']).optional().nullable(),
+  color: vine.enum(STUDENT_COLORS).optional(),
   tags: vine.string().trim().optional().nullable(),
   preferredWeekday: vine.number().withoutDecimals().min(1).max(7).optional().nullable(),
   preferredTime: vine.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional().nullable(),
@@ -31,6 +36,7 @@ export const updateStudentValidator = vine.create({
   phone: studentFields.phone.clone(),
   description: studentFields.description.clone(),
   level: studentFields.level.clone(),
+  color: vine.enum(STUDENT_COLORS).optional(),
   tags: studentFields.tags.clone(),
   preferredWeekday: studentFields.preferredWeekday.clone(),
   preferredTime: studentFields.preferredTime.clone(),
