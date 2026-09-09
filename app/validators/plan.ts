@@ -1,7 +1,7 @@
-import { PACKAGES, PLAN_PACKAGES } from '#services/package_catalog'
+import { PACKAGES } from '#services/package_catalog'
 import vine from '@vinejs/vine'
 
-export { PACKAGES, PLAN_PACKAGES }
+export { PACKAGES }
 export type { PlanPackage } from '#services/package_catalog'
 
 export const PLAN_STATUSES = ['pending', 'paid', 'cancelled'] as const
@@ -45,4 +45,8 @@ export const updatePlanValidator = vine.create({
 
 export const generatePlanLessonsValidator = vine.create({
   firstScheduledAt: vine.date({ formats: ['iso8601'] }),
+})
+
+export const listPlansValidator = vine.create({
+  studentId: vine.number().positive().optional(),
 })

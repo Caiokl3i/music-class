@@ -4,6 +4,7 @@ import {
   createLessonForStudentValidator,
   updateLessonValidator,
   repositionLessonValidator,
+  listLessonsValidator,
   type LessonStatus,
 } from '#validators/lesson'
 import {
@@ -19,8 +20,7 @@ import type User from '#models/user'
 export default class LessonsController {
   async index({ auth, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    const studentId = request.input('studentId')
-    const planId = request.input('planId')
+    const { studentId, planId } = await request.validateUsing(listLessonsValidator)
     const query = lessonsQuery(user).orderBy('scheduledAt', 'asc')
 
     if (studentId) {

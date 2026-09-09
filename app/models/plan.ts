@@ -5,7 +5,6 @@ import User from '#models/user'
 import Student from '#models/student'
 import Lesson from '#models/lesson'
 import PlanDiscount from '#models/plan_discount'
-import { remainingCredits as calculateRemainingCredits } from '#services/plan_credits'
 
 export default class Plan extends PlanSchema {
   @belongsTo(() => User)
@@ -19,8 +18,4 @@ export default class Plan extends PlanSchema {
 
   @hasMany(() => PlanDiscount)
   declare discounts: HasMany<typeof PlanDiscount>
-
-  remainingCredits(exceptLessonId?: number) {
-    return calculateRemainingCredits(this, exceptLessonId)
-  }
 }

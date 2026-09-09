@@ -26,14 +26,41 @@ export async function ensureDefaultPlanTypes(user: User) {
     return
   }
 
-  await user.related('planTypes').createMany(
-    DEFAULT_PLAN_TYPES.map((item, index) => ({
-      slug: item.slug,
-      label: item.label,
-      lessons: item.lessons,
-      price: item.price,
-      sortOrder: index,
-    }))
+  try {
+    await user.related('planTypes').createMany(
+      DEFAULT_PLAN_TYPES.map((item, index) => ({
+        slug: item.slug,
+        label: item.label,
+        lessons: item.lessons,
+        price: item.price,
+        sortOrder: index,
+      }))
+    )
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return
+    }
+    throw error
+  }
+}
+
+function isUniqueConstraintError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const candidate = error as {
+    code?: string
+    message?: string
+    cause?: { code?: string; message?: string }
+  }
+  const code = candidate.code ?? candidate.cause?.code ?? ''
+  const message = `${candidate.message ?? ''} ${candidate.cause?.message ?? ''}`
+
+  return (
+    code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+    code === 'SQLITE_CONSTRAINT' ||
+    message.includes('UNIQUE constraint failed')
   )
 }
 

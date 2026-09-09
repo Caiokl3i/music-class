@@ -210,6 +210,30 @@ test.group('Students', (group) => {
     assert.isNull(await Student.find(student.id))
   })
 
+  test('does not delete a student that still has packages or lessons', async ({
+    assert,
+    client,
+  }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({
+      name: 'Ana',
+      instrument: 'piano',
+    })
+    await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'single',
+      lessonsTotal: 1,
+      price: 35,
+      status: 'pending',
+    })
+
+    const response = await client.delete(`/api/v1/students/${student.id}`).loginAs(teacher)
+
+    response.assertStatus(422)
+    response.assertBodyContains({ code: 'E_STUDENT_HAS_HISTORY' })
+    assert.isNotNull(await Student.find(student.id))
+  })
+
   test('exposes remaining credits from paid and pending plans', async ({ client }) => {
     const teacher = await createTeacher()
     const student = await teacher.related('students').create({

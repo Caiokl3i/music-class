@@ -1,4 +1,5 @@
 import StudentTransformer from '#transformers/student_transformer'
+import { assertCanDeleteStudent } from '#services/plan_credits'
 import {
   createStudentValidator,
   listStudentsValidator,
@@ -50,6 +51,7 @@ export default class StudentsController {
 
   async destroy({ auth, params, response }: HttpContext) {
     const student = await this.findOwnedStudent(auth.getUserOrFail(), params.id)
+    await assertCanDeleteStudent(student)
     await student.delete()
 
     return response.noContent()

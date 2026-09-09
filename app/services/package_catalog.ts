@@ -15,8 +15,6 @@ export const PACKAGES = Object.fromEntries(
   [K in DefaultPlanSlug]: { lessons: number; price: number; label: string }
 }
 
-export const PLAN_PACKAGES = DEFAULT_PLAN_TYPES.map((item) => item.slug)
-
 export type PlanPackage = string
 
 export const LESSON_DURATION_MINUTES = 60

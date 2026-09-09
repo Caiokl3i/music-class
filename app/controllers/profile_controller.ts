@@ -1,5 +1,6 @@
 import UserTransformer from '#transformers/user_transformer'
 import { updatePasswordValidator, updateProfileValidator } from '#validators/user'
+import { revokeOtherAccessTokens } from '#services/access_tokens'
 import User from '#models/user'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -30,6 +31,7 @@ export default class ProfileController {
     await User.verifyCredentials(user.email, payload.currentPassword)
     user.password = payload.password
     await user.save()
+    await revokeOtherAccessTokens(user)
 
     return { message: 'Password updated successfully' }
   }

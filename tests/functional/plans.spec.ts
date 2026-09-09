@@ -271,6 +271,32 @@ test.group('Plans', (group) => {
     assert.isNotNull(response.body().data.expiresAt)
   })
 
+  test('does not move a plan with lessons to another student', async ({ client }) => {
+    const teacher = await createTeacher()
+    const ana = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const bruno = await teacher.related('students').create({ name: 'Bruno', instrument: 'violão' })
+    const plan = await teacher.related('plans').create({
+      studentId: ana.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+    })
+    await teacher.related('lessons').create({
+      studentId: ana.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-01T14:00:00.000Z'),
+      status: 'scheduled',
+    })
+
+    const response = await client.put(`/api/v1/plans/${plan.id}`).loginAs(teacher).json({
+      studentId: bruno.id,
+    })
+
+    response.assertStatus(422)
+    response.assertBodyContains({ code: 'E_PLAN_STUDENT_LOCKED' })
+  })
+
   test('does not reduce plan credits below active lessons', async ({ client }) => {
     const teacher = await createTeacher()
     const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })

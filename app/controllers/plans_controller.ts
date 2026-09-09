@@ -4,11 +4,18 @@ import {
   createPlanValidator,
   updatePlanValidator,
   generatePlanLessonsValidator,
+  listPlansValidator,
   type PlanStatus,
 } from '#validators/plan'
 import { billingQueryValidator } from '#validators/plan_discount'
 import { resolvePlanType } from '#services/plan_types'
-import { assertLessonsTotalNotBelowActive, assertCanCancelPlan, assertCanDeletePlan, expiresAtFromPaidAt } from '#services/plan_credits'
+import {
+  assertLessonsTotalNotBelowActive,
+  assertCanCancelPlan,
+  assertCanChangePlanStudent,
+  assertCanDeletePlan,
+  expiresAtFromPaidAt,
+} from '#services/plan_credits'
 import { generatePlanLessons } from '#services/lesson_generate'
 import {
   billingFilename,
@@ -22,7 +29,7 @@ import type User from '#models/user'
 export default class PlansController {
   async index({ auth, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    const studentId = request.input('studentId')
+    const { studentId } = await request.validateUsing(listPlansValidator)
     const query = this.plansQuery(user).orderBy('createdAt', 'desc')
 
     if (studentId) {
@@ -67,8 +74,9 @@ export default class PlansController {
     const previousExpiresAt = plan.expiresAt
     const payload = await request.validateUsing(updatePlanValidator)
 
-    if (payload.studentId !== undefined) {
+    if (payload.studentId !== undefined && payload.studentId !== plan.studentId) {
       await this.findOwnedStudent(user, payload.studentId)
+      await assertCanChangePlanStudent(plan)
       plan.studentId = payload.studentId
     }
 

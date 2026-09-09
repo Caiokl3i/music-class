@@ -149,6 +149,43 @@ test.group('Auth', (group) => {
     login.assertStatus(200)
   })
 
+  test('revokes other tokens when the password changes', async ({ client }) => {
+    await createTeacher()
+    const loginA = await client.post('/api/v1/auth/login').json({
+      email: 'teacher@example.com',
+      password: 'password123',
+    })
+    const loginB = await client.post('/api/v1/auth/login').json({
+      email: 'teacher@example.com',
+      password: 'password123',
+    })
+    loginA.assertStatus(200)
+    loginB.assertStatus(200)
+
+    const tokenA = loginA.body().data.token as string
+    const tokenB = loginB.body().data.token as string
+
+    const updated = await client
+      .put('/api/v1/account/password')
+      .header('Authorization', `Bearer ${tokenA}`)
+      .json({
+        currentPassword: 'password123',
+        password: 'newpassword1',
+        passwordConfirmation: 'newpassword1',
+      })
+    updated.assertStatus(200)
+
+    const withCurrent = await client
+      .get('/api/v1/account/profile')
+      .header('Authorization', `Bearer ${tokenA}`)
+    withCurrent.assertStatus(200)
+
+    const withOther = await client
+      .get('/api/v1/account/profile')
+      .header('Authorization', `Bearer ${tokenB}`)
+    withOther.assertStatus(401)
+  })
+
   test('rejects password update with wrong current password', async ({ client }) => {
     const teacher = await createTeacher()
 

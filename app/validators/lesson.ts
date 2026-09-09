@@ -62,3 +62,8 @@ export const repositionLessonValidator = vine.create({
   endsAt: lessonFields.endsAt,
   description: lessonFields.description,
 })
+
+export const listLessonsValidator = vine.create({
+  studentId: vine.number().positive().optional(),
+  planId: vine.number().positive().optional(),
+})

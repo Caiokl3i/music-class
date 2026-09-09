@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import { createError } from '@adonisjs/core/exceptions'
 import { CREDIT_VALIDITY_DAYS } from '#services/package_catalog'
 import type Plan from '#models/plan'
+import type Student from '#models/student'
 
 export const PLAN_NO_CREDITS = createError(
   'This plan has no remaining lesson credits',
@@ -36,6 +37,18 @@ export const PLAN_HAS_ACTIVE_LESSONS = createError(
 export const PLAN_HAS_LESSONS = createError(
   'Remove all lessons from this plan before deleting it',
   'E_PLAN_HAS_LESSONS',
+  422
+)
+
+export const PLAN_STUDENT_LOCKED = createError(
+  'Cannot change the student of a plan that already has lessons',
+  'E_PLAN_STUDENT_LOCKED',
+  422
+)
+
+export const STUDENT_HAS_HISTORY = createError(
+  'Archive this student or remove packages and lessons before deleting',
+  'E_STUDENT_HAS_HISTORY',
   422
 )
 
@@ -182,5 +195,23 @@ export async function assertCanDeletePlan(plan: Plan) {
   const result = await plan.related('lessons').query().count('* as total')
   if (Number(result[0]?.$extras.total ?? 0) > 0) {
     throw new PLAN_HAS_LESSONS()
+  }
+}
+
+export async function assertCanChangePlanStudent(plan: Plan) {
+  const result = await plan.related('lessons').query().count('* as total')
+  if (Number(result[0]?.$extras.total ?? 0) > 0) {
+    throw new PLAN_STUDENT_LOCKED()
+  }
+}
+
+export async function assertCanDeleteStudent(student: Student) {
+  const [plans, lessons] = await Promise.all([
+    student.related('plans').query().count('* as total'),
+    student.related('lessons').query().count('* as total'),
+  ])
+
+  if (Number(plans[0]?.$extras.total ?? 0) > 0 || Number(lessons[0]?.$extras.total ?? 0) > 0) {
+    throw new STUDENT_HAS_HISTORY()
   }
 }
