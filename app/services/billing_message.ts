@@ -24,10 +24,26 @@ const MONTH_NAMES_PT = [
   'dezembro',
 ]
 
-const FONT_CANDIDATES = [
+const FONT_REGULAR_CANDIDATES = [
   '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
   '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
 ]
+
+const FONT_BOLD_CANDIDATES = [
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+]
+
+const PDF = {
+  accent: '#0f766e',
+  accentSoft: '#f0fdfa',
+  ink: '#1a2433',
+  muted: '#5b6b7c',
+  border: '#e2e8f0',
+  surface: '#f4f6f8',
+  white: '#ffffff',
+  danger: '#b45309',
+} as const
 
 export type BillingLessonLine = {
   id: number
@@ -241,48 +257,223 @@ export function formatBillingText(input: {
   return lines.join('\n')
 }
 
-function resolvePdfFont() {
-  return FONT_CANDIDATES.find((path) => existsSync(path)) ?? null
+function resolvePdfFonts() {
+  return {
+    regular: FONT_REGULAR_CANDIDATES.find((path) => existsSync(path)) ?? null,
+    bold: FONT_BOLD_CANDIDATES.find((path) => existsSync(path)) ?? null,
+  }
+}
+
+function useFont(
+  doc: PDFKit.PDFDocument,
+  fonts: { regular: string | null; bold: string | null },
+  weight: 'regular' | 'bold'
+) {
+  const path = weight === 'bold' ? fonts.bold ?? fonts.regular : fonts.regular
+  if (path) doc.font(path)
+  else doc.font(weight === 'bold' ? 'Helvetica-Bold' : 'Helvetica')
+}
+
+function drawRoundedRect(
+  doc: PDFKit.PDFDocument,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fill: string
+) {
+  doc.save()
+  doc.roundedRect(x, y, width, height, radius).fill(fill)
+  doc.restore()
+}
+
+function drawRow(
+  doc: PDFKit.PDFDocument,
+  fonts: { regular: string | null; bold: string | null },
+  left: string,
+  right: string,
+  opts: { muted?: boolean; bold?: boolean; color?: string } = {}
+) {
+  const leftX = doc.page.margins.left
+  const rightX = doc.page.width - doc.page.margins.right
+  const y = doc.y
+  const color = opts.color ?? (opts.muted ? PDF.muted : PDF.ink)
+
+  useFont(doc, fonts, opts.bold ? 'bold' : 'regular')
+  doc.fillColor(color).fontSize(opts.bold ? 11 : 10.5)
+  doc.text(left, leftX, y, { width: rightX - leftX - 120, continued: false })
+  doc.text(right, leftX, y, { width: rightX - leftX, align: 'right' })
+  doc.moveDown(0.55)
 }
 
 export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> {
-  const fontPath = resolvePdfFont()
+  const fonts = resolvePdfFonts()
 
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 48, size: 'A4' })
+    const doc = new PDFDocument({
+      margin: 48,
+      size: 'A4',
+      info: {
+        Title: summary.monthLabel
+          ? `Cobrança — aulas de ${summary.monthLabel}`
+          : 'Cobrança — aulas do pacote',
+        Author: 'Music Class',
+      },
+    })
     const chunks: Buffer[] = []
 
     doc.on('data', (chunk: Buffer) => chunks.push(chunk))
     doc.on('end', () => resolve(Buffer.concat(chunks)))
     doc.on('error', reject)
 
-    if (fontPath) {
-      doc.font(fontPath)
-    }
+    const pageWidth = doc.page.width
+    const margin = doc.page.margins.left
+    const contentWidth = pageWidth - margin - doc.page.margins.right
+    const title = summary.monthLabel
+      ? `Cobrança — aulas de ${summary.monthLabel}`
+      : 'Cobrança — aulas do pacote'
 
-    doc.fontSize(16).text(
-      summary.monthLabel
-        ? `Cobrança — aulas de ${summary.monthLabel}`
-        : 'Cobrança — aulas do pacote',
-      { align: 'left' }
-    )
+    // Header band
+    doc.save()
+    doc.rect(0, 0, pageWidth, 108).fill(PDF.accent)
+    doc.restore()
 
-    if (summary.studentName) {
+    useFont(doc, fonts, 'bold')
+    doc.fillColor(PDF.white).fontSize(11).text('Music Class', margin, 28, {
+      width: contentWidth,
+    })
+    doc.fontSize(20).text(title, margin, 50, { width: contentWidth })
+    useFont(doc, fonts, 'regular')
+    doc
+      .fontSize(10)
+      .fillColor('#d1fae5')
+      .text('Resumo para envio ao aluno ou responsável', margin, 78, {
+        width: contentWidth,
+      })
+
+    doc.y = 128
+
+    // Meta card
+    const metaTop = doc.y
+    const metaHeight = 58
+    drawRoundedRect(doc, margin, metaTop, contentWidth, metaHeight, 8, PDF.surface)
+
+    useFont(doc, fonts, 'regular')
+    doc.fillColor(PDF.muted).fontSize(9).text('ALUNO', margin + 16, metaTop + 12)
+    useFont(doc, fonts, 'bold')
+    doc
+      .fillColor(PDF.ink)
+      .fontSize(12)
+      .text(summary.studentName ?? '—', margin + 16, metaTop + 28, {
+        width: contentWidth / 2 - 24,
+      })
+
+    useFont(doc, fonts, 'regular')
+    doc
+      .fillColor(PDF.muted)
+      .fontSize(9)
+      .text('VALOR POR AULA', margin + contentWidth / 2, metaTop + 12, {
+        width: contentWidth / 2 - 16,
+        align: 'right',
+      })
+    useFont(doc, fonts, 'bold')
+    doc
+      .fillColor(PDF.accent)
+      .fontSize(12)
+      .text(formatMoneyBr(summary.unitPrice), margin + contentWidth / 2, metaTop + 28, {
+        width: contentWidth / 2 - 16,
+        align: 'right',
+      })
+
+    doc.y = metaTop + metaHeight + 28
+
+    // Lessons section
+    useFont(doc, fonts, 'bold')
+    doc.fillColor(PDF.ink).fontSize(12).text('Aulas realizadas', margin, doc.y)
+    doc.moveDown(0.45)
+    doc
+      .moveTo(margin, doc.y)
+      .lineTo(margin + contentWidth, doc.y)
+      .strokeColor(PDF.border)
+      .lineWidth(1)
+      .stroke()
+    doc.moveDown(0.55)
+
+    if (summary.lessons.length === 0) {
+      useFont(doc, fonts, 'regular')
+      doc.fillColor(PDF.muted).fontSize(10.5).text('Nenhuma aula concluída neste período.')
       doc.moveDown(0.4)
-      doc.fontSize(11).text(`Aluno: ${summary.studentName}`)
-    }
-
-    doc.moveDown(0.6)
-    doc.fontSize(10).text(`Valor por aula: ${formatMoneyBr(summary.unitPrice)}`)
-    doc.moveDown(0.8)
-
-    for (const line of summary.text.split('\n')) {
-      if (line.length === 0) {
-        doc.moveDown(0.35)
-        continue
+    } else {
+      for (const lesson of summary.lessons) {
+        drawRow(doc, fonts, lesson.dateLabel, formatMoneyBr(summary.unitPrice))
       }
-      doc.fontSize(11).text(line)
     }
+
+    drawRow(doc, fonts, 'Total das aulas', formatMoneyBr(summary.lessonsSubtotal), {
+      bold: true,
+    })
+
+    // Discounts
+    if (summary.discounts.length > 0) {
+      doc.moveDown(0.6)
+      useFont(doc, fonts, 'bold')
+      doc.fillColor(PDF.ink).fontSize(12).text('Descontos de troca', margin, doc.y)
+      doc.moveDown(0.45)
+      doc
+        .moveTo(margin, doc.y)
+        .lineTo(margin + contentWidth, doc.y)
+        .strokeColor(PDF.border)
+        .lineWidth(1)
+        .stroke()
+      doc.moveDown(0.55)
+
+      for (const discount of summary.discounts) {
+        const label = discount.dateLabel
+          ? `${discount.name} · ${discount.dateLabel}`
+          : discount.name
+        drawRow(doc, fonts, label, `− ${formatMoneyBr(discount.amount)}`, {
+          color: PDF.danger,
+        })
+      }
+
+      drawRow(doc, fonts, 'Total de descontos', formatMoneyBr(summary.discountTotal), {
+        bold: true,
+        color: PDF.danger,
+      })
+    }
+
+    // Total box
+    doc.moveDown(0.8)
+    const totalTop = doc.y
+    const totalHeight = 56
+    drawRoundedRect(doc, margin, totalTop, contentWidth, totalHeight, 8, PDF.accentSoft)
+    doc.save()
+    doc.roundedRect(margin, totalTop, 5, totalHeight, 2).fill(PDF.accent)
+    doc.restore()
+
+    useFont(doc, fonts, 'regular')
+    doc.fillColor(PDF.muted).fontSize(9).text('VALOR TOTAL', margin + 18, totalTop + 12)
+    useFont(doc, fonts, 'bold')
+    doc
+      .fillColor(PDF.accent)
+      .fontSize(18)
+      .text(formatMoneyBr(summary.total), margin + 18, totalTop + 26, {
+        width: contentWidth - 36,
+      })
+
+    // Footer — lineHeight do texto precisa caber acima de maxY, senão abre página vazia
+    const footerY = doc.page.height - doc.page.margins.bottom - 16
+    useFont(doc, fonts, 'regular')
+    doc
+      .fillColor(PDF.muted)
+      .fontSize(8.5)
+      .text(
+        `Gerado em ${DateTime.now().setZone('America/Sao_Paulo').toFormat("dd/MM/yyyy 'às' HH:mm")} · Music Class`,
+        margin,
+        footerY,
+        { width: contentWidth, align: 'center', lineBreak: false }
+      )
 
     doc.end()
   })

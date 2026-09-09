@@ -8,7 +8,7 @@ import {
   lessonsDoneFromExtras,
 } from '#services/plan_credits'
 import { EXPIRING_SOON_DAYS, LOW_CREDIT_THRESHOLD } from '#services/package_catalog'
-import { buildMonthCsv } from '#services/month_export'
+import { buildMonthCsv, buildMonthPdf } from '#services/month_export'
 import { netPriceFromPlan } from '#services/plan_pricing'
 import { dashboardQueryValidator } from '#validators/dashboard'
 import { exportQueryValidator } from '#validators/export'
@@ -67,7 +67,7 @@ export default class DashboardController {
         studentName: student.name,
         studentInstrument: student.instrument,
         studentLevel: student.level ?? null,
-        studentColor: student.color ?? 'accent',
+        studentColor: student.color ?? '#0f766e',
         birthdate: student.birthdate?.toISODate(),
       }))
 
@@ -124,6 +124,18 @@ export default class DashboardController {
       .header('Content-Disposition', `attachment; filename="${csv.filename}"`)
       .header('Cache-Control', 'no-store')
       .send(csv.body)
+  }
+
+  async exportMonthPdf({ auth, request, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const { month, timezone } = await request.validateUsing(exportQueryValidator)
+    const pdf = await buildMonthPdf(user, { month, timezone })
+
+    return response
+      .header('Content-Type', 'application/pdf')
+      .header('Content-Disposition', `attachment; filename="${pdf.filename}"`)
+      .header('Cache-Control', 'no-store')
+      .send(pdf.body)
   }
 
   private resolveZone(timezone?: string) {

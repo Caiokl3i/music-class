@@ -138,4 +138,36 @@ test.group('Month export', (group) => {
     )
     assert.include(response.text(), 'aula_atual')
   })
+
+  test('exports the month as PDF', async ({ assert, client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan({
+      paidAt: DateTime.fromISO('2026-09-01T15:00:00.000Z'),
+    })
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-08T17:00:00.000Z'),
+      status: 'done',
+      description: 'Escala maior',
+    })
+
+    const response = await client
+      .get('/api/v1/export.pdf?month=2026-09&timezone=UTC')
+      .loginAs(teacher)
+
+    response.assertStatus(200)
+    assert.include(String(response.header('content-type')), 'application/pdf')
+    assert.include(
+      String(response.header('content-disposition')),
+      'filename="music-class-2026-09.pdf"'
+    )
+    const body = response.body()
+    assert.isTrue(Buffer.isBuffer(body) || body instanceof Uint8Array || typeof body === 'string')
+    const bytes = Buffer.isBuffer(body)
+      ? body
+      : typeof body === 'string'
+        ? Buffer.from(body)
+        : Buffer.from(body)
+    assert.isTrue(bytes.subarray(0, 4).toString() === '%PDF')
+  })
 })

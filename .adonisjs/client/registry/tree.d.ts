@@ -23,6 +23,7 @@ export interface ApiDefinition {
   dashboard: {
     show: typeof routes['dashboard.show']
     exportMonth: typeof routes['dashboard.export_month']
+    exportMonthPdf: typeof routes['dashboard.export_month_pdf']
   }
   catalog: {
     packages: typeof routes['catalog.packages']

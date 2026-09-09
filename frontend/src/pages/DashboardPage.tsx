@@ -9,6 +9,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Download,
+  FileText,
   CircleDollarSign,
   Clock,
   CreditCard,
@@ -50,7 +51,7 @@ export function DashboardPage() {
   const toast = useToast()
   const [data, setData] = useState<Dashboard | null>(null)
   const [loading, setLoading] = useState(true)
-  const [exporting, setExporting] = useState(false)
+  const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null)
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [month, setMonth] = useState(() => currentMonthValue())
 
@@ -84,16 +85,21 @@ export function DashboardPage() {
   const greeting = user?.fullName?.split(' ')[0] || 'Professor'
   const today = formatWeekdayLong(new Date())
 
-  async function exportMonth() {
-    setExporting(true)
+  async function exportMonth(format: 'csv' | 'pdf') {
+    setExporting(format)
     try {
-      await dashboardService.downloadMonthCsv(month, APP_TIMEZONE)
-      toast.success('CSV do mês baixado.')
+      if (format === 'csv') {
+        await dashboardService.downloadMonthCsv(month, APP_TIMEZONE)
+        toast.success('CSV do mês baixado.')
+      } else {
+        await dashboardService.downloadMonthPdf(month, APP_TIMEZONE)
+        toast.success('PDF do mês baixado.')
+      }
       setExportModalOpen(false)
     } catch (error) {
       toast.error(getErrorMessage(error, 'Não foi possível exportar o mês.'))
     } finally {
-      setExporting(false)
+      setExporting(null)
     }
   }
 
@@ -102,15 +108,26 @@ export function DashboardPage() {
       <PageHeader
         description={`Olá, ${greeting}. Resumo das suas aulas de hoje.`}
         actions={
-          <Button
-            id="export-csv"
-            variant="secondary"
-            size="sm"
-            onClick={() => setExportModalOpen(true)}
-          >
-            <Download />
-            Exportar CSV
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              id="export-csv"
+              variant="secondary"
+              size="sm"
+              onClick={() => setExportModalOpen(true)}
+            >
+              <Download />
+              Exportar CSV
+            </Button>
+            <Button
+              id="export-pdf"
+              variant="secondary"
+              size="sm"
+              onClick={() => setExportModalOpen(true)}
+            >
+              <FileText />
+              Exportar PDF
+            </Button>
+          </div>
         }
       />
 
@@ -127,7 +144,7 @@ export function DashboardPage() {
 
       <Modal
         open={exportModalOpen}
-        title="Exportar CSV"
+        title="Exportar mês"
         onClose={() => {
           if (!exporting) setExportModalOpen(false)
         }}
@@ -136,20 +153,34 @@ export function DashboardPage() {
             <Button
               variant="secondary"
               onClick={() => setExportModalOpen(false)}
-              disabled={exporting}
+              disabled={Boolean(exporting)}
             >
               Fechar
             </Button>
-            <Button loading={exporting} onClick={() => void exportMonth()}>
+            <Button
+              variant="secondary"
+              loading={exporting === 'csv'}
+              disabled={Boolean(exporting)}
+              onClick={() => void exportMonth('csv')}
+            >
               <Download />
-              Baixar
+              Baixar CSV
+            </Button>
+            <Button
+              loading={exporting === 'pdf'}
+              disabled={Boolean(exporting)}
+              onClick={() => void exportMonth('pdf')}
+            >
+              <FileText />
+              Baixar PDF
             </Button>
           </>
         }
       >
         <div className="space-y-3">
           <p className="text-sm text-ink-muted">
-            Escolha o mês. O arquivo traz as aulas e os pacotes desse período.
+            Escolha o mês. O CSV e o PDF trazem as aulas e os pacotes desse período — o PDF no
+            mesmo visual da cobrança.
           </p>
           <DateTimeField
             label="Mês"
@@ -329,9 +360,10 @@ function LoadedDashboard({
             actions={
               <Link
                 to="/lessons"
-                className="text-sm font-medium text-accent transition-opacity hover:opacity-80"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-accent transition-opacity hover:opacity-80"
               >
-                Ver agenda <ArrowRight className="size-3.5" />
+                Ver agenda
+                <ArrowRight className="size-3.5 shrink-0" aria-hidden />
               </Link>
             }
           />

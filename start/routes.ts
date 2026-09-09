@@ -31,6 +31,7 @@ router
       .group(() => {
         router.get('dashboard', [controllers.Dashboard, 'show'])
         router.get('export', [controllers.Dashboard, 'exportMonth'])
+        router.get('export.pdf', [controllers.Dashboard, 'exportMonthPdf'])
         router.get('packages', [controllers.Catalog, 'packages'])
         router.get('students/:studentId/lessons', [controllers.Lessons, 'indexForStudent'])
         router.post('students/:studentId/lessons', [controllers.Lessons, 'storeForStudent'])

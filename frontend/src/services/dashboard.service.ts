@@ -26,6 +26,23 @@ export async function downloadMonthCsv(month: string, timezone: string) {
   }
 }
 
+export async function downloadMonthPdf(month: string, timezone: string) {
+  try {
+    const response = await api.get<Blob>('/export.pdf', {
+      params: { month, timezone },
+      responseType: 'blob',
+    })
+    const filename = filenameFromDisposition(
+      response.headers['content-disposition'],
+      `music-class-${month}.pdf`,
+    )
+    saveBlob(response.data, filename)
+  } catch (error) {
+    await hydrateBlobError(error)
+    throw error
+  }
+}
+
 function filenameFromDisposition(header: string | undefined, fallback: string) {
   const quoted = header?.match(/filename="([^"]+)"/)
   if (quoted?.[1]) {

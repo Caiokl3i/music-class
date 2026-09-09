@@ -54,6 +54,12 @@ const routes = {
     tokens: [{"old":"/api/v1/export","type":0,"val":"api","end":""},{"old":"/api/v1/export","type":0,"val":"v1","end":""},{"old":"/api/v1/export","type":0,"val":"export","end":""}],
     types: placeholder as Registry['dashboard.export_month']['types'],
   },
+  'dashboard.export_month_pdf': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/export.pdf',
+    tokens: [{"old":"/api/v1/export.pdf","type":0,"val":"api","end":""},{"old":"/api/v1/export.pdf","type":0,"val":"v1","end":""},{"old":"/api/v1/export.pdf","type":0,"val":"export.pdf","end":""}],
+    types: placeholder as Registry['dashboard.export_month_pdf']['types'],
+  },
   'catalog.packages': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/packages',
