@@ -28,6 +28,11 @@ export const loginValidator = vine.create({
 
 export const updateProfileValidator = vine.create({
   fullName: vine.string().trim().minLength(1).maxLength(255).nullable(),
+  phone: vine.string().trim().maxLength(30).optional().nullable(),
+  studioName: vine.string().trim().maxLength(120).optional().nullable(),
+  city: vine.string().trim().maxLength(120).optional().nullable(),
+  instruments: vine.string().trim().maxLength(255).optional().nullable(),
+  bio: vine.string().trim().maxLength(2000).optional().nullable(),
 })
 
 export const updatePasswordValidator = vine.create({

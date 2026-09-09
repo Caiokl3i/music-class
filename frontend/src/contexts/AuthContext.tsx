@@ -26,7 +26,14 @@ type AuthContextValue = {
   }) => Promise<void>
   logout: () => Promise<void>
   refreshProfile: () => Promise<void>
-  updateProfile: (fullName: string | null) => Promise<void>
+  updateProfile: (input: {
+    fullName: string | null
+    phone?: string | null
+    studioName?: string | null
+    city?: string | null
+    instruments?: string | null
+    bio?: string | null
+  }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -106,10 +113,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [clearSession])
 
-  const updateProfile = useCallback(async (fullName: string | null) => {
-    const profile = await authService.updateProfile({ fullName })
-    setUser(profile)
-  }, [])
+  const updateProfile = useCallback(
+    async (input: {
+      fullName: string | null
+      phone?: string | null
+      studioName?: string | null
+      city?: string | null
+      instruments?: string | null
+      bio?: string | null
+    }) => {
+      const profile = await authService.updateProfile(input)
+      setUser(profile)
+    },
+    [],
+  )
 
   const value = useMemo(
     () => ({

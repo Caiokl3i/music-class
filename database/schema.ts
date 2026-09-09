@@ -166,8 +166,12 @@ export class StudentSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
+  static $columns = ['bio', 'city', 'createdAt', 'email', 'fullName', 'id', 'instruments', 'password', 'phone', 'studioName', 'updatedAt'] as const
   $columns = UserSchema.$columns
+  @column()
+  declare bio: string | null
+  @column()
+  declare city: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
@@ -176,8 +180,14 @@ export class UserSchema extends BaseModel {
   declare fullName: string | null
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare instruments: string | null
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare phone: string | null
+  @column()
+  declare studioName: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

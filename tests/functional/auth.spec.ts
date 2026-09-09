@@ -112,10 +112,22 @@ test.group('Auth', (group) => {
 
     const update = await client.patch('/api/v1/account/profile').loginAs(teacher).json({
       fullName: 'New Name',
+      phone: '11999990000',
+      studioName: 'Estúdio Norte',
+      city: 'São Paulo',
+      instruments: 'piano, canto',
+      bio: 'Aulas particulares e em grupo.',
     })
     update.assertStatus(200)
     update.assertBodyContains({
-      data: { fullName: 'New Name' },
+      data: {
+        fullName: 'New Name',
+        phone: '11999990000',
+        studioName: 'Estúdio Norte',
+        city: 'São Paulo',
+        instruments: 'piano, canto',
+        bio: 'Aulas particulares e em grupo.',
+      },
     })
   })
 

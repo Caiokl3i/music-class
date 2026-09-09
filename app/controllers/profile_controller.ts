@@ -13,6 +13,11 @@ export default class ProfileController {
     const payload = await request.validateUsing(updateProfileValidator)
 
     user.fullName = payload.fullName
+    if (payload.phone !== undefined) user.phone = payload.phone
+    if (payload.studioName !== undefined) user.studioName = payload.studioName
+    if (payload.city !== undefined) user.city = payload.city
+    if (payload.instruments !== undefined) user.instruments = payload.instruments
+    if (payload.bio !== undefined) user.bio = payload.bio
     await user.save()
 
     return serialize(UserTransformer.transform(user))

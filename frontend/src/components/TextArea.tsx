@@ -3,10 +3,11 @@ import { forwardRef, type TextareaHTMLAttributes } from 'react'
 type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string
   error?: string
+  hint?: string
 }
 
 export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-  { label, error, id, className = '', ...props },
+  { label, error, hint, id, className = '', ...props },
   ref,
 ) {
   const areaId = id ?? props.name
@@ -27,6 +28,8 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
         <span className="text-xs text-danger" role="alert">
           {error}
         </span>
+      ) : hint ? (
+        <span className="text-xs text-ink-muted">{hint}</span>
       ) : null}
     </label>
   )

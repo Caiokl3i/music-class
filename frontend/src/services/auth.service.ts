@@ -26,7 +26,14 @@ export async function logout() {
   await api.post<{ message: string }>('/account/logout')
 }
 
-export async function updateProfile(input: { fullName: string | null }) {
+export async function updateProfile(input: {
+  fullName: string | null
+  phone?: string | null
+  studioName?: string | null
+  city?: string | null
+  instruments?: string | null
+  bio?: string | null
+}) {
   const { data } = await api.patch<ApiData<User>>('/account/profile', input)
   return data.data
 }

@@ -40,6 +40,11 @@ export default class DemoSeeder extends BaseSeeder {
     if (existing) {
       existing.fullName = 'Marina Silva'
       existing.password = DEMO_PASSWORD
+      existing.phone = '11988887777'
+      existing.studioName = 'Estúdio Marina'
+      existing.city = 'São Paulo'
+      existing.instruments = 'piano, canto, teoria'
+      existing.bio = 'Professora de música com foco em iniciantes e adolescentes.'
       await existing.save()
       return existing
     }
@@ -48,6 +53,11 @@ export default class DemoSeeder extends BaseSeeder {
       fullName: 'Marina Silva',
       email: DEMO_EMAIL,
       password: DEMO_PASSWORD,
+      phone: '11988887777',
+      studioName: 'Estúdio Marina',
+      city: 'São Paulo',
+      instruments: 'piano, canto, teoria',
+      bio: 'Professora de música com foco em iniciantes e adolescentes.',
     })
   }
 
@@ -66,7 +76,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: 'Ana Costa',
       instrument: 'piano',
       level: 'beginner',
-      color: 'warning',
+      color: '#b45309',
       tags: 'criança, pontual',
       phone: '11987654321',
       description: 'Começou em março. Gosta de trilha de filme.',
@@ -88,7 +98,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: 'Bruno Alves',
       instrument: 'violão',
       level: 'intermediate',
-      color: 'danger',
+      color: '#dc2626',
       tags: 'adolescente, rock',
       phone: '11976543210',
       description: 'Troca de acordes rápidos. Quer tocar músicas da banda.',
@@ -114,7 +124,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: 'Clara Mendes',
       instrument: 'violino',
       level: 'beginner',
-      color: 'accent',
+      color: '#0f766e',
       tags: 'criança',
       phone: '11965432109',
       description: 'Postura do arco ainda trava o som.',
@@ -135,7 +145,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: 'Diego Rocha',
       instrument: 'bateria',
       level: 'intermediate',
-      color: 'success',
+      color: '#047857',
       tags: 'adolescente, banda',
       phone: '11954321098',
       description: 'Rende mais com metrônomo alto.',
@@ -156,7 +166,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: 'Elena Souza',
       instrument: 'canto',
       level: 'beginner',
-      color: 'warning',
+      color: '#b45309',
       tags: 'adulto',
       phone: '11943210987',
       description: 'Respiração e aquecimento. Ensaio de coral no fim de semana.',
@@ -181,7 +191,7 @@ export default class DemoSeeder extends BaseSeeder {
     const felipe = await this.student(teacher, {
       name: 'Felipe Lima',
       instrument: 'baixo',
-      color: 'danger',
+      color: '#dc2626',
       phone: '11932109876',
       description: 'Voltou depois de uma pausa. Sem nível definido ainda.',
       birthdate: now.minus({ years: 28, months: 2 }),
@@ -205,7 +215,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: 'Gabriela Nunes',
       instrument: 'flauta',
       level: 'beginner',
-      color: 'accent',
+      color: '#0f766e',
       tags: 'adulto, iniciante tarde',
       phone: '11921098765',
       description: 'Começou agora. Quer música de câmara leve.',
@@ -230,7 +240,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: string
       instrument: string
       level?: 'beginner' | 'intermediate'
-      color?: 'accent' | 'success' | 'warning' | 'danger'
+      color?: string
       tags?: string
       phone?: string
       description?: string
@@ -243,7 +253,7 @@ export default class DemoSeeder extends BaseSeeder {
       name: payload.name,
       instrument: payload.instrument,
       level: payload.level ?? null,
-      color: payload.color ?? 'accent',
+      color: payload.color ?? '#0f766e',
       tags: payload.tags ?? null,
       phone: payload.phone ?? null,
       description: payload.description ?? null,
