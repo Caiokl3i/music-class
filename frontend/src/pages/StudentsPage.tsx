@@ -23,7 +23,9 @@ import { StudentColorPicker } from '@/components/StudentColorPicker'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import { ageFromBirthdate } from '@/utils/format'
-import type { StudentColorTone } from '@/domain/student'
+import { DEFAULT_STUDENT_COLOR } from '@/domain/student'
+
+const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Escolha uma cor válida')
 
 const schema = z.object({
   name: z.string().min(1, 'Informe o nome'),
@@ -32,7 +34,7 @@ const schema = z.object({
   birthdate: z.string().optional(),
   description: z.string().optional(),
   level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
-  color: z.enum(['accent', 'success', 'warning', 'danger']),
+  color: hexColor,
   tags: z.string().optional(),
   preferredWeekday: z.string().optional(),
   preferredTime: z.string().optional(),
@@ -97,7 +99,7 @@ export function StudentsPage() {
       birthdate: '',
       description: '',
       level: '',
-      color: 'accent',
+      color: DEFAULT_STUDENT_COLOR,
       tags: '',
       preferredWeekday: '',
       preferredTime: '',
@@ -114,7 +116,7 @@ export function StudentsPage() {
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
       level: student.level ?? '',
-      color: student.color ?? 'accent',
+      color: student.color ?? DEFAULT_STUDENT_COLOR,
       tags: student.tags ?? '',
       preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
       preferredTime: student.preferredTime ?? '',
@@ -319,9 +321,9 @@ export function StudentsPage() {
           <Input label="Nome" error={errors.name?.message} {...register('name')} />
           <Input label="Instrumento" error={errors.instrument?.message} {...register('instrument')} />
           <StudentColorPicker
-            value={(watch('color') ?? 'accent') as StudentColorTone}
+            value={watch('color') ?? DEFAULT_STUDENT_COLOR}
             error={errors.color?.message}
-            onChange={(next) => setValue('color', next, { shouldValidate: true })}
+            onChange={(next) => setValue('color', next, { shouldDirty: true, shouldValidate: false })}
           />
           <Input label="Telefone" error={errors.phone?.message} {...register('phone')} />
           <DateTimeField

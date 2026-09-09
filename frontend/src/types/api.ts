@@ -2,6 +2,11 @@ export type User = {
   id: number
   fullName: string | null
   email: string
+  phone: string | null
+  studioName: string | null
+  city: string | null
+  instruments: string | null
+  bio: string | null
   createdAt: string
   updatedAt: string | null
   initials: string
@@ -26,7 +31,8 @@ export type Student = {
   activePlansCount: number
 }
 
-export type StudentColor = 'accent' | 'success' | 'warning' | 'danger'
+export type StudentColor = string
+
 
 export type PlanPackage = string
 export type PlanStatus = 'pending' | 'paid' | 'cancelled'

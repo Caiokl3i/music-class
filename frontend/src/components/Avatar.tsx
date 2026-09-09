@@ -1,4 +1,8 @@
-import { resolveStudentColor, STUDENT_AVATAR_TONE, type StudentColorTone } from '@/domain/student'
+import {
+  contrastingTextColor,
+  hexToRgba,
+  resolveStudentHex,
+} from '@/domain/student'
 
 function initialsFrom(name: string | null | undefined) {
   const parts = (name ?? '')
@@ -17,9 +21,8 @@ export function Avatar({
   className = '',
 }: {
   name?: string | null
-  /** Fallback estável quando a cor salva não veio na resposta. */
   studentId?: number | null
-  color?: StudentColorTone | string | null
+  color?: string | null
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }) {
@@ -29,17 +32,37 @@ export function Avatar({
     lg: 'size-14 text-lg',
   }
 
-  const tone =
-    color || studentId != null
-      ? STUDENT_AVATAR_TONE[resolveStudentColor(color, studentId)]
-      : 'bg-accent-soft text-accent'
+  const hex =
+    color || studentId != null ? resolveStudentHex(color, studentId) : null
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-medium ${tone} ${sizes[size]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-medium ${sizes[size]} ${className} ${
+        hex ? '' : 'bg-accent-soft text-accent'
+      }`}
+      style={
+        hex
+          ? {
+              backgroundColor: hexToRgba(hex, 0.18),
+              color: hex,
+            }
+          : undefined
+      }
       aria-hidden
     >
       {initialsFrom(name)}
     </span>
   )
+}
+
+export function studentChipStyle(color?: string | null, studentId?: number | null) {
+  const hex = resolveStudentHex(color, studentId)
+  return {
+    backgroundColor: hex,
+    color: contrastingTextColor(hex),
+  }
+}
+
+export function studentDotStyle(color?: string | null, studentId?: number | null) {
+  return { backgroundColor: resolveStudentHex(color, studentId) }
 }

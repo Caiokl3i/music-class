@@ -14,7 +14,7 @@ export default class StudentsController {
     const payload = await request.validateUsing(createStudentValidator)
     const student = await user.related('students').create({
       ...payload,
-      color: payload.color ?? 'accent',
+      color: payload.color ?? '#0f766e',
     })
 
     response.status(201)

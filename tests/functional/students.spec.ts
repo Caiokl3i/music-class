@@ -39,7 +39,7 @@ test.group('Students', (group) => {
     const student = await Student.findOrFail(response.body().data.id)
     assert.equal(student.userId, user.id)
     assert.equal(student.name, 'Maria Silva')
-    assert.equal(student.color, 'accent')
+    assert.equal(student.color, '#0f766e')
   })
 
   test('saves and updates a chosen calendar color', async ({ assert, client }) => {
@@ -47,20 +47,20 @@ test.group('Students', (group) => {
 
     const created = await client.post('/api/v1/students').loginAs(user).json({
       ...studentPayload,
-      color: 'warning',
+      color: '#b45309',
     })
 
     created.assertStatus(201)
-    assert.equal(created.body().data.color, 'warning')
+    assert.equal(created.body().data.color, '#b45309')
 
     const studentId = created.body().data.id as number
     const updated = await client.put(`/api/v1/students/${studentId}`).loginAs(user).json({
-      color: 'danger',
+      color: '#dc2626',
     })
 
     updated.assertStatus(200)
-    assert.equal(updated.body().data.color, 'danger')
-    assert.equal((await Student.findOrFail(studentId)).color, 'danger')
+    assert.equal(updated.body().data.color, '#dc2626')
+    assert.equal((await Student.findOrFail(studentId)).color, '#dc2626')
   })
 
   test('rejects invalid payloads', async ({ client }) => {

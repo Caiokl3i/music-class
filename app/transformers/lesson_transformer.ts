@@ -24,7 +24,7 @@ export default class LessonTransformer extends BaseTransformer<Lesson> {
       studentName: student?.name ?? null,
       studentInstrument: student?.instrument ?? null,
       studentLevel: (student?.level as 'beginner' | 'intermediate' | null | undefined) ?? null,
-      studentColor: (student?.color as string | undefined) ?? 'accent',
+      studentColor: (student?.color as string | undefined) ?? '#0f766e',
       planPackage: (plan?.package as Plan['package'] | undefined) ?? null,
     }
   }
