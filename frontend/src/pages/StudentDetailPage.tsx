@@ -34,6 +34,7 @@ import type {
   Student,
 } from '@/types/api'
 import { PageHeader, Card, SectionHeader } from '@/components/Card'
+import { ActionMenu } from '@/components/ActionMenu'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { Skeleton } from '@/components/Skeleton'
@@ -562,24 +563,41 @@ export function StudentDetailPage() {
         description={`${student.instrument} • ${student.creditsRemaining} aula(s) a fazer`}
         actions={
           <>
-            <Button variant="secondary" onClick={openEditStudent}>
-              <SquarePen className="size-4" aria-hidden />
-              Editar ficha
-            </Button>
-            <Button variant="secondary" loading={archiving} onClick={() => void toggleArchived()}>
-              {student.archivedAt ? 'Reativar' : 'Arquivar'}
-            </Button>
-            <Button variant="secondary" onClick={openCreatePlan}>
-              <Plus className="size-4" aria-hidden />
-              Pacote
-            </Button>
-            <Button
-              onClick={openCreateLesson}
-              className={scheduleFlash ? 'animate-schedule-flash' : undefined}
-            >
-              <Plus className="size-4" aria-hidden />
-              Agendar
-            </Button>
+            <div className="hidden gap-2 sm:flex">
+              <Button variant="secondary" onClick={openEditStudent}>
+                <SquarePen className="size-4" aria-hidden />
+                Editar ficha
+              </Button>
+              <Button variant="secondary" loading={archiving} onClick={() => void toggleArchived()}>
+                {student.archivedAt ? 'Reativar' : 'Arquivar'}
+              </Button>
+              <Button variant="secondary" onClick={openCreatePlan}>
+                <Plus className="size-4" aria-hidden />
+                Pacote
+              </Button>
+            </div>
+            <div className="flex w-full items-center gap-2 sm:contents sm:w-auto">
+              <div className="sm:hidden">
+                <ActionMenu
+                  items={[
+                    { label: 'Editar ficha', icon: <SquarePen />, onClick: openEditStudent },
+                    {
+                      label: student.archivedAt ? 'Reativar' : 'Arquivar',
+                      onClick: () => void toggleArchived(),
+                      disabled: archiving,
+                    },
+                    { label: 'Novo pacote', icon: <Plus />, onClick: openCreatePlan },
+                  ]}
+                />
+              </div>
+              <Button
+                onClick={openCreateLesson}
+                className={`flex-1 sm:flex-none ${scheduleFlash ? 'animate-schedule-flash' : ''}`}
+              >
+                <Plus className="size-4" aria-hidden />
+                Agendar
+              </Button>
+            </div>
           </>
         }
       />
@@ -781,7 +799,6 @@ export function StudentDetailPage() {
                                     <Button
                                       size="icon"
                                       variant="ghost"
-                                      className="size-8"
                                       aria-label="Editar desconto"
                                       onClick={() => {
                                         setDiscountPlan(plan)
@@ -793,7 +810,6 @@ export function StudentDetailPage() {
                                     <Button
                                       size="icon"
                                       variant="ghost"
-                                      className="size-8"
                                       aria-label="Remover desconto"
                                       onClick={() => setDeletingDiscount({ plan, discount })}
                                     >
@@ -833,25 +849,49 @@ export function StudentDetailPage() {
                               Gerar aulas
                             </Button>
                           ) : null}
-                          {allowCancel ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-danger hover:bg-danger/10 hover:text-danger"
-                              onClick={() => setPlanAction({ plan, type: 'cancel' })}
-                            >
-                              Cancelar pacote
-                            </Button>
-                          ) : null}
-                          {allowDelete ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-danger hover:bg-danger/10 hover:text-danger"
-                              onClick={() => setPlanAction({ plan, type: 'delete' })}
-                            >
-                              Apagar pacote
-                            </Button>
+                          <div className="hidden sm:contents">
+                            {allowCancel ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-danger hover:bg-danger/10 hover:text-danger"
+                                onClick={() => setPlanAction({ plan, type: 'cancel' })}
+                              >
+                                Cancelar pacote
+                              </Button>
+                            ) : null}
+                            {allowDelete ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-danger hover:bg-danger/10 hover:text-danger"
+                                onClick={() => setPlanAction({ plan, type: 'delete' })}
+                              >
+                                Apagar pacote
+                              </Button>
+                            ) : null}
+                          </div>
+                          {allowCancel || allowDelete ? (
+                            <div className="sm:hidden">
+                              <ActionMenu
+                                items={[
+                                  allowCancel
+                                    ? {
+                                        label: 'Cancelar pacote',
+                                        tone: 'danger' as const,
+                                        onClick: () => setPlanAction({ plan, type: 'cancel' }),
+                                      }
+                                    : null,
+                                  allowDelete
+                                    ? {
+                                        label: 'Apagar pacote',
+                                        tone: 'danger' as const,
+                                        onClick: () => setPlanAction({ plan, type: 'delete' }),
+                                      }
+                                    : null,
+                                ].filter((item): item is NonNullable<typeof item> => item !== null)}
+                              />
+                            </div>
                           ) : null}
                         </div>
                         {blockedByActiveLessons ? (
@@ -1327,7 +1367,7 @@ function LessonItem({
         {planLabel ? <p className="mt-0.5 text-sm text-ink-muted">{planLabel}</p> : null}
         {lesson.description ? <p className="mt-1 text-sm text-ink">{lesson.description}</p> : null}
       </div>
-      <div className="flex shrink-0 flex-wrap gap-2">
+      <div className="hidden shrink-0 flex-wrap gap-2 sm:flex">
         {scheduled && onComplete ? (
           <Button size="sm" variant="secondary" onClick={() => onComplete(lesson)}>
             Concluir
@@ -1360,6 +1400,30 @@ function LessonItem({
             Excluir
           </Button>
         ) : null}
+      </div>
+      <div className="flex items-center gap-2 sm:hidden">
+        {scheduled && onComplete ? (
+          <Button size="sm" variant="secondary" className="flex-1" onClick={() => onComplete(lesson)}>
+            Concluir
+          </Button>
+        ) : lesson.status === 'no_show' && onReposition ? (
+          <Button size="sm" variant="secondary" className="flex-1" onClick={() => onReposition(lesson)}>
+            Reposição
+          </Button>
+        ) : null}
+        <ActionMenu
+          items={[
+            scheduled && onNoShow ? { label: 'Falta', onClick: () => onNoShow(lesson) } : null,
+            scheduled && onCancel ? { label: 'Cancelar', onClick: () => onCancel(lesson) } : null,
+            lesson.status === 'no_show' && onReposition && scheduled
+              ? { label: 'Reposição', onClick: () => onReposition(lesson) }
+              : null,
+            onEdit ? { label: 'Editar', icon: <Pencil />, onClick: () => onEdit(lesson) } : null,
+            onDelete
+              ? { label: 'Excluir', icon: <Trash2 />, tone: 'danger' as const, onClick: () => onDelete(lesson) }
+              : null,
+          ].filter((item): item is NonNullable<typeof item> => item !== null)}
+        />
       </div>
     </li>
   )

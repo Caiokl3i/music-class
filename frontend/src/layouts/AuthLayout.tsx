@@ -8,7 +8,7 @@ export function AuthLayout() {
   const location = useLocation()
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center bg-sidebar p-4">
+    <div className="safe-bottom relative flex min-h-dvh items-center justify-center bg-sidebar p-4">
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle className="text-sidebar-ink hover:bg-sidebar-hover hover:text-sidebar-ink" />
       </div>

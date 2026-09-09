@@ -20,6 +20,8 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { StudentLevelBadge } from '@/components/StudentLevelBadge'
 import { StudentColorPicker } from '@/components/StudentColorPicker'
+import { ActionMenu } from '@/components/ActionMenu'
+import { SegmentedControl } from '@/components/SegmentedControl'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import { ageFromBirthdate } from '@/utils/format'
@@ -180,37 +182,27 @@ export function StudentsPage() {
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="relative block w-full max-w-sm">
+        <label className="relative block w-full sm:max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Buscar nome, instrumento, telefone…"
-            className="h-10 w-full rounded-md border border-border bg-surface-raised pr-3 pl-10 text-sm text-ink placeholder:text-ink-muted"
+            className="h-11 w-full rounded-md border border-border bg-surface-raised pr-3 pl-10 text-base text-ink placeholder:text-ink-muted sm:h-10 sm:text-sm"
             aria-label="Buscar alunos"
           />
         </label>
-        <div className="flex rounded-md border border-border bg-surface-raised p-0.5">
-          <button
-            type="button"
-            onClick={() => setShowArchived(false)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-              !showArchived ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
-            }`}
-          >
-            Ativos
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowArchived(true)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-              showArchived ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
-            }`}
-          >
-            Arquivados
-          </button>
-        </div>
+        <SegmentedControl
+          label="Situação dos alunos"
+          className="w-full sm:w-auto"
+          value={showArchived ? 'archived' : 'active'}
+          onChange={(next) => setShowArchived(next === 'archived')}
+          options={[
+            { value: 'active', label: 'Ativos' },
+            { value: 'archived', label: 'Arquivados' },
+          ]}
+        />
       </div>
 
       {loading ? (
@@ -240,96 +232,128 @@ export function StudentsPage() {
           onAction={query || showArchived ? undefined : openCreate}
         />
       ) : (
-        <div className="animate-fade-in overflow-hidden rounded-lg border border-border bg-surface-raised">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-muted/50 text-ink-muted">
-                <th className="px-5 py-3 font-medium">Aluno</th>
-                <th className="px-5 py-3 text-center font-medium">Nível</th>
-                <th className="hidden px-5 py-3 text-center font-medium md:table-cell">Instrumento</th>
-                <th className="hidden px-5 py-3 text-center font-medium md:table-cell">Aulas</th>
-                <th className="w-24 px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((student) => (
-                <tr
-                  key={student.id}
-                  className="table-row-hover cursor-pointer border-b border-border last:border-0"
-                  onClick={() => navigate(`/students/${student.id}`)}
-                >
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={student.name} studentId={student.id} color={student.color} />
-                      <div className="min-w-0">
-                        <Link
-                          to={`/students/${student.id}`}
-                          className="block truncate font-medium text-ink transition-colors hover:text-accent"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          {student.name}
-                        </Link>
-                        {student.phone ? (
-                          <p className="flex items-center gap-1 truncate text-xs text-ink-muted">
-                            <Phone className="size-3" aria-hidden />
-                            {student.phone}
-                            {ageFromBirthdate(student.birthdate) !== null ? (
-                              <span>· {ageFromBirthdate(student.birthdate)} anos</span>
-                            ) : null}
-                            {tagsPreview(student.tags) ? (
-                              <span>· {tagsPreview(student.tags)}</span>
-                            ) : null}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-ink-muted md:hidden">
-                            {student.instrument}
-                            {ageFromBirthdate(student.birthdate) !== null ? (
-                              <span> · {ageFromBirthdate(student.birthdate)} anos</span>
-                            ) : null}
-                            {tagsPreview(student.tags) ? (
-                              <span> · {tagsPreview(student.tags)}</span>
-                            ) : null}
-                          </p>
-                        )}
+        <>
+          <ul className="animate-fade-in space-y-3 md:hidden">
+            {filtered.map((student) => (
+              <li key={student.id}>
+                <div className="flex items-start gap-3 rounded-lg border border-border bg-surface-raised p-4 active:bg-surface-muted/50">
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                    onClick={() => navigate(`/students/${student.id}`)}
+                  >
+                    <Avatar name={student.name} studentId={student.id} color={student.color} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-ink">{student.name}</p>
+                      <p className="mt-0.5 truncate text-sm text-ink-muted">{student.instrument}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {student.level ? <StudentLevelBadge level={student.level} /> : null}
+                        {creditsCell(student.creditsRemaining)}
                       </div>
+                      {student.phone ? (
+                        <p className="mt-2 flex items-center gap-1 truncate text-xs text-ink-muted">
+                          <Phone className="size-3 shrink-0" aria-hidden />
+                          {student.phone}
+                        </p>
+                      ) : null}
                     </div>
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    {student.level ? <StudentLevelBadge level={student.level} /> : <span className="text-ink-muted">—</span>}
-                  </td>
-                  <td className="hidden px-5 py-3 text-center text-ink-muted md:table-cell">
-                    {student.instrument}
-                  </td>
-                  <td className="hidden px-5 py-3 text-center md:table-cell">
-                    {creditsCell(student.creditsRemaining)}
-                  </td>
-                  <td className="px-5 py-3" onClick={(event) => event.stopPropagation()}>
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8"
-                        aria-label="Editar"
-                        onClick={() => openEdit(student)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 text-danger hover:bg-danger/10 hover:text-danger"
-                        aria-label="Excluir"
-                        onClick={() => setDeleting(student)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
+                  </button>
+                  <ActionMenu
+                    items={[
+                      { label: 'Editar', icon: <Pencil />, onClick: () => openEdit(student) },
+                      {
+                        label: 'Excluir',
+                        icon: <Trash2 />,
+                        tone: 'danger',
+                        onClick: () => setDeleting(student),
+                      },
+                    ]}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="animate-fade-in hidden overflow-hidden rounded-lg border border-border bg-surface-raised md:block">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-muted/50 text-ink-muted">
+                  <th className="px-5 py-3 font-medium">Aluno</th>
+                  <th className="px-5 py-3 text-center font-medium">Nível</th>
+                  <th className="px-5 py-3 text-center font-medium">Instrumento</th>
+                  <th className="px-5 py-3 text-center font-medium">Aulas</th>
+                  <th className="w-28 px-5 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((student) => (
+                  <tr
+                    key={student.id}
+                    className="table-row-hover cursor-pointer border-b border-border last:border-0"
+                    onClick={() => navigate(`/students/${student.id}`)}
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={student.name} studentId={student.id} color={student.color} />
+                        <div className="min-w-0">
+                          <Link
+                            to={`/students/${student.id}`}
+                            className="block truncate font-medium text-ink transition-colors hover:text-accent"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {student.name}
+                          </Link>
+                          {student.phone ? (
+                            <p className="flex items-center gap-1 truncate text-xs text-ink-muted">
+                              <Phone className="size-3" aria-hidden />
+                              {student.phone}
+                              {ageFromBirthdate(student.birthdate) !== null ? (
+                                <span>· {ageFromBirthdate(student.birthdate)} anos</span>
+                              ) : null}
+                              {tagsPreview(student.tags) ? (
+                                <span>· {tagsPreview(student.tags)}</span>
+                              ) : null}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      {student.level ? (
+                        <StudentLevelBadge level={student.level} />
+                      ) : (
+                        <span className="text-ink-muted">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-center text-ink-muted">{student.instrument}</td>
+                    <td className="px-5 py-3 text-center">{creditsCell(student.creditsRemaining)}</td>
+                    <td className="px-5 py-3" onClick={(event) => event.stopPropagation()}>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Editar"
+                          onClick={() => openEdit(student)}
+                        >
+                          <Pencil />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-danger hover:bg-danger/10 hover:text-danger"
+                          aria-label="Excluir"
+                          onClick={() => setDeleting(student)}
+                        >
+                          <Trash2 />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <Modal

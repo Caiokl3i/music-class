@@ -220,7 +220,7 @@ export function ProfilePage() {
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         <nav
-          className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible"
+          className="grid grid-cols-3 gap-2 lg:flex lg:flex-col"
           aria-label="Seções do perfil"
         >
           {SECTIONS.map((item) => {
@@ -231,16 +231,16 @@ export function ProfilePage() {
                 key={item.id}
                 type="button"
                 onClick={() => selectSection(item.id)}
-                className={`flex min-w-[10.5rem] items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors lg:min-w-0 ${
+                className={`flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl border px-2 py-3 text-center transition-colors lg:min-h-0 lg:items-start lg:justify-start lg:px-3.5 lg:text-left ${
                   active
                     ? 'border-accent/40 bg-accent-soft text-accent'
-                    : 'border-border bg-surface-raised text-ink-muted hover:border-border hover:bg-surface-hover hover:text-ink'
+                    : 'border-border bg-surface-raised text-ink-muted hover:border-border hover:bg-surface-hover hover:text-ink active:bg-surface-hover'
                 }`}
               >
-                <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-                <span>
-                  <span className="block text-sm font-medium">{item.label}</span>
-                  <span className="mt-0.5 block text-xs opacity-80">{item.description}</span>
+                <Icon className="size-4 shrink-0 lg:mt-0.5" aria-hidden />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">{item.label}</span>
+                  <span className="mt-0.5 hidden text-xs opacity-80 lg:block">{item.description}</span>
                 </span>
               </button>
             )

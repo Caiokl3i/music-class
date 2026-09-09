@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { brazilTodayParts } from '@/utils/format'
-import { popoverMotion } from '@/utils/motion'
+import { overlayMotion, popoverMotion } from '@/utils/motion'
 
 type FieldKind = 'datetime' | 'date' | 'time' | 'month'
 
@@ -119,6 +119,7 @@ export function DateTimeField({
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({})
   const selected = parseValue(value, kind)
   const [cursor, setCursor] = useState(() => selected ?? todayParts())
@@ -131,10 +132,24 @@ export function DateTimeField({
     if (!open) return
 
     function place() {
+      const isNarrow = window.innerWidth < 640
+      setNarrow(isNarrow)
+      if (isNarrow) {
+        setPanelStyle({
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          maxHeight: 'min(85dvh, 36rem)',
+          zIndex: 70,
+        })
+        return
+      }
       const anchor = rootRef.current
       if (!anchor) return
       const rect = anchor.getBoundingClientRect()
-      const width = kind === 'datetime' ? 360 : kind === 'time' ? 220 : 288
+      const width = Math.min(kind === 'datetime' ? 360 : kind === 'time' ? 220 : 288, window.innerWidth - 24)
       const left = Math.min(rect.left, window.innerWidth - width - 12)
       const below = rect.bottom + 8
       const top = below + 340 > window.innerHeight ? Math.max(12, rect.top - 348) : below
@@ -158,6 +173,7 @@ export function DateTimeField({
 
   useEffect(() => {
     if (!open) return
+    if (window.innerWidth < 640) document.body.style.overflow = 'hidden'
     function onDoc(event: MouseEvent) {
       const target = event.target as Node
       if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) return
@@ -172,6 +188,7 @@ export function DateTimeField({
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey, true)
     return () => {
+      document.body.style.overflow = ''
       document.removeEventListener('mousedown', onDoc)
       document.removeEventListener('keydown', onKey, true)
     }
@@ -202,7 +219,7 @@ export function DateTimeField({
         name={name}
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}
-        className={`flex h-10 w-full items-center rounded-md border bg-surface-raised px-3 text-left text-sm transition-colors ${
+        className={`flex h-11 w-full min-w-0 items-center rounded-md border bg-surface-raised px-3 text-left text-base transition-colors sm:h-10 sm:text-sm ${
           error ? 'border-danger' : 'border-border focus:border-accent'
         } ${display ? 'text-ink' : 'text-ink-muted'} disabled:opacity-60`}
         aria-haspopup="dialog"
@@ -221,11 +238,23 @@ export function DateTimeField({
       {createPortal(
         <AnimatePresence>
           {open ? (
+            <>
+              {narrow ? (
+                <motion.button
+                  type="button"
+                  aria-label="Fechar"
+                  className="fixed inset-0 z-[69] bg-overlay"
+                  {...overlayMotion}
+                  onClick={() => setOpen(false)}
+                />
+              ) : null}
             <motion.div
               ref={panelRef}
               style={panelStyle}
               {...popoverMotion}
-              className="rounded-lg border border-border bg-surface-raised p-3 shadow-lg shadow-black/10"
+              className={`overflow-y-auto border border-border bg-surface-raised p-4 shadow-lg shadow-black/10 ${
+                narrow ? 'safe-bottom rounded-t-lg' : 'rounded-lg p-3'
+              }`}
               role="dialog"
               aria-label={label}
             >
@@ -234,7 +263,7 @@ export function DateTimeField({
                   <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
-                      className="rounded-md p-1 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+                      className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
                       onClick={() =>
                         setCursor((current) =>
                           current.month === 1
@@ -258,7 +287,7 @@ export function DateTimeField({
                     </button>
                     <button
                       type="button"
-                      className="rounded-md p-1 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+                      className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
                       onClick={() =>
                         setCursor((current) =>
                           current.month === 12
@@ -277,7 +306,7 @@ export function DateTimeField({
                     <div className="mb-2 flex items-center justify-between">
                       <button
                         type="button"
-                        className="rounded-md p-1 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+                        className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
                         onClick={() =>
                           setCursor((current) =>
                             current.month === 1
@@ -294,7 +323,7 @@ export function DateTimeField({
                       </p>
                       <button
                         type="button"
-                        className="rounded-md p-1 text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+                        className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
                         onClick={() =>
                           setCursor((current) =>
                             current.month === 12
@@ -317,7 +346,7 @@ export function DateTimeField({
                     <div className="grid grid-cols-7 gap-0.5">
                       {grid.map((cell, index) => {
                         if (!cell) {
-                          return <div key={`empty-${index}`} className="h-8" />
+                          return <div key={`empty-${index}`} className="h-10 sm:h-8" />
                         }
                         const isSelected =
                           selected &&
@@ -331,7 +360,7 @@ export function DateTimeField({
                             key={`${cursor.year}-${cursor.month}-${cell.day}`}
                             type="button"
                             onClick={() => pickDay(cell.day)}
-                            className={`h-8 rounded-md text-xs font-medium transition-colors ${
+                            className={`h-10 rounded-md text-sm font-medium transition-colors sm:h-8 sm:text-xs ${
                               isSelected
                                 ? 'bg-accent text-white'
                                 : isToday
@@ -377,10 +406,10 @@ export function DateTimeField({
                 ) : null}
               </div>
 
-              <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
+              <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
                 <button
                   type="button"
-                  className="text-xs font-medium text-ink-muted transition-colors hover:text-ink"
+                  className="min-h-10 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
                   onClick={() => {
                     onChange?.('')
                     setOpen(false)
@@ -390,7 +419,7 @@ export function DateTimeField({
                 </button>
                 <button
                   type="button"
-                  className="text-xs font-medium text-accent transition-opacity hover:opacity-80"
+                  className="min-h-10 text-sm font-medium text-accent transition-opacity hover:opacity-80"
                   onClick={() => {
                     commit(todayParts())
                     setOpen(false)
@@ -400,6 +429,7 @@ export function DateTimeField({
                 </button>
               </div>
             </motion.div>
+            </>
           ) : null}
         </AnimatePresence>,
         document.body,
@@ -420,7 +450,7 @@ function TimeColumn({
   onSelect: (value: number) => void
 }) {
   return (
-    <div className="w-16">
+    <div className="min-w-16 flex-1 sm:flex-none">
       <p className="mb-1 text-center text-[11px] font-medium uppercase tracking-wide text-ink-muted">{label}</p>
       <div className="max-h-48 overflow-auto rounded-md border border-border">
         {values.map((value) => (
@@ -428,7 +458,7 @@ function TimeColumn({
             key={value}
             type="button"
             onClick={() => onSelect(value)}
-            className={`flex h-8 w-full items-center justify-center text-xs ${
+            className={`flex h-10 w-full items-center justify-center text-sm sm:h-8 sm:text-xs ${
               selected === value ? 'bg-accent text-white' : 'text-ink hover:bg-surface-hover'
             }`}
           >

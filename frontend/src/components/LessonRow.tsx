@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/Button'
+import { ActionMenu } from '@/components/ActionMenu'
 import { LessonStatusBadge } from '@/components/StatusBadges'
 import { StudentLevelBadge } from '@/components/StudentLevelBadge'
 import { formatDateTimeRange } from '@/utils/format'
@@ -28,6 +30,14 @@ export function LessonRow({
 }: LessonRowProps) {
   const name = lesson.studentName ?? `Aluno #${lesson.studentId}`
   const scheduled = lesson.status === 'scheduled'
+  const menuItems = [
+    scheduled && onNoShow ? { label: 'Falta', onClick: () => onNoShow(lesson) } : null,
+    scheduled && onCancel ? { label: 'Cancelar', onClick: () => onCancel(lesson) } : null,
+    onEdit ? { label: 'Editar', icon: <Pencil />, onClick: () => onEdit(lesson) } : null,
+    onDelete
+      ? { label: 'Excluir', icon: <Trash2 />, tone: 'danger' as const, onClick: () => onDelete(lesson) }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => item !== null)
 
   return (
     <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
@@ -49,7 +59,7 @@ export function LessonRow({
         </p>
         {lesson.description ? <p className="mt-1 text-sm text-ink">{lesson.description}</p> : null}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="hidden flex-wrap gap-2 sm:flex">
         {scheduled && onComplete ? (
           <Button size="sm" variant="secondary" onClick={() => onComplete(lesson)}>
             Concluir
@@ -75,6 +85,14 @@ export function LessonRow({
             Excluir
           </Button>
         ) : null}
+      </div>
+      <div className="flex items-center gap-2 sm:hidden">
+        {scheduled && onComplete ? (
+          <Button size="sm" variant="secondary" className="flex-1" onClick={() => onComplete(lesson)}>
+            Concluir
+          </Button>
+        ) : null}
+        <ActionMenu items={menuItems} />
       </div>
     </li>
   )

@@ -118,7 +118,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
       onClose={onClose}
       size="lg"
       footer={
-        <div className="flex flex-wrap justify-end gap-2">
+        <>
           <Button variant="secondary" onClick={onClose}>
             Fechar
           </Button>
@@ -127,7 +127,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
               href={waHref}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-surface-raised px-4 text-sm font-medium text-ink hover:bg-surface-muted"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-border bg-surface-raised px-4 text-sm font-medium text-ink hover:bg-surface-muted active:bg-surface-muted sm:h-10 sm:w-auto"
             >
               <MessageCircle className="size-4" aria-hidden />
               WhatsApp
@@ -141,7 +141,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
             <Download className="size-4" aria-hidden />
             Baixar PDF
           </Button>
-        </div>
+        </>
       }
     >
       <div className="space-y-4">
@@ -159,7 +159,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
               <span className="text-sm font-medium text-ink">Mês</span>
               <input
                 type="month"
-                className="h-10 rounded-md border border-border bg-surface-raised px-3 text-sm text-ink focus:border-accent"
+                className="h-11 w-full min-w-0 rounded-md border border-border bg-surface-raised px-3 text-base text-ink focus:border-accent sm:h-10 sm:text-sm"
                 {...form.register('month')}
               />
             </label>

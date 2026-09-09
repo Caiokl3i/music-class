@@ -7,29 +7,36 @@ import {
   ChevronRight,
   LayoutDashboard,
   LogOut,
-  Menu,
   Music2,
   Package,
   UserRound,
   Users,
-  X,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Avatar } from '@/components/Avatar'
 import { getErrorMessage } from '@/utils/errors'
-import { overlayMotion, pageMotion, popoverMotion } from '@/utils/motion'
+import { pageMotion, popoverMotion } from '@/utils/motion'
 
-const mainNav = [
+type AppNavItem = {
+  to: string
+  label: string
+  icon: typeof Users
+  end?: boolean
+}
+
+const mainNav: AppNavItem[] = [
   { to: '/', label: 'Painel', icon: LayoutDashboard, end: true },
 ]
 
-const studioNav = [
+const studioNav: AppNavItem[] = [
   { to: '/students', label: 'Alunos', icon: Users },
   { to: '/plans', label: 'Pacotes', icon: Package },
   { to: '/lessons', label: 'Aulas', icon: CalendarDays },
 ]
+
+const mobileNav = [...mainNav, ...studioNav]
 
 function pageTitle(pathname: string) {
   if (pathname === '/') return 'Painel'
@@ -46,7 +53,6 @@ export function AppLayout() {
   const toast = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -62,15 +68,6 @@ export function AppLayout() {
     }
   }
 
-  const sidebar = (
-    <SidebarContent
-      collapsed={collapsed}
-      onNavigate={() => setMobileOpen(false)}
-      onLogout={handleLogout}
-      loggingOut={loggingOut}
-    />
-  )
-
   return (
     <div className="flex h-dvh overflow-hidden bg-surface">
       <aside
@@ -78,12 +75,16 @@ export function AppLayout() {
           collapsed ? 'w-20' : 'w-64'
         }`}
       >
-        {sidebar}
+        <SidebarContent
+          collapsed={collapsed}
+          onNavigate={() => undefined}
+          onLogout={handleLogout}
+          loggingOut={loggingOut}
+        />
         <button
           type="button"
           onClick={() => setCollapsed((value) => !value)}
-          className="absolute top-6 z-10 flex size-6 items-center justify-center rounded-full border border-border bg-surface-raised shadow-sm hover:bg-surface-muted"
-          style={{ left: collapsed ? 68 : 248 }}
+          className="absolute top-6 right-0 z-10 flex size-8 translate-x-1/2 items-center justify-center rounded-full border border-border bg-surface-raised shadow-sm hover:bg-surface-muted active:bg-surface-muted"
           aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
         >
           {collapsed ? (
@@ -94,58 +95,12 @@ export function AppLayout() {
         </button>
       </aside>
 
-      <AnimatePresence>
-        {mobileOpen ? (
-          <div className="fixed inset-0 z-40 lg:hidden">
-            <motion.button
-              type="button"
-              aria-label="Fechar menu"
-              className="absolute inset-0 bg-overlay"
-              {...overlayMotion}
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              initial={{ x: -24, opacity: 0.85 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -16, opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-y-0 left-0 w-72 bg-sidebar shadow-xl"
-            >
-              <div className="absolute top-3 right-3">
-                <button
-                  type="button"
-                  onClick={() => setMobileOpen(false)}
-                  className="rounded-md p-2 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
-                  aria-label="Fechar"
-                >
-                  <X className="size-5" />
-                </button>
-              </div>
-              <SidebarContent
-                collapsed={false}
-                onNavigate={() => setMobileOpen(false)}
-                onLogout={handleLogout}
-                loggingOut={loggingOut}
-              />
-            </motion.aside>
-          </div>
-        ) : null}
-      </AnimatePresence>
-
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-surface-raised px-4 sm:px-6">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface-raised px-4 sm:px-6 lg:h-16">
           <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              className="rounded-md p-2 text-ink hover:bg-surface-muted lg:hidden"
-              aria-label="Abrir menu"
-            >
-              <Menu className="size-5" />
-            </button>
-            <h1 className="truncate text-xl font-bold text-ink">{pageTitle(location.pathname)}</h1>
+            <h1 className="truncate text-lg font-bold text-ink lg:text-xl">{pageTitle(location.pathname)}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             <UserMenu
               name={user?.fullName || user?.email}
@@ -155,12 +110,36 @@ export function AppLayout() {
             />
           </div>
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto p-6">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] sm:p-6 lg:pb-6">
           <motion.div key={location.pathname} {...pageMotion}>
             <Outlet />
           </motion.div>
         </main>
       </div>
+
+      <nav
+        className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-raised lg:hidden"
+        aria-label="Principal"
+      >
+        <ul className="grid grid-cols-4">
+          {mobileNav.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium transition-colors ${
+                    isActive ? 'text-accent' : 'text-ink-muted active:bg-surface-muted'
+                  }`
+                }
+              >
+                <item.icon className="size-5 shrink-0" aria-hidden />
+                <span className="truncate">{item.label}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   )
 }
@@ -246,7 +225,7 @@ function NavItem({
   collapsed,
   onNavigate,
 }: {
-  item: { to: string; label: string; icon: typeof Users; end?: boolean }
+  item: AppNavItem
   collapsed: boolean
   onNavigate: () => void
 }) {
@@ -282,8 +261,15 @@ function UserMenu({
     function onDoc(event: MouseEvent) {
       if (!ref.current?.contains(event.target as Node)) setOpen(false)
     }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false)
+    }
     document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [])
 
   return (
@@ -312,7 +298,7 @@ function UserMenu({
             <Link
               to="/profile"
               role="menuitem"
-              className="block px-3 py-2 text-sm text-ink transition-colors hover:bg-surface-muted"
+              className="block px-3 py-3 text-sm text-ink transition-colors hover:bg-surface-muted active:bg-surface-muted"
               onClick={() => setOpen(false)}
             >
               Perfil
@@ -321,7 +307,7 @@ function UserMenu({
               type="button"
               role="menuitem"
               disabled={loggingOut}
-              className="block w-full px-3 py-2 text-left text-sm text-danger transition-colors hover:bg-danger/10 disabled:opacity-60"
+              className="block w-full px-3 py-3 text-left text-sm text-danger transition-colors hover:bg-danger/10 active:bg-danger/10 disabled:opacity-60"
               onClick={onLogout}
             >
               Sair

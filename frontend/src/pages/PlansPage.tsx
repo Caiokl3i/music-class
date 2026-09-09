@@ -10,6 +10,7 @@ import * as planTypesService from '@/services/plan-types.service'
 import * as studentsService from '@/services/students.service'
 import type { PackageOption, Plan, PlanPackage, PlanStatus, Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
+import { ActionMenu } from '@/components/ActionMenu'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Select } from '@/components/Select'
@@ -311,11 +312,23 @@ export function PlansPage() {
                       <Package className="size-5" aria-hidden />
                     )}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="sm:hidden">
+                    <ActionMenu
+                      items={[
+                        { label: 'Editar', icon: <Pencil />, onClick: () => openEditType(item) },
+                        {
+                          label: 'Excluir',
+                          icon: <Trash2 />,
+                          tone: 'danger',
+                          onClick: () => setDeletingType(item),
+                        },
+                      ]}
+                    />
+                  </div>
+                  <div className="hidden gap-1 sm:flex">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-8"
                       onClick={() => openEditType(item)}
                       aria-label={`Editar ${item.label}`}
                     >
@@ -324,7 +337,7 @@ export function PlansPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-8 text-danger hover:bg-danger/10 hover:text-danger"
+                      className="text-danger hover:bg-danger/10 hover:text-danger"
                       onClick={() => setDeletingType(item)}
                       aria-label={`Excluir ${item.label}`}
                     >

@@ -25,6 +25,8 @@ import * as dashboardService from '@/services/dashboard.service'
 import * as lessonsService from '@/services/lessons.service'
 import type { Dashboard, Lesson, LessonStatus, PlanAlert, PlanPackage } from '@/types/api'
 import { Card, PageHeader, SectionHeader } from '@/components/Card'
+import { EmptyState } from '@/components/EmptyState'
+import { ActionMenu } from '@/components/ActionMenu'
 import { Avatar } from '@/components/Avatar'
 import { Skeleton } from '@/components/Skeleton'
 import { Button } from '@/components/Button'
@@ -57,14 +59,17 @@ export function DashboardPage() {
   const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null)
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [month, setMonth] = useState(() => currentMonthValue())
+  const [loadError, setLoadError] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(false)
     try {
       setData(
         await dashboardService.getDashboard(APP_TIMEZONE),
       )
     } catch (error) {
+      setLoadError(true)
       toast.error(getErrorMessage(error, 'Não foi possível carregar o painel.'))
     } finally {
       setLoading(false)
@@ -123,8 +128,16 @@ export function DashboardPage() {
         }
       />
 
-      {loading || !data ? (
+      {loading ? (
         <DashboardSkeleton />
+      ) : loadError || !data ? (
+        <EmptyState
+          icon={<TriangleAlert className="size-8" />}
+          title="Não foi possível carregar o painel"
+          description="Confira a conexão e tente de novo."
+          actionLabel="Tentar novamente"
+          onAction={() => void load()}
+        />
       ) : (
         <LoadedDashboard
           data={data}
@@ -468,7 +481,7 @@ function LoadedDashboard({
             <>
               <ul className="divide-y divide-border border-t border-border">
                 {data.upcoming.map((lesson) => (
-                  <li key={lesson.id} className="flex items-center gap-3 py-3">
+                  <li key={lesson.id} className="flex items-start gap-3 py-3 sm:items-center">
                     <Avatar
                       name={lesson.studentName}
                       studentId={lesson.studentId}
@@ -706,7 +719,7 @@ function LessonListRow({
           {formatDateTimeRange(lesson.scheduledAt, lesson.endsAt)}
         </p>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="hidden shrink-0 flex-wrap items-center gap-2 sm:flex">
         <Button size="sm" variant="secondary" onClick={() => onStatus(lesson, 'done')}>
           Concluir
         </Button>
@@ -716,6 +729,17 @@ function LessonListRow({
         <Button size="sm" variant="ghost" onClick={() => onStatus(lesson, 'cancelled')}>
           Cancelar
         </Button>
+      </div>
+      <div className="flex items-center gap-2 sm:hidden">
+        <Button size="sm" variant="secondary" className="flex-1" onClick={() => onStatus(lesson, 'done')}>
+          Concluir
+        </Button>
+        <ActionMenu
+          items={[
+            { label: 'Falta', onClick: () => void onStatus(lesson, 'no_show') },
+            { label: 'Cancelar', onClick: () => void onStatus(lesson, 'cancelled') },
+          ]}
+        />
       </div>
     </li>
   )

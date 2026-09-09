@@ -22,6 +22,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { LessonRow } from '@/components/LessonRow'
+import { SegmentedControl } from '@/components/SegmentedControl'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
@@ -158,6 +159,10 @@ export function LessonsPage() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [filterStudentId, setFilterStudentId] = useState('')
   const [createDay, setCreateDay] = useState<Date | undefined>()
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const parts = brazilTodayParts()
+    return fromBrazilWallTime(parts.year, parts.month, parts.day, 12, 0)
+  })
 
   const {
     register,
@@ -239,6 +244,18 @@ export function LessonsPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    setSelectedDay((current) => {
+      if (sameBrazilMonth(current, month)) return current
+      const today = brazilTodayParts()
+      const monthParts = brazilTodayParts(month)
+      if (today.year === monthParts.year && today.month === monthParts.month) {
+        return fromBrazilWallTime(today.year, today.month, today.day, 12, 0)
+      }
+      return fromBrazilWallTime(monthParts.year, monthParts.month, 1, 12, 0)
+    })
+  }, [month])
 
   function scheduleForStudent(studentId: string, day?: Date) {
     const student = students.find((item) => String(item.id) === studentId)
@@ -380,41 +397,20 @@ export function LessonsPage() {
   return (
     <div>
       <PageHeader
-        description="Clique na aula para ver detalhes, ou no dia para escolher ver as aulas ou agendar."
+        description="Toque na aula para ver detalhes. No calendário, toque no dia para ver as aulas ou agendar."
         actions={
           <>
-            <div className="flex rounded-md border border-border bg-surface-raised p-0.5">
-              <button
-                type="button"
-                onClick={() => setView('list')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
-                  view === 'list' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                <List className="size-3.5" />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('week')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
-                  view === 'week' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                <CalendarRange className="size-3.5" />
-                Semana
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('month')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
-                  view === 'month' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                <CalendarDays className="size-3.5" />
-                Mês
-              </button>
-            </div>
+            <SegmentedControl
+              label="Visualização"
+              className="w-full sm:w-auto"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: 'list', label: 'Lista', icon: <List className="size-3.5" /> },
+                { value: 'week', label: 'Semana', icon: <CalendarRange className="size-3.5" /> },
+                { value: 'month', label: 'Mês', icon: <CalendarDays className="size-3.5" /> },
+              ]}
+            />
             <Button onClick={() => openCreate()}>
               <Plus className="size-4" />
               Nova aula
@@ -485,10 +481,10 @@ export function LessonsPage() {
         </ul>
       ) : (
         <div className="animate-fade-in overflow-hidden rounded-lg border border-border bg-surface-raised">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border px-3 py-2 sm:px-4 sm:py-3">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() =>
                 view === 'week'
                   ? setWeek((current) => shiftBrazilWeek(current, -1))
@@ -503,7 +499,7 @@ export function LessonsPage() {
             </p>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() =>
                 view === 'week'
                   ? setWeek((current) => shiftBrazilWeek(current, 1))
@@ -534,80 +530,222 @@ export function LessonsPage() {
               ))}
             </div>
           ) : null}
-          <div className="grid grid-cols-7 border-b border-border bg-surface-muted text-center text-xs font-medium uppercase tracking-wide text-ink-muted">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-              <div key={day} className="px-1 py-2">
-                {day}
-              </div>
-            ))}
-          </div>
-          <div
-            className={`grid grid-cols-7 ${
-              view === 'week' ? 'auto-rows-[minmax(160px,1fr)]' : 'auto-rows-[minmax(88px,1fr)]'
-            }`}
-          >
-            {visibleCalendarDays.map((day) => {
-              const dayKey = brazilDateKey(day)
-              const dayLessons = filteredLessons.filter(
-                (lesson) => brazilDateKey(lesson.scheduledAt) === dayKey,
-              )
-              const inMonth = view === 'week' || sameBrazilMonth(day, month)
-              return (
-                <div
-                  key={dayKey ?? day.toISOString()}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openDayMenu(day)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      openDayMenu(day)
-                    }
-                  }}
-                  className={`flex cursor-pointer flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft ${
-                    view === 'week' ? 'min-h-[160px]' : 'min-h-[88px]'
-                  } ${inMonth ? 'bg-surface-raised' : 'bg-surface-muted'}`}
-                >
-                  <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-ink-muted'}`}>
-                    {brazilTodayParts(day).day}
-                  </span>
-                  <div className="flex flex-col gap-1 overflow-hidden">
-                    {dayLessons.slice(0, chipLimit).map((lesson) => (
-                      <button
-                        key={lesson.id}
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openDetails(lesson)
-                        }}
-                        className={`truncate rounded px-1.5 py-0.5 text-left font-semibold ${
-                          view === 'week' ? 'text-[11px]' : 'text-[10px]'
-                        }`}
-                        style={studentChipStyle(
-                          lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
-                          lesson.studentId,
-                        )}
-                      >
-                        {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
-                        {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
-                      </button>
-                    ))}
-                    {dayLessons.length > chipLimit ? (
-                      <button
-                        type="button"
-                        className="text-left text-[10px] text-ink-muted transition-opacity hover:opacity-80"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openDayList(day)
-                        }}
-                      >
-                        +{dayLessons.length - chipLimit} ver todas
-                      </button>
-                    ) : null}
+
+          {view === 'week' ? (
+            <div className="divide-y divide-border md:hidden">
+              {weekDays.map((day) => {
+                const dayLessons = lessonsForDay(day)
+                return (
+                  <section key={brazilDateKey(day) ?? day.toISOString()} className="px-4 py-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold capitalize text-ink">
+                          {formatWeekdayLong(day).split(',')[0]}
+                        </p>
+                        <p className="text-xs text-ink-muted">{formatWeekdayLong(day).split(', ')[1]}</p>
+                      </div>
+                      <Button size="sm" variant="secondary" onClick={() => scheduleOnDay(day)}>
+                        Agendar
+                      </Button>
+                    </div>
+                    {dayLessons.length === 0 ? (
+                      <p className="text-sm text-ink-muted">Nenhuma aula</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {dayLessons.map((lesson) => (
+                          <li key={lesson.id}>
+                            <button
+                              type="button"
+                              onClick={() => openDetails(lesson)}
+                              className="w-full truncate rounded-md px-3 py-2.5 text-left text-sm font-semibold"
+                              style={studentChipStyle(
+                                lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
+                                lesson.studentId,
+                              )}
+                            >
+                              {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
+                              {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="md:hidden">
+              <div className="grid grid-cols-7 border-b border-border bg-surface-muted text-center text-[11px] font-medium uppercase tracking-wide text-ink-muted">
+                {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, index) => (
+                  <div key={`${day}-${index}`} className="py-2">
+                    {day}
                   </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
+                {calendarDays.map((day) => {
+                  const dayKey = brazilDateKey(day)
+                  const dayLessons = lessonsForDay(day)
+                  const inMonth = sameBrazilMonth(day, month)
+                  const selected = brazilDateKey(selectedDay) === dayKey
+                  const todayPartsNow = brazilTodayParts()
+                  const todayKey = brazilDateKey(
+                    fromBrazilWallTime(todayPartsNow.year, todayPartsNow.month, todayPartsNow.day, 12, 0),
+                  )
+                  return (
+                    <button
+                      key={dayKey ?? day.toISOString()}
+                      type="button"
+                      onClick={() => setSelectedDay(day)}
+                      className={`flex min-h-12 flex-col items-center justify-center gap-1 py-1.5 ${
+                        selected
+                          ? 'bg-accent-soft'
+                          : inMonth
+                            ? 'bg-surface-raised active:bg-surface-muted'
+                            : 'bg-surface-muted'
+                      }`}
+                    >
+                      <span
+                        className={`flex size-7 items-center justify-center rounded-full text-sm font-medium ${
+                          selected
+                            ? 'bg-accent text-white'
+                            : dayKey === todayKey
+                              ? 'text-accent'
+                              : inMonth
+                                ? 'text-ink'
+                                : 'text-ink-muted'
+                        }`}
+                      >
+                        {brazilTodayParts(day).day}
+                      </span>
+                      <span className="flex h-1.5 items-center justify-center gap-0.5">
+                        {dayLessons.slice(0, 3).map((lesson) => (
+                          <span
+                            key={lesson.id}
+                            className="size-1.5 rounded-full"
+                            style={studentDotStyle(
+                              lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
+                              lesson.studentId,
+                            )}
+                          />
+                        ))}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="border-t border-border px-4 py-3">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold capitalize text-ink">
+                    {formatWeekdayLong(selectedDay)}
+                  </p>
+                  <Button size="sm" onClick={() => scheduleOnDay(selectedDay)}>
+                    Agendar
+                  </Button>
                 </div>
-              )
-            })}
+                {lessonsForDay(selectedDay).length === 0 ? (
+                  <p className="text-sm text-ink-muted">Nenhuma aula neste dia.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {lessonsForDay(selectedDay).map((lesson) => (
+                      <li key={lesson.id}>
+                        <button
+                          type="button"
+                          onClick={() => openDetails(lesson)}
+                          className="w-full truncate rounded-md px-3 py-2.5 text-left text-sm font-semibold"
+                          style={studentChipStyle(
+                            lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
+                            lesson.studentId,
+                          )}
+                        >
+                          {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
+                          {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="hidden md:block">
+            <div className="grid grid-cols-7 border-b border-border bg-surface-muted text-center text-xs font-medium uppercase tracking-wide text-ink-muted">
+              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                <div key={day} className="px-1 py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div
+              className={`grid grid-cols-7 ${
+                view === 'week' ? 'auto-rows-[minmax(160px,1fr)]' : 'auto-rows-[minmax(88px,1fr)]'
+              }`}
+            >
+              {visibleCalendarDays.map((day) => {
+                const dayKey = brazilDateKey(day)
+                const dayLessons = filteredLessons.filter(
+                  (lesson) => brazilDateKey(lesson.scheduledAt) === dayKey,
+                )
+                const inMonth = view === 'week' || sameBrazilMonth(day, month)
+                return (
+                  <div
+                    key={dayKey ?? day.toISOString()}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openDayMenu(day)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        openDayMenu(day)
+                      }
+                    }}
+                    className={`flex cursor-pointer flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft active:bg-accent-soft ${
+                      view === 'week' ? 'min-h-[160px]' : 'min-h-[88px]'
+                    } ${inMonth ? 'bg-surface-raised' : 'bg-surface-muted'}`}
+                  >
+                    <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-ink-muted'}`}>
+                      {brazilTodayParts(day).day}
+                    </span>
+                    <div className="flex flex-col gap-1 overflow-hidden">
+                      {dayLessons.slice(0, chipLimit).map((lesson) => (
+                        <button
+                          key={lesson.id}
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openDetails(lesson)
+                          }}
+                          className={`truncate rounded px-1.5 py-0.5 text-left font-semibold ${
+                            view === 'week' ? 'text-[11px]' : 'text-[10px]'
+                          }`}
+                          style={studentChipStyle(
+                            lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
+                            lesson.studentId,
+                          )}
+                        >
+                          {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
+                          {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
+                        </button>
+                      ))}
+                      {dayLessons.length > chipLimit ? (
+                        <button
+                          type="button"
+                          className="text-left text-[10px] text-ink-muted transition-opacity hover:opacity-80"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openDayList(day)
+                          }}
+                        >
+                          +{dayLessons.length - chipLimit} ver todas
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       )}
