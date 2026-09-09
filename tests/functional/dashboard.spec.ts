@@ -17,6 +17,11 @@ test.group('Dashboard', (group) => {
   }) => {
     const { teacher, student, plan } = await createTeacherWithPlan({ package: 'pack_8' })
     const now = DateTime.now().setZone('UTC')
+    await teacher.related('students').create({
+      name: 'Arquivado',
+      instrument: 'flauta',
+      archivedAt: now,
+    })
 
     await teacher.related('lessons').create({
       studentId: student.id,
@@ -28,6 +33,12 @@ test.group('Dashboard', (group) => {
       studentId: student.id,
       planId: plan.id,
       scheduledAt: now.set({ hour: 16, minute: 0, second: 0, millisecond: 0 }),
+      status: 'scheduled',
+    })
+    const tomorrowLesson = await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: now.plus({ days: 1 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }),
       status: 'scheduled',
     })
     await teacher.related('lessons').create({
@@ -49,7 +60,7 @@ test.group('Dashboard', (group) => {
     const body = response.body().data
     assert.equal(body.studentCount, 1)
     assert.equal(body.activePlans, 1)
-    assert.equal(body.scheduledCount, 3)
+    assert.equal(body.scheduledCount, 4)
     assert.equal(body.doneCount, 1)
     assert.equal(Number(body.revenue), 240)
     assert.equal(Number(body.revenueThisMonth), 240)
@@ -59,18 +70,35 @@ test.group('Dashboard', (group) => {
     assert.lengthOf(body.overdue, 1)
     assert.equal(body.today[0].id, todayLesson.id)
     assert.equal(body.today[0].studentName, 'Ana')
+    assert.equal(body.tomorrow[0].id, tomorrowLesson.id)
     assert.lengthOf(body.upcoming, 1)
     assert.equal(body.recent[0].id, done.id)
     assert.equal(body.recent[0].studentName, 'Ana')
   })
 
   test('does not include another teacher data', async ({ assert, client }) => {
-    const { teacher } = await createTeacherWithPlan({ email: 'teacher@example.com' })
-    await createTeacherWithPlan({ email: 'other@example.com' })
+    const { teacher, student, plan } = await createTeacherWithPlan({ email: 'teacher@example.com' })
+    const other = await createTeacherWithPlan({ email: 'other@example.com' })
+    const now = DateTime.now().setZone('UTC')
+
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: now.plus({ days: 1 }).set({ hour: 10, minute: 0, second: 0, millisecond: 0 }),
+      status: 'scheduled',
+    })
+    await other.teacher.related('lessons').create({
+      studentId: other.student.id,
+      planId: other.plan.id,
+      scheduledAt: now.plus({ days: 1 }).set({ hour: 11, minute: 0, second: 0, millisecond: 0 }),
+      status: 'scheduled',
+    })
 
     const response = await client.get('/api/v1/dashboard?timezone=UTC').loginAs(teacher)
     response.assertStatus(200)
     assert.equal(response.body().data.studentCount, 1)
+    assert.lengthOf(response.body().data.tomorrow, 1)
+    assert.equal(response.body().data.tomorrow[0].studentId, student.id)
   })
 
   test('splits this month revenue from lifetime and flags low credits', async ({

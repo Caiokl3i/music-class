@@ -35,7 +35,6 @@ const FIELD_LABELS: Record<string, string> = {
   bio: 'sobre você',
   name: 'nome',
   instrument: 'instrumento',
-  phone: 'telefone',
   birthdate: 'data de nascimento',
   description: 'observações',
   notes: 'observações',

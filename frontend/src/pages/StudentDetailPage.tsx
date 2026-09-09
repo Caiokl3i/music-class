@@ -171,6 +171,7 @@ export function StudentDetailPage() {
     null,
   )
   const [planActionLoading, setPlanActionLoading] = useState(false)
+  const [archiving, setArchiving] = useState(false)
   const [scheduleFlash, setScheduleFlash] = useState(false)
   const scheduleFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -514,6 +515,22 @@ export function StudentDetailPage() {
     }
   }
 
+  async function toggleArchived() {
+    if (!student) return
+    setArchiving(true)
+    try {
+      const next = await studentsService.updateStudent(student.id, {
+        archivedAt: student.archivedAt ? null : new Date().toISOString(),
+      })
+      setStudent(next)
+      toast.success(next.archivedAt ? 'Aluno arquivado.' : 'Aluno reativado.')
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível atualizar o aluno.'))
+    } finally {
+      setArchiving(false)
+    }
+  }
+
   if (loading || !student) {
     return (
       <div className="space-y-4">
@@ -535,7 +552,9 @@ export function StudentDetailPage() {
             <Avatar name={student.name} studentId={student.id} color={student.color} size="lg" />
             <span className="inline-flex flex-wrap items-center gap-2">
               {student.name}
-              <Badge tone="success">Ativo</Badge>
+              <Badge tone={student.archivedAt ? 'neutral' : 'success'}>
+                {student.archivedAt ? 'Arquivado' : 'Ativo'}
+              </Badge>
               <StudentLevelBadge level={student.level} />
             </span>
           </span>
@@ -546,6 +565,9 @@ export function StudentDetailPage() {
             <Button variant="secondary" onClick={openEditStudent}>
               <SquarePen className="size-4" aria-hidden />
               Editar ficha
+            </Button>
+            <Button variant="secondary" loading={archiving} onClick={() => void toggleArchived()}>
+              {student.archivedAt ? 'Reativar' : 'Arquivar'}
             </Button>
             <Button variant="secondary" onClick={openCreatePlan}>
               <Plus className="size-4" aria-hidden />

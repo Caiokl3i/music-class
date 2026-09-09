@@ -21,6 +21,7 @@ export default class StudentTransformer extends BaseTransformer<Student> {
         'tags',
         'preferredWeekday',
         'preferredTime',
+        'archivedAt',
         'createdAt',
         'updatedAt',
       ]),

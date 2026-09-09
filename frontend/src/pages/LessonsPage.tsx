@@ -7,7 +7,7 @@ import {
   format,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarDays, ChevronLeft, ChevronRight, List, Plus } from 'lucide-react'
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Copy, List, Plus } from 'lucide-react'
 import * as lessonsService from '@/services/lessons.service'
 import * as studentsService from '@/services/students.service'
 import * as plansService from '@/services/plans.service'
@@ -46,6 +46,7 @@ import {
 } from '@/domain/schedule'
 import { bookablePlans } from '@/domain/status'
 import { levelLabel } from '@/domain/student'
+import { copyText, formatLessonReminder } from '@/domain/reminder'
 
 const schema = z
   .object({
@@ -62,7 +63,7 @@ const schema = z
   })
 
 type FormValues = z.infer<typeof schema>
-type ViewMode = 'list' | 'calendar'
+type ViewMode = 'list' | 'week' | 'month'
 
 function brazilMonthAnchor(from = new Date()) {
   const parts = brazilTodayParts(from)
@@ -72,6 +73,40 @@ function brazilMonthAnchor(from = new Date()) {
 function shiftBrazilMonth(monthDate: Date, delta: number) {
   const parts = brazilTodayParts(monthDate)
   return fromBrazilWallTime(parts.year, parts.month + delta, 1, 12, 0)
+}
+
+function brazilWeekAnchor(from = new Date()) {
+  const parts = brazilTodayParts(from)
+  const weekday = new Date(parts.year, parts.month - 1, parts.day).getDay()
+  return fromBrazilWallTime(parts.year, parts.month, parts.day - weekday, 12, 0)
+}
+
+function shiftBrazilWeek(weekDate: Date, delta: number) {
+  const parts = brazilTodayParts(weekDate)
+  return fromBrazilWallTime(parts.year, parts.month, parts.day + delta * 7, 12, 0)
+}
+
+function brazilWeekDays(weekDate: Date) {
+  const start = brazilWeekAnchor(weekDate)
+  const parts = brazilTodayParts(start)
+  return Array.from({ length: 7 }, (_, index) =>
+    fromBrazilWallTime(parts.year, parts.month, parts.day + index, 12, 0),
+  )
+}
+
+function brazilWeekLabel(weekDate: Date) {
+  const days = brazilWeekDays(weekDate)
+  const start = brazilTodayParts(days[0])
+  const end = brazilTodayParts(days[6])
+  const startLabel = format(new Date(start.year, start.month - 1, start.day), 'd', { locale: ptBR })
+  const endLabel = format(new Date(end.year, end.month - 1, end.day), "d 'de' MMMM", { locale: ptBR })
+  if (start.month === end.month && start.year === end.year) {
+    return `${startLabel}–${endLabel}`
+  }
+  const startFull = format(new Date(start.year, start.month - 1, start.day), "d 'de' MMM", {
+    locale: ptBR,
+  })
+  return `${startFull} – ${endLabel}`
 }
 
 function brazilCalendarDays(monthDate: Date) {
@@ -106,8 +141,9 @@ export function LessonsPage() {
   const toast = useToast()
   const { labelFor, lessonDurationMinutes } = useCatalog()
   const previousStart = useRef('')
-  const [view, setView] = useState<ViewMode>('calendar')
+  const [view, setView] = useState<ViewMode>('week')
   const [month, setMonth] = useState(() => brazilMonthAnchor())
+  const [week, setWeek] = useState(() => brazilWeekAnchor())
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
@@ -162,7 +198,10 @@ export function LessonsPage() {
   }, [lessons, filterStudentId])
 
   const calendarLegend = useMemo(() => {
-    const byId = new Map<number, { id: number; name: string; level: Student['level'] }>()
+    const byId = new Map<
+      number,
+      { id: number; name: string; level: Student['level']; color: string | null }
+    >()
     for (const lesson of filteredLessons) {
       if (byId.has(lesson.studentId)) continue
       const fromList = studentsMap.get(lesson.studentId)
@@ -173,6 +212,7 @@ export function LessonsPage() {
           fromList?.name ??
           `Aluno #${lesson.studentId}`,
         level: lesson.studentLevel ?? fromList?.level ?? null,
+        color: lesson.studentColor ?? fromList?.color ?? null,
       })
     }
     return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
@@ -333,6 +373,9 @@ export function LessonsPage() {
   }
 
   const calendarDays = useMemo(() => brazilCalendarDays(month), [month])
+  const weekDays = useMemo(() => brazilWeekDays(week), [week])
+  const visibleCalendarDays = view === 'week' ? weekDays : calendarDays
+  const chipLimit = view === 'week' ? 8 : 3
 
   return (
     <div>
@@ -353,13 +396,23 @@ export function LessonsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setView('calendar')}
+                onClick={() => setView('week')}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
-                  view === 'calendar' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
+                  view === 'week' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                <CalendarRange className="size-3.5" />
+                Semana
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('month')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
+                  view === 'month' ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 <CalendarDays className="size-3.5" />
-                Calendário
+                Mês
               </button>
             </div>
             <Button onClick={() => openCreate()}>
@@ -377,7 +430,9 @@ export function LessonsPage() {
           onChange={(event) => setFilterStudentId(event.target.value)}
           options={[
             { value: '', label: 'Todos os alunos' },
-            ...students.map((student) => ({
+            ...students
+              .filter((student) => !student.archivedAt)
+              .map((student) => ({
               value: student.id,
               label: levelLabel(student.level)
                 ? `${student.name} · ${levelLabel(student.level)}`
@@ -431,13 +486,31 @@ export function LessonsPage() {
       ) : (
         <div className="animate-fade-in overflow-hidden rounded-lg border border-border bg-surface-raised">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <Button variant="ghost" size="sm" onClick={() => setMonth((m) => shiftBrazilMonth(m, -1))} aria-label="Mês anterior">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                view === 'week'
+                  ? setWeek((current) => shiftBrazilWeek(current, -1))
+                  : setMonth((current) => shiftBrazilMonth(current, -1))
+              }
+              aria-label={view === 'week' ? 'Semana anterior' : 'Mês anterior'}
+            >
               <ChevronLeft className="size-4" />
             </Button>
             <p className="text-sm font-semibold capitalize text-ink">
-              {brazilMonthLabel(month)}
+              {view === 'week' ? brazilWeekLabel(week) : brazilMonthLabel(month)}
             </p>
-            <Button variant="ghost" size="sm" onClick={() => setMonth((m) => shiftBrazilMonth(m, 1))} aria-label="Próximo mês">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                view === 'week'
+                  ? setWeek((current) => shiftBrazilWeek(current, 1))
+                  : setMonth((current) => shiftBrazilMonth(current, 1))
+              }
+              aria-label={view === 'week' ? 'Próxima semana' : 'Próximo mês'}
+            >
               <ChevronRight className="size-4" />
             </Button>
           </div>
@@ -468,13 +541,17 @@ export function LessonsPage() {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 auto-rows-[minmax(88px,1fr)]">
-            {calendarDays.map((day) => {
+          <div
+            className={`grid grid-cols-7 ${
+              view === 'week' ? 'auto-rows-[minmax(160px,1fr)]' : 'auto-rows-[minmax(88px,1fr)]'
+            }`}
+          >
+            {visibleCalendarDays.map((day) => {
               const dayKey = brazilDateKey(day)
               const dayLessons = filteredLessons.filter(
                 (lesson) => brazilDateKey(lesson.scheduledAt) === dayKey,
               )
-              const inMonth = sameBrazilMonth(day, month)
+              const inMonth = view === 'week' || sameBrazilMonth(day, month)
               return (
                 <div
                   key={dayKey ?? day.toISOString()}
@@ -487,15 +564,15 @@ export function LessonsPage() {
                       openDayMenu(day)
                     }
                   }}
-                  className={`flex min-h-[88px] cursor-pointer flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft ${
-                    inMonth ? 'bg-surface-raised' : 'bg-surface-muted'
-                  }`}
+                  className={`flex cursor-pointer flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft ${
+                    view === 'week' ? 'min-h-[160px]' : 'min-h-[88px]'
+                  } ${inMonth ? 'bg-surface-raised' : 'bg-surface-muted'}`}
                 >
                   <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-ink-muted'}`}>
                     {brazilTodayParts(day).day}
                   </span>
                   <div className="flex flex-col gap-1 overflow-hidden">
-                    {dayLessons.slice(0, 3).map((lesson) => (
+                    {dayLessons.slice(0, chipLimit).map((lesson) => (
                       <button
                         key={lesson.id}
                         type="button"
@@ -503,7 +580,9 @@ export function LessonsPage() {
                           event.stopPropagation()
                           openDetails(lesson)
                         }}
-                        className="truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold"
+                        className={`truncate rounded px-1.5 py-0.5 text-left font-semibold ${
+                          view === 'week' ? 'text-[11px]' : 'text-[10px]'
+                        }`}
                         style={studentChipStyle(
                           lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
                           lesson.studentId,
@@ -513,7 +592,7 @@ export function LessonsPage() {
                         {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
                       </button>
                     ))}
-                    {dayLessons.length > 3 ? (
+                    {dayLessons.length > chipLimit ? (
                       <button
                         type="button"
                         className="text-left text-[10px] text-ink-muted transition-opacity hover:opacity-80"
@@ -522,7 +601,7 @@ export function LessonsPage() {
                           openDayList(day)
                         }}
                       >
-                        +{dayLessons.length - 3} ver todas
+                        +{dayLessons.length - chipLimit} ver todas
                       </button>
                     ) : null}
                   </div>
@@ -553,7 +632,9 @@ export function LessonsPage() {
             label="Aluno"
             placeholder="Selecione"
             error={errors.studentId?.message}
-            options={students.map((student) => ({
+            options={students
+              .filter((student) => !student.archivedAt || String(student.id) === formStudentId)
+              .map((student) => ({
               value: student.id,
               label: levelLabel(student.level)
                 ? `${student.name} · ${levelLabel(student.level)}`
@@ -730,6 +811,19 @@ export function LessonsPage() {
             <Button variant="secondary" onClick={() => setViewing(null)}>
               Fechar
             </Button>
+            {viewing ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  void copyText(formatLessonReminder(viewing))
+                    .then(() => toast.success('Lembrete copiado.'))
+                    .catch(() => toast.error('Não foi possível copiar.'))
+                }}
+              >
+                <Copy className="size-4" aria-hidden />
+                Copiar lembrete
+              </Button>
+            ) : null}
             {viewing ? (
               <Button
                 onClick={() => {

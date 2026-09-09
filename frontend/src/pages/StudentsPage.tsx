@@ -53,6 +53,7 @@ export function StudentsPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<Student | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   const {
     register,
@@ -67,13 +68,13 @@ export function StudentsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      setStudents(await studentsService.listStudents())
+      setStudents(await studentsService.listStudents({ archived: showArchived }))
     } catch (error) {
       toast.error(getErrorMessage(error, 'Não foi possível carregar os alunos.'))
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, [toast, showArchived])
 
   useEffect(() => {
     void load()
@@ -81,13 +82,14 @@ export function StudentsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return students
-    return students.filter(
-      (student) =>
+    return students.filter((student) => {
+      if (!q) return true
+      return (
         student.name.toLowerCase().includes(q) ||
         student.instrument.toLowerCase().includes(q) ||
-        (student.phone ?? '').includes(q),
-    )
+        (student.phone ?? '').includes(q)
+      )
+    })
   }, [students, query])
 
   function openCreate() {
@@ -189,6 +191,26 @@ export function StudentsPage() {
             aria-label="Buscar alunos"
           />
         </label>
+        <div className="flex rounded-md border border-border bg-surface-raised p-0.5">
+          <button
+            type="button"
+            onClick={() => setShowArchived(false)}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+              !showArchived ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
+            }`}
+          >
+            Ativos
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowArchived(true)}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+              showArchived ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink'
+            }`}
+          >
+            Arquivados
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -200,14 +222,22 @@ export function StudentsPage() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Users className="size-8" />}
-          title={query ? 'Nenhum aluno encontrado' : 'Nenhum aluno ainda'}
+          title={
+            query
+              ? 'Nenhum aluno encontrado'
+              : showArchived
+                ? 'Nenhum aluno arquivado'
+                : 'Nenhum aluno ainda'
+          }
           description={
             query
               ? 'Tente outro termo de busca.'
-              : 'Cadastre o primeiro aluno para começar a vender pacotes e agendar aulas.'
+              : showArchived
+                ? 'Alunos arquivados somem da lista principal, mas a ficha continua acessível.'
+                : 'Cadastre o primeiro aluno para começar a vender pacotes e agendar aulas.'
           }
-          actionLabel={query ? undefined : 'Cadastrar aluno'}
-          onAction={query ? undefined : openCreate}
+          actionLabel={query || showArchived ? undefined : 'Cadastrar aluno'}
+          onAction={query || showArchived ? undefined : openCreate}
         />
       ) : (
         <div className="animate-fade-in overflow-hidden rounded-lg border border-border bg-surface-raised">

@@ -29,6 +29,7 @@ export type Student = {
   updatedAt: string | null
   creditsRemaining: number
   activePlansCount: number
+  archivedAt: string | null
 }
 
 export type StudentColor = string
@@ -115,6 +116,7 @@ export type Lesson = {
   studentInstrument: string | null
   studentLevel: 'beginner' | 'intermediate' | null
   studentColor: StudentColor | null
+  studentPhone: string | null
   planPackage: PlanPackage | null
 }
 
@@ -181,6 +183,7 @@ export type Dashboard = {
   expiredPlans: PlanAlert[]
   overdue: Lesson[]
   today: Lesson[]
+  tomorrow: Lesson[]
   upcoming: Lesson[]
   recent: Lesson[]
 }
@@ -210,6 +213,7 @@ export type CreateStudentInput = {
   tags?: string | null
   preferredWeekday?: number | null
   preferredTime?: string | null
+  archivedAt?: string | null
 }
 
 export type UpdateStudentInput = Partial<CreateStudentInput>

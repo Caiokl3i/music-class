@@ -133,8 +133,10 @@ export class PlanSchema extends BaseModel {
 }
 
 export class StudentSchema extends BaseModel {
-  static $columns = ['birthdate', 'color', 'createdAt', 'description', 'id', 'instrument', 'level', 'name', 'phone', 'preferredTime', 'preferredWeekday', 'tags', 'updatedAt', 'userId'] as const
+  static $columns = ['archivedAt', 'birthdate', 'color', 'createdAt', 'description', 'id', 'instrument', 'level', 'name', 'phone', 'preferredTime', 'preferredWeekday', 'tags', 'updatedAt', 'userId'] as const
   $columns = StudentSchema.$columns
+  @column.dateTime()
+  declare archivedAt: DateTime | null
   @column.date()
   declare birthdate: DateTime | null
   @column()

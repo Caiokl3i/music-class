@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'motion/react'
-import { BookOpen, Package, Pencil, Plus, Trash2 } from 'lucide-react'
+import { BookOpen, CircleDollarSign, Package, Pencil, Plus, Trash2 } from 'lucide-react'
 import * as plansService from '@/services/plans.service'
 import * as planTypesService from '@/services/plan-types.service'
 import * as studentsService from '@/services/students.service'
-import type { PackageOption, PlanPackage, PlanStatus, Student } from '@/types/api'
+import type { PackageOption, Plan, PlanPackage, PlanStatus, Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -41,8 +42,11 @@ type TypeValues = z.infer<typeof typeSchema>
 
 export function PlansPage() {
   const toast = useToast()
+  const navigate = useNavigate()
   const { packages, optionFor, creditValidityDays, loading: catalogLoading, reload } = useCatalog()
   const [students, setStudents] = useState<Student[]>([])
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [markingPaidId, setMarkingPaidId] = useState<number | null>(null)
   const [sellOpen, setSellOpen] = useState(false)
   const [typeOpen, setTypeOpen] = useState(false)
   const [editingType, setEditingType] = useState<PackageOption | null>(null)
@@ -71,9 +75,34 @@ export function PlansPage() {
     }
   }, [toast])
 
+  const loadPlans = useCallback(async () => {
+    try {
+      setPlans(await plansService.listPlans())
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível carregar os pacotes.'))
+    }
+  }, [toast])
+
   useEffect(() => {
     void loadStudents()
-  }, [loadStudents])
+    void loadPlans()
+  }, [loadStudents, loadPlans])
+
+  useEffect(() => {
+    if (window.location.hash === '#receber') {
+      document.getElementById('receber')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [plans])
+
+  const activeStudents = useMemo(
+    () => students.filter((student) => !student.archivedAt),
+    [students],
+  )
+  const pendingPlans = useMemo(
+    () => plans.filter((plan) => plan.status === 'pending'),
+    [plans],
+  )
+  const studentsMap = useMemo(() => new Map(students.map((student) => [student.id, student])), [students])
 
   function openSell(pack?: PlanPackage) {
     sellForm.reset({
@@ -112,6 +141,7 @@ export function PlansPage() {
       })
       toast.success('Pacote vendido.')
       setSellOpen(false)
+      navigate(`/students/${values.studentId}`)
     } catch (error) {
       const fields = getFieldErrors(error)
       Object.entries(fields).forEach(([field, message]) => {
@@ -161,10 +191,23 @@ export function PlansPage() {
     }
   }
 
+  async function markPaid(plan: Plan) {
+    setMarkingPaidId(plan.id)
+    try {
+      await plansService.updatePlan(plan.id, { status: 'paid' })
+      toast.success('Pacote marcado como pago.')
+      await loadPlans()
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível atualizar o pagamento.'))
+    } finally {
+      setMarkingPaidId(null)
+    }
+  }
+
   return (
-    <div>
+    <div className="space-y-8">
       <PageHeader
-        description="Monte o catálogo do estúdio. Preço e aulas da venda ficam gravados no pacote do aluno."
+        description="A receber e o catálogo do estúdio. Preço e aulas da venda ficam gravados no pacote do aluno."
         actions={
           <>
             <Button variant="secondary" onClick={openCreateType}>
@@ -179,6 +222,61 @@ export function PlansPage() {
         }
       />
 
+      <section id="receber" className="scroll-mt-6 space-y-3">
+        <div>
+          <h2 className="inline-flex items-center gap-2 text-base font-semibold text-ink">
+            <CircleDollarSign className="size-4 text-accent" aria-hidden />
+            A receber
+          </h2>
+          <p className="mt-0.5 text-sm text-ink-muted">
+            Pacotes pendentes de todos os alunos.
+          </p>
+        </div>
+        {pendingPlans.length === 0 ? (
+          <p className="rounded-lg border border-border bg-surface-raised px-4 py-3 text-sm text-ink-muted">
+            Nenhum pacote pendente. Tudo em dia.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface-raised">
+            {pendingPlans.map((plan) => {
+              const student = studentsMap.get(plan.studentId)
+              return (
+                <li
+                  key={plan.id}
+                  className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      to={`/students/${plan.studentId}`}
+                      className="font-medium text-ink transition-colors hover:text-accent"
+                    >
+                      {student?.name ?? `Aluno #${plan.studentId}`}
+                    </Link>
+                    <p className="mt-0.5 text-sm text-ink-muted">
+                      {optionFor(plan.package).label} · {plan.lessonsDone}/{plan.lessonsTotal}{' '}
+                      aulas feitas · {formatCurrency(Number(plan.netPrice ?? plan.price))}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    loading={markingPaidId === plan.id}
+                    onClick={() => void markPaid(plan)}
+                  >
+                    Marcar pago
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold text-ink">Tipos de pacote</h2>
+          <p className="mt-0.5 text-sm text-ink-muted">O que você vende no estúdio.</p>
+        </div>
       {catalogLoading ? (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           <Skeleton className="h-48 rounded-lg" />
@@ -253,6 +351,7 @@ export function PlansPage() {
           })}
         </ul>
       )}
+      </section>
 
       <Modal
         open={typeOpen}
@@ -322,7 +421,7 @@ export function PlansPage() {
             label="Aluno"
             placeholder="Selecione"
             error={sellForm.formState.errors.studentId?.message}
-            options={students.map((student) => ({
+            options={activeStudents.map((student) => ({
               value: student.id,
               label: levelLabel(student.level)
                 ? `${student.name} · ${levelLabel(student.level)}`

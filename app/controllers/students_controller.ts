@@ -1,11 +1,22 @@
 import StudentTransformer from '#transformers/student_transformer'
-import { createStudentValidator, updateStudentValidator } from '#validators/student'
+import {
+  createStudentValidator,
+  listStudentsValidator,
+  updateStudentValidator,
+} from '#validators/student'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 
 export default class StudentsController {
-  async index({ auth, serialize }: HttpContext) {
-    const students = await this.studentsQuery(auth.getUserOrFail()).orderBy('name', 'asc')
+  async index({ auth, request, serialize }: HttpContext) {
+    const { archived } = await request.validateUsing(listStudentsValidator)
+    const query = this.studentsQuery(auth.getUserOrFail())
+    if (archived) {
+      query.whereNotNull('archivedAt')
+    } else {
+      query.whereNull('archivedAt')
+    }
+    const students = await query.orderBy('name', 'asc')
     return serialize(StudentTransformer.transform(students))
   }
 

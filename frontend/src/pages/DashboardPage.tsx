@@ -8,9 +8,11 @@ import {
   CalendarClock,
   CalendarDays,
   CheckCircle2,
+  Copy,
   Download,
   FileText,
   CircleDollarSign,
+  MessageCircle,
   Clock,
   CreditCard,
   TrendingUp,
@@ -33,6 +35,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage } from '@/utils/errors'
+import { copyText, formatLessonReminder, formatTomorrowReminders, whatsappReminderUrl } from '@/domain/reminder'
 import {
   APP_TIMEZONE,
   brazilTodayParts,
@@ -108,26 +111,15 @@ export function DashboardPage() {
       <PageHeader
         description={`Olá, ${greeting}. Resumo das suas aulas de hoje.`}
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              id="export-csv"
-              variant="secondary"
-              size="sm"
-              onClick={() => setExportModalOpen(true)}
-            >
-              <Download />
-              Exportar CSV
-            </Button>
-            <Button
-              id="export-pdf"
-              variant="secondary"
-              size="sm"
-              onClick={() => setExportModalOpen(true)}
-            >
-              <FileText />
-              Exportar PDF
-            </Button>
-          </div>
+          <Button
+            id="export-month"
+            variant="secondary"
+            size="sm"
+            onClick={() => setExportModalOpen(true)}
+          >
+            <Download />
+            Exportar mês
+          </Button>
         }
       />
 
@@ -205,6 +197,7 @@ function LoadedDashboard({
   labelFor: (value: PlanPackage | null | undefined) => string
   onStatus: (lesson: Lesson, status: LessonStatus) => Promise<void>
 }) {
+  const toast = useToast()
   const unpaid = data.unpaidPlans ?? []
   const lastLessons = data.lowCredits ?? []
   const expiring = data.expiringSoon ?? []
@@ -234,6 +227,7 @@ function LoadedDashboard({
           value={formatCurrency(data.pendingAmount)}
           hint={data.pendingPlans ? `${data.pendingPlans} pacote(s)` : 'em dia'}
           delay={0.08}
+          to="/plans#receber"
         />
         <StatCard
           icon={<TrendingUp className="size-5" />}
@@ -347,6 +341,77 @@ function LoadedDashboard({
                 </div>
               </li>
             ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      {(data.tomorrow ?? []).length > 0 ? (
+        <Card>
+          <SectionHeader
+            icon={<CalendarClock className="size-4" />}
+            title="Amanhã"
+            description={`${data.tomorrow.length} aula(s) agendada(s)`}
+            actions={
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  void copyText(formatTomorrowReminders(data.tomorrow))
+                    .then(() => toast.success('Lembretes de amanhã copiados.'))
+                    .catch(() => toast.error('Não foi possível copiar.'))
+                }}
+              >
+                <Copy className="size-3.5" aria-hidden />
+                Lembretes de amanhã
+              </Button>
+            }
+          />
+          <ul className="divide-y divide-border">
+            {data.tomorrow.map((lesson) => {
+              const text = formatLessonReminder(lesson, 'Olá! Lembrete da aula de amanhã.')
+              const wa = whatsappReminderUrl(lesson.studentPhone, text)
+              return (
+                <li key={lesson.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <Link
+                      to={`/students/${lesson.studentId}`}
+                      className="truncate text-sm font-medium text-ink transition-colors hover:text-accent"
+                    >
+                      {lesson.studentName ?? `Aluno #${lesson.studentId}`}
+                    </Link>
+                    <p className="text-xs text-ink-muted">
+                      {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}
+                      {lesson.studentInstrument ? ` · ${lesson.studentInstrument}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        void copyText(text)
+                          .then(() => toast.success('Lembrete copiado.'))
+                          .catch(() => toast.error('Não foi possível copiar.'))
+                      }}
+                    >
+                      <Copy className="size-3.5" aria-hidden />
+                      Copiar
+                    </Button>
+                    {wa ? (
+                      <a
+                        href={wa}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-accent hover:opacity-80"
+                      >
+                        <MessageCircle className="size-3.5" aria-hidden />
+                        WhatsApp
+                      </a>
+                    ) : null}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         </Card>
       ) : null}
@@ -546,14 +611,16 @@ function StatCard({
   value,
   hint,
   delay,
+  to,
 }: {
   icon: ReactNode
   label: string
   value: string
   hint: string
   delay: number
+  to?: string
 }) {
-  return (
+  const card = (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -572,6 +639,16 @@ function StatCard({
       </div>
     </motion.div>
   )
+
+  if (to) {
+    return (
+      <Link to={to} className="block transition-opacity hover:opacity-90">
+        {card}
+      </Link>
+    )
+  }
+
+  return card
 }
 
 const PILL_TONES: Record<LessonStatus, string> = {

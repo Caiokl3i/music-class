@@ -146,6 +146,38 @@ test.group('Students', (group) => {
     })
   })
 
+  test('archives and restores a student', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({
+      name: 'Ana',
+      instrument: 'piano',
+    })
+
+    const archived = await client.put(`/api/v1/students/${student.id}`).loginAs(teacher).json({
+      archivedAt: '2026-09-09T15:00:00.000Z',
+    })
+    archived.assertStatus(200)
+    assert.isNotNull(archived.body().data.archivedAt)
+
+    const activeList = await client.get('/api/v1/students').loginAs(teacher)
+    activeList.assertStatus(200)
+    assert.lengthOf(activeList.body().data, 0)
+
+    const archivedList = await client.get('/api/v1/students?archived=true').loginAs(teacher)
+    archivedList.assertStatus(200)
+    assert.equal(archivedList.body().data[0].id, student.id)
+
+    const restored = await client.put(`/api/v1/students/${student.id}`).loginAs(teacher).json({
+      archivedAt: null,
+    })
+    restored.assertStatus(200)
+    assert.isNull(restored.body().data.archivedAt)
+
+    const restoredList = await client.get('/api/v1/students').loginAs(teacher)
+    restoredList.assertStatus(200)
+    assert.equal(restoredList.body().data[0].id, student.id)
+  })
+
   test('stores a preferred weekday and time on create', async ({ client }) => {
     const user = await createTeacher()
 

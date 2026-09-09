@@ -16,12 +16,17 @@ const studentFields = {
   tags: vine.string().trim().optional().nullable(),
   preferredWeekday: vine.number().withoutDecimals().min(1).max(7).optional().nullable(),
   preferredTime: vine.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional().nullable(),
+  archivedAt: vine.date({ formats: ['iso8601'] }).optional().nullable(),
 }
 
 /**
  * Validator used when creating a student.
  * `userId` is set from the authenticated user in the controller.
  */
+export const listStudentsValidator = vine.create({
+  archived: vine.boolean().optional(),
+})
+
 export const createStudentValidator = vine.create(studentFields)
 
 /**
@@ -38,4 +43,5 @@ export const updateStudentValidator = vine.create({
   tags: studentFields.tags.clone(),
   preferredWeekday: studentFields.preferredWeekday.clone(),
   preferredTime: studentFields.preferredTime.clone(),
+  archivedAt: studentFields.archivedAt.clone(),
 })

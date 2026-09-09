@@ -34,7 +34,7 @@ export default class DashboardController {
 
     const [studentCount, plans, scheduledCount, doneCount, scheduledLessons, recent] =
       await Promise.all([
-        this.count(user.related('students').query()),
+        this.count(user.related('students').query().whereNull('archivedAt')),
         user
           .related('plans')
           .query()
@@ -55,10 +55,14 @@ export default class DashboardController {
           .limit(5),
       ])
 
+    const startOfTomorrow = startOfDay.plus({ days: 1 })
+    const endOfTomorrow = endOfDay.plus({ days: 1 })
+
     const birthdaysToday = await user
       .related('students')
       .query()
       .whereNotNull('birthdate')
+      .whereNull('archivedAt')
 
     const birthdays = birthdaysToday
       .filter((student) => student.birthdate?.month === now.month && student.birthdate?.day === now.day)
@@ -109,7 +113,10 @@ export default class DashboardController {
       ),
       overdue: LessonTransformer.transform(this.before(scheduledLessons, startOfDay)),
       today: LessonTransformer.transform(this.between(scheduledLessons, startOfDay, endOfDay)),
-      upcoming: LessonTransformer.transform(this.after(scheduledLessons, endOfDay).slice(0, 5)),
+      tomorrow: LessonTransformer.transform(
+        this.between(scheduledLessons, startOfTomorrow, endOfTomorrow)
+      ),
+      upcoming: LessonTransformer.transform(this.after(scheduledLessons, endOfTomorrow).slice(0, 5)),
       recent: LessonTransformer.transform(recent),
     })
   }

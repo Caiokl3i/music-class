@@ -1,8 +1,10 @@
 import { api } from '@/services/api'
 import type { ApiData, CreateStudentInput, Student, StudentColor, UpdateStudentInput } from '@/types/api'
 
-export async function listStudents() {
-  const { data } = await api.get<ApiData<Student[]>>('/students')
+export async function listStudents(params?: { archived?: boolean }) {
+  const { data } = await api.get<ApiData<Student[]>>('/students', {
+    params: params?.archived ? { archived: true } : undefined,
+  })
   return data.data
 }
 
