@@ -67,9 +67,9 @@ export function ActionMenu({ items, label = 'Mais ações', align = 'end' }: Act
               align === 'end' ? 'right-0 origin-top-right' : 'left-0 origin-top-left'
             }`}
           >
-            {visible.map((item) => (
+            {visible.map((item, index) => (
               <button
-                key={item.label}
+                key={`${item.label}-${index}`}
                 type="button"
                 role="menuitem"
                 disabled={item.disabled}

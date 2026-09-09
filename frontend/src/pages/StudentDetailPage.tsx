@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { isAxiosError } from 'axios'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -18,6 +19,7 @@ import {
   Plus,
   SquarePen,
   Trash2,
+  TriangleAlert,
   UserRound,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -41,14 +43,14 @@ import { Skeleton } from '@/components/Skeleton'
 import { Avatar } from '@/components/Avatar'
 import { Modal } from '@/components/Modal'
 import { Select } from '@/components/Select'
-import { Input } from '@/components/Input'
 import { DateTimeField } from '@/components/DateTimeField'
 import { TextArea } from '@/components/TextArea'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { EmptyState } from '@/components/EmptyState'
 import { LessonStatusBadge, PlanStatusBadge } from '@/components/StatusBadges'
 import { StudentLevelBadge } from '@/components/StudentLevelBadge'
-import { StudentColorPicker } from '@/components/StudentColorPicker'
 import { GenerateLessonsModal } from '@/components/GenerateLessonsModal'
+import { StudentFormFields, studentFormSchema, type StudentFormValues } from '@/components/StudentFormFields'
 import { BillingModal } from '@/components/BillingModal'
 import { PlanDiscountModal } from '@/components/PlanDiscountModal'
 import { CreditBar } from '@/components/CreditBar'
@@ -78,7 +80,6 @@ import {
 import { collapseMotion, fadeInMotion } from '@/utils/motion'
 import { DEFAULT_STUDENT_COLOR, resolveStudentHex } from '@/domain/student'
 import {
-  WEEKDAY_OPTIONS,
   addMinutesToDatetimeLocal,
   formatPreferredSchedule,
   moveDatetimeLocalKeepingDuration,
@@ -115,25 +116,9 @@ const planSchema = z.object({
   notes: z.string().optional(),
 })
 
-const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Escolha uma cor válida')
-
-const studentSchema = z.object({
-  name: z.string().min(1, 'Informe o nome'),
-  instrument: z.string().min(1, 'Informe o instrumento'),
-  phone: z.string().optional(),
-  birthdate: z.string().optional(),
-  description: z.string().optional(),
-  level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
-  color: hexColor,
-  tags: z.string().optional(),
-  preferredWeekday: z.string().optional(),
-  preferredTime: z.string().optional(),
-})
-
 type LessonFormValues = z.infer<typeof lessonSchema>
 type RepositionFormValues = z.infer<typeof repositionSchema>
 type PlanFormValues = z.infer<typeof planSchema>
-type StudentFormValues = z.infer<typeof studentSchema>
 
 export function StudentDetailPage() {
   const { id } = useParams()
@@ -192,9 +177,10 @@ export function StudentDetailPage() {
   })
 
   const studentForm = useForm<StudentFormValues>({
-    resolver: zodResolver(studentSchema),
+    resolver: zodResolver(studentFormSchema),
     defaultValues: { color: DEFAULT_STUDENT_COLOR },
   })
+  const [loadError, setLoadError] = useState(false)
 
   const selectedPackage = planForm.watch('package') as PlanPackage
   const availablePlans = useMemo(
@@ -218,6 +204,7 @@ export function StudentDetailPage() {
       return
     }
     setLoading(true)
+    setLoadError(false)
     try {
       const studentData = await studentsService.getStudent(studentId)
       setStudent(studentData)
@@ -231,7 +218,11 @@ export function StudentDetailPage() {
       else toast.error(getErrorMessage(lessonsResult.reason, 'Não foi possível carregar as aulas.'))
     } catch (error) {
       toast.error(getErrorMessage(error, 'Não foi possível carregar o aluno.'))
-      navigate('/students')
+      if (isAxiosError(error) && error.response?.status === 404) {
+        navigate('/students')
+        return
+      }
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
@@ -532,12 +523,24 @@ export function StudentDetailPage() {
     }
   }
 
-  if (loading || !student) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-40 w-full" />
       </div>
+    )
+  }
+
+  if (loadError || !student) {
+    return (
+      <EmptyState
+        icon={<TriangleAlert className="size-8" />}
+        title="Não foi possível carregar o aluno"
+        description="Confira a conexão e tente de novo."
+        actionLabel="Tentar novamente"
+        onAction={() => void load()}
+      />
     )
   }
 
@@ -1172,71 +1175,11 @@ export function StudentDetailPage() {
         }
       >
         <form className="space-y-4" onSubmit={studentForm.handleSubmit(onSubmitStudent)}>
-          <Input label="Nome" error={studentForm.formState.errors.name?.message} {...studentForm.register('name')} />
-          <Input
-            label="Instrumento"
-            error={studentForm.formState.errors.instrument?.message}
-            {...studentForm.register('instrument')}
-          />
-          <StudentColorPicker
-            value={studentForm.watch('color') ?? DEFAULT_STUDENT_COLOR}
-            error={studentForm.formState.errors.color?.message}
-            onChange={(next) =>
-              studentForm.setValue('color', next, { shouldDirty: true, shouldValidate: false })
-            }
-          />
-          <Input label="Telefone" error={studentForm.formState.errors.phone?.message} {...studentForm.register('phone')} />
-          <DateTimeField
-            label="Data de nascimento"
-            kind="date"
-            value={studentForm.watch('birthdate')}
-            error={studentForm.formState.errors.birthdate?.message}
-            onChange={(next) => studentForm.setValue('birthdate', next, { shouldValidate: true })}
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Nível"
-              error={studentForm.formState.errors.level?.message}
-              options={[
-                { value: '', label: 'Sem nível' },
-                { value: 'beginner', label: 'Iniciante' },
-                { value: 'intermediate', label: 'Intermediário' },
-              ]}
-              {...studentForm.register('level')}
-            />
-            <Input
-              label="Etiquetas"
-              hint="Separe por vírgula"
-              error={studentForm.formState.errors.tags?.message}
-              {...studentForm.register('tags')}
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Dia da aula"
-              error={studentForm.formState.errors.preferredWeekday?.message}
-              options={[
-                { value: '', label: 'Qualquer dia' },
-                ...WEEKDAY_OPTIONS.map((day) => ({
-                  value: String(day.value),
-                  label: day.label,
-                })),
-              ]}
-              {...studentForm.register('preferredWeekday')}
-            />
-            <DateTimeField
-              label="Horário"
-              kind="time"
-              hint="Padrão 14:00"
-              value={studentForm.watch('preferredTime')}
-              error={studentForm.formState.errors.preferredTime?.message}
-              onChange={(next) => studentForm.setValue('preferredTime', next, { shouldValidate: true })}
-            />
-          </div>
-          <TextArea
-            label="Observações"
-            error={studentForm.formState.errors.description?.message}
-            {...studentForm.register('description')}
+          <StudentFormFields
+            register={studentForm.register}
+            errors={studentForm.formState.errors}
+            watch={studentForm.watch}
+            setValue={studentForm.setValue}
           />
         </form>
       </Modal>
@@ -1415,9 +1358,6 @@ function LessonItem({
           items={[
             scheduled && onNoShow ? { label: 'Falta', onClick: () => onNoShow(lesson) } : null,
             scheduled && onCancel ? { label: 'Cancelar', onClick: () => onCancel(lesson) } : null,
-            lesson.status === 'no_show' && onReposition && scheduled
-              ? { label: 'Reposição', onClick: () => onReposition(lesson) }
-              : null,
             onEdit ? { label: 'Editar', icon: <Pencil />, onClick: () => onEdit(lesson) } : null,
             onDelete
               ? { label: 'Excluir', icon: <Trash2 />, tone: 'danger' as const, onClick: () => onDelete(lesson) }

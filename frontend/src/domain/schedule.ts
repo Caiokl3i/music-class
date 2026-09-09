@@ -108,6 +108,57 @@ export function moveDatetimeLocalKeepingDuration(
   return addMinutesToDatetimeLocal(nextStart, minutes)
 }
 
+export function brazilMonthAnchor(from = new Date()) {
+  const parts = brazilTodayParts(from)
+  return fromBrazilWallTime(parts.year, parts.month, 1, 12, 0)
+}
+
+export function shiftBrazilMonth(monthDate: Date, delta: number) {
+  const parts = brazilTodayParts(monthDate)
+  return fromBrazilWallTime(parts.year, parts.month + delta, 1, 12, 0)
+}
+
+export function brazilWeekAnchor(from = new Date()) {
+  const parts = brazilTodayParts(from)
+  const weekday = new Date(parts.year, parts.month - 1, parts.day).getDay()
+  return fromBrazilWallTime(parts.year, parts.month, parts.day - weekday, 12, 0)
+}
+
+export function shiftBrazilWeek(weekDate: Date, delta: number) {
+  const parts = brazilTodayParts(weekDate)
+  return fromBrazilWallTime(parts.year, parts.month, parts.day + delta * 7, 12, 0)
+}
+
+export function brazilWeekDays(weekDate: Date) {
+  const start = brazilWeekAnchor(weekDate)
+  const parts = brazilTodayParts(start)
+  return Array.from({ length: 7 }, (_, index) =>
+    fromBrazilWallTime(parts.year, parts.month, parts.day + index, 12, 0),
+  )
+}
+
+export function brazilCalendarDays(monthDate: Date) {
+  const parts = brazilTodayParts(monthDate)
+  const firstWeekday = new Date(parts.year, parts.month - 1, 1).getDay()
+  const daysInMonth = new Date(parts.year, parts.month, 0).getDate()
+  const lastWeekday = new Date(parts.year, parts.month - 1, daysInMonth).getDay()
+  const leading = firstWeekday
+  const trailing = 6 - lastWeekday
+  const days: Date[] = []
+
+  for (let day = 1 - leading; day <= daysInMonth + trailing; day += 1) {
+    days.push(fromBrazilWallTime(parts.year, parts.month, day, 12, 0))
+  }
+
+  return days
+}
+
+export function sameBrazilMonth(a: Date, b: Date) {
+  const left = brazilTodayParts(a)
+  const right = brazilTodayParts(b)
+  return left.year === right.year && left.month === right.month
+}
+
 export function weeklySlots(first: Date, count: number, until?: Date | null) {
   const slots: Date[] = []
   let current = new Date(first.getTime())

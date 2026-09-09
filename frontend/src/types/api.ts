@@ -115,7 +115,7 @@ export type Lesson = {
   studentName: string | null
   studentInstrument: string | null
   studentLevel: 'beginner' | 'intermediate' | null
-  studentColor: StudentColor | null
+  studentColor: StudentColor
   studentPhone: string | null
   planPackage: PlanPackage | null
 }
@@ -170,7 +170,7 @@ export type Dashboard = {
     studentName: string
     studentInstrument: string | null
     studentLevel: 'beginner' | 'intermediate' | null
-    studentColor: StudentColor | null
+    studentColor: StudentColor
     birthdate: string | null
   }>
   revenue: number

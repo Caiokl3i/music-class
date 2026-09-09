@@ -42,8 +42,8 @@ export function AppRouter() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <CatalogProvider>
-            <ToastProvider>
+          <ToastProvider>
+            <CatalogProvider>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route element={<GuestRoute />}>
@@ -68,8 +68,8 @@ export function AppRouter() {
                 <Route path="*" element={<Navigate to="/404" replace />} />
               </Routes>
             </Suspense>
-            </ToastProvider>
-          </CatalogProvider>
+            </CatalogProvider>
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

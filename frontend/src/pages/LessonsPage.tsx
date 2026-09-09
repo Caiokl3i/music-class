@@ -7,7 +7,7 @@ import {
   format,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Copy, List, Plus } from 'lucide-react'
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Copy, List, Plus, TriangleAlert } from 'lucide-react'
 import * as lessonsService from '@/services/lessons.service'
 import * as studentsService from '@/services/students.service'
 import * as plansService from '@/services/plans.service'
@@ -42,8 +42,15 @@ import {
 } from '@/utils/format'
 import {
   addMinutesToDatetimeLocal,
+  brazilCalendarDays,
+  brazilMonthAnchor,
+  brazilWeekAnchor,
+  brazilWeekDays,
   moveDatetimeLocalKeepingDuration,
   preferredSlot,
+  sameBrazilMonth,
+  shiftBrazilMonth,
+  shiftBrazilWeek,
 } from '@/domain/schedule'
 import { bookablePlans } from '@/domain/status'
 import { levelLabel } from '@/domain/student'
@@ -66,35 +73,6 @@ const schema = z
 type FormValues = z.infer<typeof schema>
 type ViewMode = 'list' | 'week' | 'month'
 
-function brazilMonthAnchor(from = new Date()) {
-  const parts = brazilTodayParts(from)
-  return fromBrazilWallTime(parts.year, parts.month, 1, 12, 0)
-}
-
-function shiftBrazilMonth(monthDate: Date, delta: number) {
-  const parts = brazilTodayParts(monthDate)
-  return fromBrazilWallTime(parts.year, parts.month + delta, 1, 12, 0)
-}
-
-function brazilWeekAnchor(from = new Date()) {
-  const parts = brazilTodayParts(from)
-  const weekday = new Date(parts.year, parts.month - 1, parts.day).getDay()
-  return fromBrazilWallTime(parts.year, parts.month, parts.day - weekday, 12, 0)
-}
-
-function shiftBrazilWeek(weekDate: Date, delta: number) {
-  const parts = brazilTodayParts(weekDate)
-  return fromBrazilWallTime(parts.year, parts.month, parts.day + delta * 7, 12, 0)
-}
-
-function brazilWeekDays(weekDate: Date) {
-  const start = brazilWeekAnchor(weekDate)
-  const parts = brazilTodayParts(start)
-  return Array.from({ length: 7 }, (_, index) =>
-    fromBrazilWallTime(parts.year, parts.month, parts.day + index, 12, 0),
-  )
-}
-
 function brazilWeekLabel(weekDate: Date) {
   const days = brazilWeekDays(weekDate)
   const start = brazilTodayParts(days[0])
@@ -108,28 +86,6 @@ function brazilWeekLabel(weekDate: Date) {
     locale: ptBR,
   })
   return `${startFull} – ${endLabel}`
-}
-
-function brazilCalendarDays(monthDate: Date) {
-  const parts = brazilTodayParts(monthDate)
-  const firstWeekday = new Date(parts.year, parts.month - 1, 1).getDay()
-  const daysInMonth = new Date(parts.year, parts.month, 0).getDate()
-  const lastWeekday = new Date(parts.year, parts.month - 1, daysInMonth).getDay()
-  const leading = firstWeekday
-  const trailing = 6 - lastWeekday
-  const days: Date[] = []
-
-  for (let day = 1 - leading; day <= daysInMonth + trailing; day += 1) {
-    days.push(fromBrazilWallTime(parts.year, parts.month, day, 12, 0))
-  }
-
-  return days
-}
-
-function sameBrazilMonth(a: Date, b: Date) {
-  const left = brazilTodayParts(a)
-  const right = brazilTodayParts(b)
-  return left.year === right.year && left.month === right.month
 }
 
 function brazilMonthLabel(monthDate: Date) {
@@ -157,6 +113,7 @@ export function LessonsPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<Lesson | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [filterStudentId, setFilterStudentId] = useState('')
   const [createDay, setCreateDay] = useState<Date | undefined>()
   const [selectedDay, setSelectedDay] = useState(() => {
@@ -225,6 +182,7 @@ export function LessonsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(false)
     try {
       const [lessonsData, studentsData, plansData] = await Promise.all([
         lessonsService.listLessons(),
@@ -235,6 +193,7 @@ export function LessonsPage() {
       setStudents(studentsData)
       setPlans(plansData)
     } catch (error) {
+      setLoadError(true)
       toast.error(getErrorMessage(error, 'Não foi possível carregar as aulas.'))
     } finally {
       setLoading(false)
@@ -443,6 +402,14 @@ export function LessonsPage() {
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
+      ) : loadError ? (
+        <EmptyState
+          icon={<TriangleAlert className="size-8" />}
+          title="Não foi possível carregar as aulas"
+          description="Confira a conexão e tente de novo."
+          actionLabel="Tentar novamente"
+          onAction={() => void load()}
+        />
       ) : students.length === 0 ? (
         <EmptyState
           icon={<CalendarDays className="size-8" />}

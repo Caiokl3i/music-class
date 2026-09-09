@@ -1,48 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Pencil, Phone, Plus, Search, Trash2, Users } from 'lucide-react'
+import { Pencil, Phone, Plus, Search, Trash2, TriangleAlert, Users } from 'lucide-react'
 import * as studentsService from '@/services/students.service'
-import { WEEKDAY_OPTIONS } from '@/domain/schedule'
 import type { Student } from '@/types/api'
 import { PageHeader } from '@/components/Card'
 import { Avatar } from '@/components/Avatar'
 import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
-import { DateTimeField } from '@/components/DateTimeField'
-import { Select } from '@/components/Select'
-import { TextArea } from '@/components/TextArea'
 import { Modal } from '@/components/Modal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { StudentLevelBadge } from '@/components/StudentLevelBadge'
-import { StudentColorPicker } from '@/components/StudentColorPicker'
 import { ActionMenu } from '@/components/ActionMenu'
 import { SegmentedControl } from '@/components/SegmentedControl'
+import { StudentFormFields, studentFormSchema, type StudentFormValues } from '@/components/StudentFormFields'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import { ageFromBirthdate } from '@/utils/format'
 import { DEFAULT_STUDENT_COLOR } from '@/domain/student'
 
-const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Escolha uma cor válida')
-
-const schema = z.object({
-  name: z.string().min(1, 'Informe o nome'),
-  instrument: z.string().min(1, 'Informe o instrumento'),
-  phone: z.string().optional(),
-  birthdate: z.string().optional(),
-  description: z.string().optional(),
-  level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
-  color: hexColor,
-  tags: z.string().optional(),
-  preferredWeekday: z.string().optional(),
-  preferredTime: z.string().optional(),
-})
-
-type FormValues = z.infer<typeof schema>
+type FormValues = StudentFormValues
 
 export function StudentsPage() {
   const navigate = useNavigate()
@@ -56,6 +35,7 @@ export function StudentsPage() {
   const [deleting, setDeleting] = useState<Student | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   const {
     register,
@@ -65,13 +45,15 @@ export function StudentsPage() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) })
+  } = useForm<FormValues>({ resolver: zodResolver(studentFormSchema) })
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(false)
     try {
       setStudents(await studentsService.listStudents({ archived: showArchived }))
     } catch (error) {
+      setLoadError(true)
       toast.error(getErrorMessage(error, 'Não foi possível carregar os alunos.'))
     } finally {
       setLoading(false)
@@ -211,6 +193,14 @@ export function StudentsPage() {
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
+      ) : loadError ? (
+        <EmptyState
+          icon={<TriangleAlert className="size-8" />}
+          title="Não foi possível carregar os alunos"
+          description="Confira a conexão e tente de novo."
+          actionLabel="Tentar novamente"
+          onAction={() => void load()}
+        />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Users className="size-8" />}
@@ -303,18 +293,7 @@ export function StudentsPage() {
                           >
                             {student.name}
                           </Link>
-                          {student.phone ? (
-                            <p className="flex items-center gap-1 truncate text-xs text-ink-muted">
-                              <Phone className="size-3" aria-hidden />
-                              {student.phone}
-                              {ageFromBirthdate(student.birthdate) !== null ? (
-                                <span>· {ageFromBirthdate(student.birthdate)} anos</span>
-                              ) : null}
-                              {tagsPreview(student.tags) ? (
-                                <span>· {tagsPreview(student.tags)}</span>
-                              ) : null}
-                            </p>
-                          ) : null}
+                          {studentMetaLine(student)}
                         </div>
                       </div>
                     </td>
@@ -372,74 +351,53 @@ export function StudentsPage() {
         }
       >
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <Input label="Nome" error={errors.name?.message} {...register('name')} />
-          <Input label="Instrumento" error={errors.instrument?.message} {...register('instrument')} />
-          <StudentColorPicker
-            value={watch('color') ?? DEFAULT_STUDENT_COLOR}
-            error={errors.color?.message}
-            onChange={(next) => setValue('color', next, { shouldDirty: true, shouldValidate: false })}
+          <StudentFormFields
+            register={register}
+            errors={errors}
+            watch={watch}
+            setValue={setValue}
           />
-          <Input label="Telefone" error={errors.phone?.message} {...register('phone')} />
-          <DateTimeField
-            label="Data de nascimento"
-            kind="date"
-            value={watch('birthdate')}
-            error={errors.birthdate?.message}
-            onChange={(next) => setValue('birthdate', next, { shouldValidate: true })}
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Nível"
-              error={errors.level?.message}
-              options={[
-                { value: '', label: 'Sem nível' },
-                { value: 'beginner', label: 'Iniciante' },
-                { value: 'intermediate', label: 'Intermediário' },
-              ]}
-              {...register('level')}
-            />
-            <Input
-              label="Etiquetas"
-              hint="Separe por vírgula"
-              error={errors.tags?.message}
-              {...register('tags')}
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Dia da aula"
-              error={errors.preferredWeekday?.message}
-              options={[
-                { value: '', label: 'Qualquer dia' },
-                ...WEEKDAY_OPTIONS.map((day) => ({
-                  value: String(day.value),
-                  label: day.label,
-                })),
-              ]}
-              {...register('preferredWeekday')}
-            />
-            <DateTimeField
-              label="Horário"
-              kind="time"
-              hint="Padrão 14:00"
-              value={watch('preferredTime')}
-              error={errors.preferredTime?.message}
-              onChange={(next) => setValue('preferredTime', next, { shouldValidate: true })}
-            />
-          </div>
-          <TextArea label="Observações" error={errors.description?.message} {...register('description')} />
         </form>
       </Modal>
 
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Excluir aluno?"
-        description={`Tem certeza que deseja excluir ${deleting?.name}? Pacotes e aulas vinculados também serão removidos.`}
+        description={`Tem certeza que deseja excluir ${deleting?.name}? Só é possível excluir alunos sem pacotes e sem aulas.`}
         loading={deleteLoading}
         onCancel={() => setDeleting(null)}
         onConfirm={confirmDelete}
       />
     </div>
+  )
+}
+
+function studentMetaLine(student: Student) {
+  const age = ageFromBirthdate(student.birthdate)
+  const tags = tagsPreview(student.tags)
+  if (!student.phone && age === null && !tags) return null
+
+  return (
+    <p className="flex items-center gap-1 truncate text-xs text-ink-muted">
+      {student.phone ? (
+        <>
+          <Phone className="size-3" aria-hidden />
+          {student.phone}
+        </>
+      ) : null}
+      {age !== null ? (
+        <span>
+          {student.phone ? '· ' : ''}
+          {age} anos
+        </span>
+      ) : null}
+      {tags ? (
+        <span>
+          {student.phone || age !== null ? '· ' : ''}
+          {tags}
+        </span>
+      ) : null}
+    </p>
   )
 }
 

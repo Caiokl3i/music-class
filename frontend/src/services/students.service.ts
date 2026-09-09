@@ -1,4 +1,5 @@
 import { api } from '@/services/api'
+import { DEFAULT_STUDENT_COLOR } from '@/domain/student'
 import type { ApiData, CreateStudentInput, Student, StudentColor, UpdateStudentInput } from '@/types/api'
 
 export async function listStudents(params?: { archived?: boolean }) {
@@ -46,7 +47,7 @@ export function studentFormPayload(values: {
     birthdate: values.birthdate || null,
     description: values.description || null,
     level: values.level || null,
-    color: values.color ?? '#0f766e',
+    color: values.color ?? DEFAULT_STUDENT_COLOR,
     tags: values.tags || null,
     preferredWeekday: values.preferredWeekday ? Number(values.preferredWeekday) : null,
     preferredTime: values.preferredTime ? values.preferredTime.slice(0, 5) : null,

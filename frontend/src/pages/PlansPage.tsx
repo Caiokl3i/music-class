@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'motion/react'
-import { BookOpen, CircleDollarSign, Package, Pencil, Plus, Trash2 } from 'lucide-react'
+import { BookOpen, CircleDollarSign, Package, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react'
 import * as plansService from '@/services/plans.service'
 import * as planTypesService from '@/services/plan-types.service'
 import * as studentsService from '@/services/students.service'
@@ -55,6 +55,8 @@ export function PlansPage() {
   const [savingSell, setSavingSell] = useState(false)
   const [savingType, setSavingType] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   const sellForm = useForm<SellValues>({
     resolver: zodResolver(sellSchema),
@@ -68,26 +70,27 @@ export function PlansPage() {
 
   const selectedPackage = sellForm.watch('package') as PlanPackage
 
-  const loadStudents = useCallback(async () => {
+  const load = useCallback(async () => {
+    setLoading(true)
+    setLoadError(false)
     try {
-      setStudents(await studentsService.listStudents())
+      const [studentsData, plansData] = await Promise.all([
+        studentsService.listStudents(),
+        plansService.listPlans(),
+      ])
+      setStudents(studentsData)
+      setPlans(plansData)
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível carregar os alunos.'))
-    }
-  }, [toast])
-
-  const loadPlans = useCallback(async () => {
-    try {
-      setPlans(await plansService.listPlans())
-    } catch (error) {
+      setLoadError(true)
       toast.error(getErrorMessage(error, 'Não foi possível carregar os pacotes.'))
+    } finally {
+      setLoading(false)
     }
   }, [toast])
 
   useEffect(() => {
-    void loadStudents()
-    void loadPlans()
-  }, [loadStudents, loadPlans])
+    void load()
+  }, [load])
 
   useEffect(() => {
     if (window.location.hash === '#receber') {
@@ -197,7 +200,7 @@ export function PlansPage() {
     try {
       await plansService.updatePlan(plan.id, { status: 'paid' })
       toast.success('Pacote marcado como pago.')
-      await loadPlans()
+      await load()
     } catch (error) {
       toast.error(getErrorMessage(error, 'Não foi possível atualizar o pagamento.'))
     } finally {
@@ -233,7 +236,17 @@ export function PlansPage() {
             Pacotes pendentes de todos os alunos.
           </p>
         </div>
-        {pendingPlans.length === 0 ? (
+        {loading ? (
+          <Skeleton className="h-16 w-full rounded-lg" />
+        ) : loadError ? (
+          <EmptyState
+            icon={<TriangleAlert className="size-8" />}
+            title="Não foi possível carregar os pacotes"
+            description="Confira a conexão e tente de novo."
+            actionLabel="Tentar novamente"
+            onAction={() => void load()}
+          />
+        ) : pendingPlans.length === 0 ? (
           <p className="rounded-lg border border-border bg-surface-raised px-4 py-3 text-sm text-ink-muted">
             Nenhum pacote pendente. Tudo em dia.
           </p>

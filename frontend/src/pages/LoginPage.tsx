@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,10 +16,17 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+function safeInternalPath(value: unknown) {
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+    ? value
+    : '/'
+}
+
 export function LoginPage() {
   const { login } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
   const [submitting, setSubmitting] = useState(false)
   const {
     register,
@@ -32,7 +39,9 @@ export function LoginPage() {
     setSubmitting(true)
     try {
       await login(values.email, values.password)
-      navigate('/')
+      navigate(safeInternalPath((location.state as { from?: string } | null)?.from), {
+        replace: true,
+      })
     } catch (error) {
       const fields = getFieldErrors(error)
       Object.entries(fields).forEach(([field, message]) => {

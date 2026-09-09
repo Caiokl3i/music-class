@@ -51,7 +51,7 @@ export function GenerateLessonsModal({
 
   const preview = useMemo(() => {
     if (!plan || !firstAt) return []
-    const first = new Date(firstAt)
+    const first = new Date(fromDatetimeLocalValue(firstAt))
     if (Number.isNaN(first.getTime())) return []
     const until = plan.expiresAt ? new Date(plan.expiresAt) : null
     return weeklySlots(first, plan.lessonsSchedulable, until)

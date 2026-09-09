@@ -4,27 +4,24 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
 import * as catalogService from '@/services/catalog.service'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
+import { getErrorMessage } from '@/utils/errors'
 import type { Catalog, PackageOption, PlanPackage } from '@/types/api'
 
-const FALLBACK_PACKAGES: PackageOption[] = [
-  { value: 'single', lessons: 1, price: 35, label: 'Aula avulsa' },
-  { value: 'pack_4', lessons: 4, price: 130, label: 'Pacote mensal 1' },
-  { value: 'pack_8', lessons: 8, price: 240, label: 'Pacote mensal 2' },
-]
-
-const FALLBACK: Catalog = {
-  packages: FALLBACK_PACKAGES,
+const EMPTY_CATALOG: Catalog = {
+  packages: [],
   lessonDurationMinutes: 60,
   creditValidityDays: 60,
   lowCreditThreshold: 1,
 }
 
-function fallbackOption(value: string): PackageOption {
+function unknownPackage(value: string): PackageOption {
   return {
     value,
     lessons: 0,
@@ -44,23 +41,30 @@ const CatalogContext = createContext<CatalogContextValue | null>(null)
 
 export function CatalogProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth()
-  const [catalog, setCatalog] = useState<Catalog>(FALLBACK)
+  const toast = useToast()
+  const [catalog, setCatalog] = useState<Catalog>(EMPTY_CATALOG)
   const [loading, setLoading] = useState(false)
+  const loadedOnce = useRef(false)
 
   const load = useCallback(async () => {
     if (!isAuthenticated) {
-      setCatalog(FALLBACK)
+      setCatalog(EMPTY_CATALOG)
+      loadedOnce.current = false
       return
     }
     setLoading(true)
     try {
       setCatalog(await catalogService.getCatalog())
-    } catch {
-      setCatalog(FALLBACK)
+      loadedOnce.current = true
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível carregar o catálogo de pacotes.'))
+      if (!loadedOnce.current) {
+        setCatalog(EMPTY_CATALOG)
+      }
     } finally {
       setLoading(false)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, toast])
 
   useEffect(() => {
     void load()
@@ -73,7 +77,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       loading,
       reload: load,
       labelFor: (value) => (value ? map.get(value)?.label ?? value : 'Pacote'),
-      optionFor: (value) => map.get(value) ?? fallbackOption(value),
+      optionFor: (value) => map.get(value) ?? unknownPackage(value),
     }
   }, [catalog, loading, load])
 

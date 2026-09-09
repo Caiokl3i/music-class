@@ -7,6 +7,8 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   E_PLAN_HAS_ACTIVE_LESSONS:
     'Cancele todas as aulas deste pacote antes de cancelar o pacote.',
   E_PLAN_HAS_LESSONS: 'Só é possível apagar um pacote sem nenhuma aula.',
+  E_PLAN_STUDENT_LOCKED: 'Não é possível trocar o aluno de um pacote que já tem aulas.',
+  E_STUDENT_HAS_HISTORY: 'Arquive o aluno ou remova pacotes e aulas antes de excluir.',
   E_LESSON_STUDENT_MISMATCH: 'O aluno da aula precisa ser o mesmo do pacote.',
   E_PLAN_LESSONS_TOTAL_TOO_LOW:
     'Não é possível reduzir o pacote abaixo das aulas já agendadas.',

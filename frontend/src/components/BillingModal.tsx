@@ -10,6 +10,7 @@ import * as plansService from '@/services/plans.service'
 import type { BillingSummary, Plan, Student } from '@/types/api'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/utils/errors'
+import { whatsappReminderUrl } from '@/domain/reminder'
 import { brazilTodayParts, formatCurrency } from '@/utils/format'
 
 const billingSchema = z.object({
@@ -29,13 +30,6 @@ type BillingModalProps = {
 function currentMonthValue() {
   const parts = brazilTodayParts()
   return `${parts.year}-${String(parts.month).padStart(2, '0')}`
-}
-
-function whatsappDigits(phone: string | null | undefined) {
-  if (!phone) return null
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length < 10) return null
-  return digits.startsWith('55') ? digits : `55${digits}`
 }
 
 export function BillingModal({ open, plan, student, onClose }: BillingModalProps) {
@@ -105,11 +99,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
     }
   }
 
-  const waNumber = whatsappDigits(student?.phone)
-  const waHref =
-    waNumber && summary?.text
-      ? `https://wa.me/${waNumber}?text=${encodeURIComponent(summary.text)}`
-      : null
+  const waHref = summary?.text ? whatsappReminderUrl(student?.phone, summary.text) : null
 
   return (
     <Modal

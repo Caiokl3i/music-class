@@ -1,4 +1,5 @@
 import { api } from '@/services/api'
+import { filenameFromDisposition, hydrateBlobError, saveBlob } from '@/utils/download'
 import type {
   ApiData,
   BillingSummary,
@@ -77,24 +78,22 @@ export async function getPlanBilling(planId: number, month?: string | null) {
 }
 
 export async function downloadPlanBillingPdf(planId: number, month?: string | null) {
-  const response = await api.get<Blob>(`/plans/${planId}/billing.pdf`, {
-    params: {
-      timezone: APP_TIMEZONE,
-      ...(month ? { month } : {}),
-    },
-    responseType: 'blob',
-  })
+  try {
+    const response = await api.get<Blob>(`/plans/${planId}/billing.pdf`, {
+      params: {
+        timezone: APP_TIMEZONE,
+        ...(month ? { month } : {}),
+      },
+      responseType: 'blob',
+    })
 
-  const disposition = response.headers['content-disposition'] as string | undefined
-  const match = disposition?.match(/filename="([^"]+)"/)
-  const filename = match?.[1] ?? `cobranca-${planId}.pdf`
-
-  const url = URL.createObjectURL(response.data)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = filename
-  document.body.appendChild(anchor)
-  anchor.click()
-  anchor.remove()
-  URL.revokeObjectURL(url)
+    const filename = filenameFromDisposition(
+      response.headers['content-disposition'],
+      `cobranca-${planId}.pdf`,
+    )
+    saveBlob(response.data, filename)
+  } catch (error) {
+    await hydrateBlobError(error)
+    throw error
+  }
 }
