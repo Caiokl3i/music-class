@@ -25,10 +25,15 @@ import { LessonRow } from '@/components/LessonRow'
 import { useToast } from '@/contexts/ToastContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
+import { LessonStatusBadge } from '@/components/StatusBadges'
+import { StudentLevelBadge } from '@/components/StudentLevelBadge'
+import { studentChipStyle, studentDotStyle } from '@/components/Avatar'
 import {
   brazilDateKey,
   brazilTodayParts,
+  formatDateTimeRange,
   formatTimeRange,
+  formatWeekdayLong,
   fromBrazilWallTime,
   fromDatetimeLocalValue,
   toDatetimeLocalFromDate,
@@ -40,12 +45,7 @@ import {
   preferredSlot,
 } from '@/domain/schedule'
 import { bookablePlans } from '@/domain/status'
-import {
-  STUDENT_CALENDAR_CHIP,
-  STUDENT_DOT,
-  levelLabel,
-  resolveStudentColor,
-} from '@/domain/student'
+import { levelLabel } from '@/domain/student'
 
 const schema = z
   .object({
@@ -114,6 +114,9 @@ export function LessonsPage() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Lesson | null>(null)
+  const [viewing, setViewing] = useState<Lesson | null>(null)
+  const [dayMenu, setDayMenu] = useState<Date | null>(null)
+  const [dayList, setDayList] = useState<Date | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<Lesson | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -226,6 +229,7 @@ export function LessonsPage() {
   }
 
   function openEdit(lesson: Lesson) {
+    setViewing(null)
     setEditing(lesson)
     const scheduledAt = toDatetimeLocalValue(lesson.scheduledAt)
     const endsAt = lesson.endsAt
@@ -241,6 +245,35 @@ export function LessonsPage() {
       description: lesson.description ?? '',
     })
     setModalOpen(true)
+  }
+
+  function openDetails(lesson: Lesson) {
+    setDayMenu(null)
+    setDayList(null)
+    setViewing(lesson)
+  }
+
+  function openDayMenu(day: Date) {
+    setDayMenu(day)
+  }
+
+  function openDayList(day: Date) {
+    setDayMenu(null)
+    setDayList(day)
+  }
+
+  function scheduleOnDay(day: Date) {
+    setDayMenu(null)
+    setDayList(null)
+    openCreate(day)
+  }
+
+  function lessonsForDay(day: Date) {
+    const dayKey = brazilDateKey(day)
+    return filteredLessons
+      .filter((lesson) => brazilDateKey(lesson.scheduledAt) === dayKey)
+      .slice()
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
   }
 
   async function onSubmit(values: FormValues) {
@@ -304,7 +337,7 @@ export function LessonsPage() {
   return (
     <div>
       <PageHeader
-        description="Agenda de todos os alunos. Clique no dia para marcar."
+        description="Clique na aula para ver detalhes, ou no dia para escolher ver as aulas ou agendar."
         actions={
           <>
             <div className="flex rounded-md border border-border bg-surface-raised p-0.5">
@@ -416,7 +449,8 @@ export function LessonsPage() {
                   className="inline-flex items-center gap-1.5 rounded-md bg-surface-muted px-2 py-1 text-xs text-ink"
                 >
                   <span
-                    className={`size-2.5 shrink-0 rounded-full ${STUDENT_DOT[resolveStudentColor(item.color, item.id)]}`}
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={studentDotStyle(item.color, item.id)}
                     aria-hidden
                   />
                   <span className="font-medium">{item.name.split(' ')[0]}</span>
@@ -442,11 +476,18 @@ export function LessonsPage() {
               )
               const inMonth = sameBrazilMonth(day, month)
               return (
-                <button
+                <div
                   key={dayKey ?? day.toISOString()}
-                  type="button"
-                  onClick={() => openCreate(day)}
-                  className={`flex min-h-[88px] flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft ${
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openDayMenu(day)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      openDayMenu(day)
+                    }
+                  }}
+                  className={`flex min-h-[88px] cursor-pointer flex-col border-b border-r border-border p-1.5 text-left transition-colors hover:bg-accent-soft ${
                     inMonth ? 'bg-surface-raised' : 'bg-surface-muted'
                   }`}
                 >
@@ -455,31 +496,37 @@ export function LessonsPage() {
                   </span>
                   <div className="flex flex-col gap-1 overflow-hidden">
                     {dayLessons.slice(0, 3).map((lesson) => (
-                      <span
+                      <button
                         key={lesson.id}
-                        role="presentation"
+                        type="button"
                         onClick={(event) => {
                           event.stopPropagation()
-                          openEdit(lesson)
+                          openDetails(lesson)
                         }}
-                        className={`truncate rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                          STUDENT_CALENDAR_CHIP[
-                            resolveStudentColor(
-                              lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
-                              lesson.studentId,
-                            )
-                          ]
-                        }`}
+                        className="truncate rounded px-1.5 py-0.5 text-left text-[10px] font-semibold"
+                        style={studentChipStyle(
+                          lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
+                          lesson.studentId,
+                        )}
                       >
                         {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
                         {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
-                      </span>
+                      </button>
                     ))}
                     {dayLessons.length > 3 ? (
-                      <span className="text-[10px] text-ink-muted">+{dayLessons.length - 3}</span>
+                      <button
+                        type="button"
+                        className="text-left text-[10px] text-ink-muted transition-opacity hover:opacity-80"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openDayList(day)
+                        }}
+                      >
+                        +{dayLessons.length - 3} ver todas
+                      </button>
                     ) : null}
                   </div>
-                </button>
+                </div>
               )
             })}
           </div>
@@ -588,6 +635,157 @@ export function LessonsPage() {
           />
           <TextArea label="Anotações" error={errors.description?.message} {...register('description')} />
         </form>
+      </Modal>
+
+      <Modal
+        open={Boolean(dayMenu)}
+        title={dayMenu ? formatWeekdayLong(dayMenu) : 'Dia'}
+        onClose={() => setDayMenu(null)}
+        footer={
+          <Button variant="secondary" onClick={() => setDayMenu(null)}>
+            Fechar
+          </Button>
+        }
+      >
+        {dayMenu ? (
+          <div className="space-y-3">
+            <p className="text-sm text-ink-muted">
+              {lessonsForDay(dayMenu).length === 0
+                ? 'Nenhuma aula neste dia ainda.'
+                : `${lessonsForDay(dayMenu).length} aula(s) neste dia.`}
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="secondary"
+                className="justify-start"
+                disabled={lessonsForDay(dayMenu).length === 0}
+                onClick={() => openDayList(dayMenu)}
+              >
+                Ver aulas do dia
+              </Button>
+              <Button className="justify-start" onClick={() => scheduleOnDay(dayMenu)}>
+                Agendar aula neste dia
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={Boolean(dayList)}
+        title={dayList ? `Aulas · ${formatWeekdayLong(dayList)}` : 'Aulas do dia'}
+        onClose={() => setDayList(null)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDayList(null)}>
+              Fechar
+            </Button>
+            {dayList ? (
+              <Button onClick={() => scheduleOnDay(dayList)}>Agendar neste dia</Button>
+            ) : null}
+          </>
+        }
+      >
+        {dayList ? (
+          lessonsForDay(dayList).length === 0 ? (
+            <p className="text-sm text-ink-muted">Nenhuma aula neste dia.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {lessonsForDay(dayList).map((lesson) => {
+                const name =
+                  lesson.studentName ??
+                  studentsMap.get(lesson.studentId)?.name ??
+                  `Aluno #${lesson.studentId}`
+                return (
+                  <li key={lesson.id}>
+                    <button
+                      type="button"
+                      className="flex w-full items-start justify-between gap-3 py-3 text-left transition-opacity hover:opacity-80"
+                      onClick={() => openDetails(lesson)}
+                    >
+                      <span className="min-w-0">
+                        <span className="block font-medium text-ink">
+                          {formatTimeRange(lesson.scheduledAt, lesson.endsAt)} · {name}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-ink-muted">
+                          {labelFor(lesson.planPackage)}
+                        </span>
+                      </span>
+                      <LessonStatusBadge status={lesson.status} />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={Boolean(viewing)}
+        title="Detalhes da aula"
+        onClose={() => setViewing(null)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setViewing(null)}>
+              Fechar
+            </Button>
+            {viewing ? (
+              <Button
+                onClick={() => {
+                  const lesson = viewing
+                  openEdit(lesson)
+                }}
+              >
+                Editar aula
+              </Button>
+            ) : null}
+          </>
+        }
+      >
+        {viewing ? (
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-ink-muted">Horário</dt>
+              <dd className="mt-0.5 font-medium text-ink">
+                {formatDateTimeRange(viewing.scheduledAt, viewing.endsAt)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Aluno</dt>
+              <dd className="mt-0.5 flex flex-wrap items-center gap-2 text-ink">
+                <button
+                  type="button"
+                  className="font-medium text-accent transition-opacity hover:opacity-80"
+                  onClick={() => navigate(`/students/${viewing.studentId}`)}
+                >
+                  {viewing.studentName ??
+                    studentsMap.get(viewing.studentId)?.name ??
+                    `Aluno #${viewing.studentId}`}
+                </button>
+                <StudentLevelBadge
+                  level={viewing.studentLevel ?? studentsMap.get(viewing.studentId)?.level}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Status</dt>
+              <dd className="mt-0.5">
+                <LessonStatusBadge status={viewing.status} />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Pacote</dt>
+              <dd className="mt-0.5 text-ink">{labelFor(viewing.planPackage)}</dd>
+            </div>
+            {viewing.description ? (
+              <div>
+                <dt className="text-ink-muted">Anotações</dt>
+                <dd className="mt-0.5 whitespace-pre-wrap text-ink">{viewing.description}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
       </Modal>
 
       <ConfirmDialog
