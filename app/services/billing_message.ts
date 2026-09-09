@@ -1,10 +1,11 @@
 import { DateTime } from 'luxon'
 import { createRequire } from 'node:module'
-import { existsSync } from 'node:fs'
 import type Plan from '#models/plan'
 import type PlanDiscount from '#models/plan_discount'
 import type Lesson from '#models/lesson'
 import { roundMoney, unitPriceFromPlan } from '#services/plan_pricing'
+import { monthWindow, resolveStudioZone } from '#services/studio_timezone'
+import { PDF_COLORS as PDF, drawRoundedRect, resolvePdfFonts, useFont } from '#services/pdf_layout'
 
 const require = createRequire(import.meta.url)
 const PDFDocument = require('pdfkit') as typeof import('pdfkit')
@@ -23,27 +24,6 @@ const MONTH_NAMES_PT = [
   'novembro',
   'dezembro',
 ]
-
-const FONT_REGULAR_CANDIDATES = [
-  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-  '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-]
-
-const FONT_BOLD_CANDIDATES = [
-  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-  '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
-]
-
-const PDF = {
-  accent: '#0f766e',
-  accentSoft: '#f0fdfa',
-  ink: '#1a2433',
-  muted: '#5b6b7c',
-  border: '#e2e8f0',
-  surface: '#f4f6f8',
-  white: '#ffffff',
-  danger: '#b45309',
-} as const
 
 export type BillingLessonLine = {
   id: number
@@ -80,19 +60,6 @@ export type BuildBillingInput = {
   month?: string | null
   timezone?: string
   studentName?: string | null
-}
-
-export function resolveBillingZone(timezone?: string) {
-  const zone = timezone || 'America/Sao_Paulo'
-  return DateTime.now().setZone(zone).isValid ? zone : 'America/Sao_Paulo'
-}
-
-export function monthWindow(month: string, zone: string) {
-  const start = DateTime.fromFormat(month, 'yyyy-MM', { zone }).startOf('month')
-  if (!start.isValid) {
-    throw new Error('Invalid month')
-  }
-  return { start, end: start.endOf('month'), zone }
 }
 
 export function formatMoneyBr(value: number) {
@@ -166,7 +133,7 @@ export function filterBillingDiscounts(
 }
 
 export function buildBillingSummary(input: BuildBillingInput): BillingSummary {
-  const zone = resolveBillingZone(input.timezone)
+  const zone = resolveStudioZone(input.timezone)
   const month = input.month ?? null
   const unitPrice = unitPriceFromPlan(Number(input.plan.price), input.plan.lessonsTotal)
   const lessons = filterDoneLessons(input.lessons, month, zone)
@@ -257,37 +224,6 @@ export function formatBillingText(input: {
   return lines.join('\n')
 }
 
-function resolvePdfFonts() {
-  return {
-    regular: FONT_REGULAR_CANDIDATES.find((path) => existsSync(path)) ?? null,
-    bold: FONT_BOLD_CANDIDATES.find((path) => existsSync(path)) ?? null,
-  }
-}
-
-function useFont(
-  doc: PDFKit.PDFDocument,
-  fonts: { regular: string | null; bold: string | null },
-  weight: 'regular' | 'bold'
-) {
-  const path = weight === 'bold' ? fonts.bold ?? fonts.regular : fonts.regular
-  if (path) doc.font(path)
-  else doc.font(weight === 'bold' ? 'Helvetica-Bold' : 'Helvetica')
-}
-
-function drawRoundedRect(
-  doc: PDFKit.PDFDocument,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-  fill: string
-) {
-  doc.save()
-  doc.roundedRect(x, y, width, height, radius).fill(fill)
-  doc.restore()
-}
-
 function drawRow(
   doc: PDFKit.PDFDocument,
   fonts: { regular: string | null; bold: string | null },
@@ -334,7 +270,6 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
       ? `Cobrança — aulas de ${summary.monthLabel}`
       : 'Cobrança — aulas do pacote'
 
-    // Header band
     doc.save()
     doc.rect(0, 0, pageWidth, 108).fill(PDF.accent)
     doc.restore()
@@ -354,7 +289,6 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
 
     doc.y = 128
 
-    // Meta card
     const metaTop = doc.y
     const metaHeight = 58
     drawRoundedRect(doc, margin, metaTop, contentWidth, metaHeight, 8, PDF.surface)
@@ -388,7 +322,6 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
 
     doc.y = metaTop + metaHeight + 28
 
-    // Lessons section
     useFont(doc, fonts, 'bold')
     doc.fillColor(PDF.ink).fontSize(12).text('Aulas realizadas', margin, doc.y)
     doc.moveDown(0.45)
@@ -414,7 +347,6 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
       bold: true,
     })
 
-    // Discounts
     if (summary.discounts.length > 0) {
       doc.moveDown(0.6)
       useFont(doc, fonts, 'bold')
@@ -443,7 +375,6 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
       })
     }
 
-    // Total box
     doc.moveDown(0.8)
     const totalTop = doc.y
     const totalHeight = 56
@@ -462,7 +393,6 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
         width: contentWidth - 36,
       })
 
-    // Footer — lineHeight do texto precisa caber acima de maxY, senão abre página vazia
     const footerY = doc.page.height - doc.page.margins.bottom - 16
     useFont(doc, fonts, 'regular')
     doc

@@ -1,13 +1,17 @@
 import { DateTime } from 'luxon'
 import { createRequire } from 'node:module'
-import { existsSync } from 'node:fs'
 import { lessonEnd } from '#services/lesson_schedule'
 import { packageLabelMap } from '#services/plan_types'
 import { formatMoneyBr, monthLabelPt } from '#services/billing_message'
+import { netPriceFromPlan } from '#services/plan_pricing'
+import { monthWindow, resolveStudioZone } from '#services/studio_timezone'
+import { PDF_COLORS as PDF, drawRoundedRect, resolvePdfFonts, useFont } from '#services/pdf_layout'
 import type User from '#models/user'
 import type Lesson from '#models/lesson'
 import type Plan from '#models/plan'
 import type Student from '#models/student'
+
+export { monthWindow, resolveStudioZone }
 
 const require = createRequire(import.meta.url)
 const PDFDocument = require('pdfkit') as typeof import('pdfkit')
@@ -24,26 +28,6 @@ const PLAN_STATUS_LABEL: Record<string, string> = {
   paid: 'Pago',
   cancelled: 'Cancelado',
 }
-
-const FONT_REGULAR_CANDIDATES = [
-  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-  '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-]
-
-const FONT_BOLD_CANDIDATES = [
-  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-  '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
-]
-
-const PDF = {
-  accent: '#0f766e',
-  accentSoft: '#f0fdfa',
-  ink: '#1a2433',
-  muted: '#5b6b7c',
-  border: '#e2e8f0',
-  surface: '#f4f6f8',
-  white: '#ffffff',
-} as const
 
 export const CSV_HEADER = [
   'tipo',
@@ -66,29 +50,6 @@ type MonthExportRow = {
   status: string
   amount: number | null
   notes: string | null
-}
-
-export function resolveStudioZone(timezone?: string) {
-  const zone = timezone?.trim() || 'America/Sao_Paulo'
-  return DateTime.now().setZone(zone).isValid ? zone : 'America/Sao_Paulo'
-}
-
-export function monthWindow(month?: string, timezone?: string) {
-  const zone = resolveStudioZone(timezone)
-  const start = month
-    ? DateTime.fromISO(`${month}-01`, { zone }).startOf('month')
-    : DateTime.now().setZone(zone).startOf('month')
-
-  if (!start.isValid) {
-    throw new Error('Invalid month')
-  }
-
-  return {
-    zone,
-    month: start.toFormat('yyyy-MM'),
-    start,
-    end: start.endOf('month'),
-  }
 }
 
 export function csvEscape(value: string | number | null | undefined) {
@@ -115,7 +76,7 @@ async function collectMonthRows(user: User, query: { month?: string; timezone?: 
   const window = monthWindow(query.month, query.timezone)
   const [lessons, plans, labels] = await Promise.all([
     user.related('lessons').query().preload('student').preload('plan').orderBy('scheduledAt', 'asc'),
-    user.related('plans').query().preload('student').orderBy('id', 'asc'),
+    user.related('plans').query().preload('student').preload('discounts').orderBy('id', 'asc'),
     packageLabelMap(user),
   ])
 
@@ -210,7 +171,7 @@ function planRow(plan: Plan, zone: string, labels: Map<string, string>): MonthEx
     instrument: student?.instrument ?? '',
     packageLabel: packageLabel(plan.package, labels),
     status: PLAN_STATUS_LABEL[plan.status] ?? plan.status,
-    amount: Number(plan.price),
+    amount: netPriceFromPlan(Number(plan.price), plan.discounts),
     notes: plan.notes,
   }
 }
@@ -233,37 +194,6 @@ function packageLabel(value: string | null | undefined, labels: Map<string, stri
     return ''
   }
   return labels.get(value) ?? value
-}
-
-function resolvePdfFonts() {
-  return {
-    regular: FONT_REGULAR_CANDIDATES.find((path) => existsSync(path)) ?? null,
-    bold: FONT_BOLD_CANDIDATES.find((path) => existsSync(path)) ?? null,
-  }
-}
-
-function useFont(
-  doc: PDFKit.PDFDocument,
-  fonts: { regular: string | null; bold: string | null },
-  weight: 'regular' | 'bold'
-) {
-  const path = weight === 'bold' ? fonts.bold ?? fonts.regular : fonts.regular
-  if (path) doc.font(path)
-  else doc.font(weight === 'bold' ? 'Helvetica-Bold' : 'Helvetica')
-}
-
-function drawRoundedRect(
-  doc: PDFKit.PDFDocument,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-  fill: string
-) {
-  doc.save()
-  doc.roundedRect(x, y, width, height, radius).fill(fill)
-  doc.restore()
 }
 
 function drawRow(

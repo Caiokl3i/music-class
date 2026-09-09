@@ -8,6 +8,7 @@ import {
   lessonsDoneFromExtras,
 } from '#services/plan_credits'
 import { EXPIRING_SOON_DAYS, LOW_CREDIT_THRESHOLD } from '#services/package_catalog'
+import { resolveStudioZone } from '#services/studio_timezone'
 import { buildMonthCsv, buildMonthPdf } from '#services/month_export'
 import { netPriceFromPlan } from '#services/plan_pricing'
 import { dashboardQueryValidator } from '#validators/dashboard'
@@ -22,7 +23,7 @@ export default class DashboardController {
   async show({ auth, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
     const { timezone } = await request.validateUsing(dashboardQueryValidator)
-    const zone = this.resolveZone(timezone)
+    const zone = resolveStudioZone(timezone)
     const now = DateTime.now().setZone(zone)
     if (!now.isValid) {
       throw new Error('Invalid timezone')
@@ -143,11 +144,6 @@ export default class DashboardController {
       .header('Content-Disposition', `attachment; filename="${pdf.filename}"`)
       .header('Cache-Control', 'no-store')
       .send(pdf.body)
-  }
-
-  private resolveZone(timezone?: string) {
-    const zone = timezone || 'America/Sao_Paulo'
-    return DateTime.now().setZone(zone).isValid ? zone : 'America/Sao_Paulo'
   }
 
   private lessonList(user: User) {

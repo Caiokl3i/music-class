@@ -84,6 +84,25 @@ test.group('Month export', (group) => {
     assert.notInclude(csv, 'AULA_ALHEIA')
   })
 
+  test('exports the plan net price after discounts', async ({ assert, client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan({
+      paidAt: DateTime.fromISO('2026-09-01T15:00:00.000Z'),
+    })
+    await plan.related('discounts').create({
+      userId: teacher.id,
+      name: 'Troca',
+      amount: 30,
+    })
+
+    const response = await client.get('/api/v1/export?month=2026-09&timezone=UTC').loginAs(teacher)
+
+    response.assertStatus(200)
+    assert.include(
+      response.text(),
+      'pacote;2026-09-01 15:00;Ana;piano;Pacote mensal 1;Pago;100,00;'
+    )
+  })
+
   test('uses the studio timezone to decide which day belongs to the month', async ({
     assert,
     client,
