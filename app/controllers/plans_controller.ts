@@ -8,7 +8,7 @@ import {
 } from '#validators/plan'
 import { billingQueryValidator } from '#validators/plan_discount'
 import { resolvePlanType } from '#services/plan_types'
-import { assertLessonsTotalNotBelowActive, expiresAtFromPaidAt } from '#services/plan_credits'
+import { assertLessonsTotalNotBelowActive, assertCanCancelPlan, assertCanDeletePlan, expiresAtFromPaidAt } from '#services/plan_credits'
 import { generatePlanLessons } from '#services/lesson_generate'
 import {
   billingFilename,
@@ -81,6 +81,9 @@ export default class PlansController {
     }
 
     if (payload.status !== undefined) {
+      if (payload.status === 'cancelled' && previousStatus !== 'cancelled') {
+        await assertCanCancelPlan(plan)
+      }
       plan.status = payload.status
     }
 
@@ -137,6 +140,7 @@ export default class PlansController {
 
   async destroy({ auth, params, response }: HttpContext) {
     const plan = await this.findOwnedPlan(auth.getUserOrFail(), params.id)
+    await assertCanDeletePlan(plan)
     await plan.delete()
 
     return response.noContent()

@@ -4,6 +4,9 @@ import type { ApiErrorBody } from '@/types/api'
 const DOMAIN_MESSAGES: Record<string, string> = {
   E_PLAN_NO_CREDITS: 'Este pacote já tem todas as aulas marcadas.',
   E_PLAN_CANCELLED: 'Não é possível agendar aulas em um pacote cancelado.',
+  E_PLAN_HAS_ACTIVE_LESSONS:
+    'Cancele todas as aulas deste pacote antes de cancelar o pacote.',
+  E_PLAN_HAS_LESSONS: 'Só é possível apagar um pacote sem nenhuma aula.',
   E_LESSON_STUDENT_MISMATCH: 'O aluno da aula precisa ser o mesmo do pacote.',
   E_PLAN_LESSONS_TOTAL_TOO_LOW:
     'Não é possível reduzir o pacote abaixo das aulas já agendadas.',
@@ -25,6 +28,11 @@ const FIELD_LABELS: Record<string, string> = {
   passwordConfirmation: 'confirmação de senha',
   currentPassword: 'senha atual',
   fullName: 'nome',
+  phone: 'telefone',
+  studioName: 'estúdio',
+  city: 'cidade',
+  instruments: 'instrumentos',
+  bio: 'sobre você',
   name: 'nome',
   instrument: 'instrumento',
   phone: 'telefone',

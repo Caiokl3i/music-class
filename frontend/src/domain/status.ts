@@ -26,6 +26,26 @@ export function planHoldsCredits(plan: { status: PlanStatus }) {
   return plan.status !== 'cancelled'
 }
 
+/** Aulas que ainda ocupam vaga no pacote (não canceladas). */
+export function planHasActiveLessons(planId: number, lessons: { planId: number; status: string }[]) {
+  return lessons.some((lesson) => lesson.planId === planId && lesson.status !== 'cancelled')
+}
+
+export function planHasAnyLessons(planId: number, lessons: { planId: number }[]) {
+  return lessons.some((lesson) => lesson.planId === planId)
+}
+
+export function canCancelPlan(
+  plan: { id: number; status: PlanStatus },
+  lessons: { planId: number; status: string }[],
+) {
+  return plan.status !== 'cancelled' && !planHasActiveLessons(plan.id, lessons)
+}
+
+export function canDeletePlan(plan: { id: number }, lessons: { planId: number }[]) {
+  return !planHasAnyLessons(plan.id, lessons)
+}
+
 export function canGenerateLessons(plan: Plan, now = new Date()) {
   return planHoldsCredits(plan) && plan.lessonsSchedulable > 0 && !planIsExpired(plan, now)
 }

@@ -37,6 +37,7 @@ import { PageHeader, Card, SectionHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { Skeleton } from '@/components/Skeleton'
+import { Avatar } from '@/components/Avatar'
 import { Modal } from '@/components/Modal'
 import { Select } from '@/components/Select'
 import { Input } from '@/components/Input'
@@ -69,9 +70,12 @@ import {
   isLowCredit,
   planHoldsCredits,
   planIsExpired,
+  canCancelPlan,
+  canDeletePlan,
+  planHasActiveLessons,
 } from '@/domain/status'
 import { collapseMotion, fadeInMotion } from '@/utils/motion'
-import type { StudentColorTone } from '@/domain/student'
+import { DEFAULT_STUDENT_COLOR, resolveStudentHex } from '@/domain/student'
 import {
   WEEKDAY_OPTIONS,
   addMinutesToDatetimeLocal,
@@ -106,9 +110,11 @@ const repositionSchema = z
 
 const planSchema = z.object({
   package: z.string().min(1, 'Selecione o pacote'),
-  status: z.enum(['pending', 'paid', 'cancelled']),
+  status: z.enum(['pending', 'paid']),
   notes: z.string().optional(),
 })
+
+const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Escolha uma cor válida')
 
 const studentSchema = z.object({
   name: z.string().min(1, 'Informe o nome'),
@@ -117,7 +123,7 @@ const studentSchema = z.object({
   birthdate: z.string().optional(),
   description: z.string().optional(),
   level: z.union([z.enum(['beginner', 'intermediate']), z.literal('')]).optional(),
-  color: z.enum(['accent', 'success', 'warning', 'danger']),
+  color: hexColor,
   tags: z.string().optional(),
   preferredWeekday: z.string().optional(),
   preferredTime: z.string().optional(),
@@ -161,6 +167,10 @@ export function StudentDetailPage() {
     discount: PlanDiscount
   } | null>(null)
   const [deletingDiscountLoading, setDeletingDiscountLoading] = useState(false)
+  const [planAction, setPlanAction] = useState<{ plan: Plan; type: 'cancel' | 'delete' } | null>(
+    null,
+  )
+  const [planActionLoading, setPlanActionLoading] = useState(false)
   const [scheduleFlash, setScheduleFlash] = useState(false)
   const scheduleFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -181,7 +191,7 @@ export function StudentDetailPage() {
 
   const studentForm = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
-    defaultValues: { color: 'accent' },
+    defaultValues: { color: DEFAULT_STUDENT_COLOR },
   })
 
   const selectedPackage = planForm.watch('package') as PlanPackage
@@ -315,7 +325,7 @@ export function StudentDetailPage() {
       birthdate: student.birthdate?.slice(0, 10) ?? '',
       description: student.description ?? '',
       level: student.level ?? '',
-      color: student.color ?? 'accent',
+      color: student.color ?? DEFAULT_STUDENT_COLOR,
       tags: student.tags ?? '',
       preferredWeekday: student.preferredWeekday ? String(student.preferredWeekday) : '',
       preferredTime: student.preferredTime ?? '',
@@ -476,6 +486,34 @@ export function StudentDetailPage() {
     }
   }
 
+  async function confirmPlanAction() {
+    if (!planAction) return
+    setPlanActionLoading(true)
+    try {
+      if (planAction.type === 'cancel') {
+        await plansService.updatePlan(planAction.plan.id, { status: 'cancelled' })
+        toast.success('Pacote cancelado.')
+      } else {
+        await plansService.deletePlan(planAction.plan.id)
+        toast.success('Pacote apagado.')
+        if (openPlanId === planAction.plan.id) setOpenPlanId(null)
+      }
+      setPlanAction(null)
+      await load()
+    } catch (error) {
+      toast.error(
+        getErrorMessage(
+          error,
+          planAction.type === 'cancel'
+            ? 'Não foi possível cancelar o pacote.'
+            : 'Não foi possível apagar o pacote.',
+        ),
+      )
+    } finally {
+      setPlanActionLoading(false)
+    }
+  }
+
   if (loading || !student) {
     return (
       <div className="space-y-4">
@@ -493,11 +531,14 @@ export function StudentDetailPage() {
       </Button>
       <PageHeader
         title={
-          <>
-            {student.name}
-            <Badge tone="success">Ativo</Badge>
-            <StudentLevelBadge level={student.level} />
-          </>
+          <span className="inline-flex flex-wrap items-center gap-3">
+            <Avatar name={student.name} studentId={student.id} color={student.color} size="lg" />
+            <span className="inline-flex flex-wrap items-center gap-2">
+              {student.name}
+              <Badge tone="success">Ativo</Badge>
+              <StudentLevelBadge level={student.level} />
+            </span>
+          </span>
         }
         description={`${student.instrument} • ${student.creditsRemaining} aula(s) a fazer`}
         actions={
@@ -559,6 +600,19 @@ export function StudentDetailPage() {
             <InfoRow icon={<Info className="size-4" />} label="Nível">
               {student.level ? <StudentLevelBadge level={student.level} /> : '—'}
             </InfoRow>
+            <InfoRow
+              icon={
+                <span
+                  className="size-4 rounded-full border border-black/10"
+                  style={{ backgroundColor: resolveStudentHex(student.color, student.id) }}
+                />
+              }
+              label="Cor no calendário"
+            >
+              <span className="font-mono text-xs uppercase text-ink-muted">
+                {resolveStudentHex(student.color, student.id)}
+              </span>
+            </InfoRow>
             <InfoRow icon={<FileText className="size-4" />} label="Etiquetas">
               {student.tags
                 ? student.tags
@@ -599,6 +653,10 @@ export function StudentDetailPage() {
                 const open = openPlanId === plan.id
                 const canMarkPaid = plan.status === 'pending'
                 const canGenerate = canGenerateLessons(plan)
+                const allowCancel = canCancelPlan(plan, lessons)
+                const allowDelete = canDeletePlan(plan, lessons)
+                const blockedByActiveLessons =
+                  plan.status !== 'cancelled' && planHasActiveLessons(plan.id, lessons)
                 return (
                   <li
                     key={plan.id}
@@ -753,7 +811,32 @@ export function StudentDetailPage() {
                               Gerar aulas
                             </Button>
                           ) : null}
+                          {allowCancel ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-danger hover:bg-danger/10 hover:text-danger"
+                              onClick={() => setPlanAction({ plan, type: 'cancel' })}
+                            >
+                              Cancelar pacote
+                            </Button>
+                          ) : null}
+                          {allowDelete ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-danger hover:bg-danger/10 hover:text-danger"
+                              onClick={() => setPlanAction({ plan, type: 'delete' })}
+                            >
+                              Apagar pacote
+                            </Button>
+                          ) : null}
                         </div>
+                        {blockedByActiveLessons ? (
+                          <p className="text-xs text-ink-muted">
+                            Para cancelar este pacote, cancele antes todas as aulas dele.
+                          </p>
+                        ) : null}
                           </div>
                         </motion.div>
                       ) : null}
@@ -1000,7 +1083,6 @@ export function StudentDetailPage() {
             options={[
               { value: 'paid', label: 'Pago agora' },
               { value: 'pending', label: 'Pendente (aulas agora, paga depois)' },
-              { value: 'cancelled', label: 'Cancelado' },
             ]}
             {...planForm.register('status')}
           />
@@ -1035,9 +1117,11 @@ export function StudentDetailPage() {
             {...studentForm.register('instrument')}
           />
           <StudentColorPicker
-            value={(studentForm.watch('color') ?? 'accent') as StudentColorTone}
+            value={studentForm.watch('color') ?? DEFAULT_STUDENT_COLOR}
             error={studentForm.formState.errors.color?.message}
-            onChange={(next) => studentForm.setValue('color', next, { shouldValidate: true })}
+            onChange={(next) =>
+              studentForm.setValue('color', next, { shouldDirty: true, shouldValidate: false })
+            }
           />
           <Input label="Telefone" error={studentForm.formState.errors.phone?.message} {...studentForm.register('phone')} />
           <DateTimeField
@@ -1142,6 +1226,20 @@ export function StudentDetailPage() {
         loading={deletingDiscountLoading}
         onCancel={() => setDeletingDiscount(null)}
         onConfirm={confirmDeleteDiscount}
+      />
+
+      <ConfirmDialog
+        open={Boolean(planAction)}
+        title={planAction?.type === 'delete' ? 'Apagar pacote?' : 'Cancelar pacote?'}
+        description={
+          planAction?.type === 'delete'
+            ? `Apaga definitivamente “${labelFor(planAction.plan.package)}”. Só é permitido sem nenhuma aula.`
+            : `Marca “${planAction ? labelFor(planAction.plan.package) : ''}” como cancelado. Ele deixa de valer créditos.`
+        }
+        confirmLabel={planAction?.type === 'delete' ? 'Apagar pacote' : 'Cancelar pacote'}
+        loading={planActionLoading}
+        onCancel={() => setPlanAction(null)}
+        onConfirm={confirmPlanAction}
       />
     </div>
   )

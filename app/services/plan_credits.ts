@@ -27,6 +27,18 @@ export const PLAN_LESSONS_TOTAL_TOO_LOW = createError(
   422
 )
 
+export const PLAN_HAS_ACTIVE_LESSONS = createError(
+  'Cancel all lessons on this plan before cancelling the plan',
+  'E_PLAN_HAS_ACTIVE_LESSONS',
+  422
+)
+
+export const PLAN_HAS_LESSONS = createError(
+  'Remove all lessons from this plan before deleting it',
+  'E_PLAN_HAS_LESSONS',
+  422
+)
+
 /** Occupies a calendar slot and a package seat. Cancelled frees both. */
 export function lessonOccupiesSlot(status: string) {
   return status !== 'cancelled'
@@ -155,5 +167,20 @@ export async function assertLessonsTotalNotBelowActive(plan: Plan, lessonsTotal:
 
   if (lessonsTotal < activeLessons) {
     throw new PLAN_LESSONS_TOTAL_TOO_LOW()
+  }
+}
+
+/** Cancelamento só com zero aulas ativas (todas canceladas ou nenhuma aula). */
+export async function assertCanCancelPlan(plan: Plan) {
+  if ((await countActiveLessons(plan)) > 0) {
+    throw new PLAN_HAS_ACTIVE_LESSONS()
+  }
+}
+
+/** Exclusão só sem nenhuma aula (nem cancelada). */
+export async function assertCanDeletePlan(plan: Plan) {
+  const result = await plan.related('lessons').query().count('* as total')
+  if (Number(result[0]?.$extras.total ?? 0) > 0) {
+    throw new PLAN_HAS_LESSONS()
   }
 }

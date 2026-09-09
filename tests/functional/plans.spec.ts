@@ -370,6 +370,78 @@ test.group('Plans', (group) => {
     assert.isNull(await Plan.find(plan.id))
   })
 
+  test('rejects deleting a plan that still has lessons', async ({ client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+    })
+    await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-01T14:00:00.000Z'),
+      status: 'cancelled',
+    })
+
+    const response = await client.delete(`/api/v1/plans/${plan.id}`).loginAs(teacher)
+    response.assertStatus(422)
+    response.assertBodyContains({ code: 'E_PLAN_HAS_LESSONS' })
+  })
+
+  test('cancels a plan only when all lessons are cancelled', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'paid',
+    })
+    const lesson = await teacher.related('lessons').create({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt: DateTime.fromISO('2026-09-01T14:00:00.000Z'),
+      status: 'scheduled',
+    })
+
+    const blocked = await client.put(`/api/v1/plans/${plan.id}`).loginAs(teacher).json({
+      status: 'cancelled',
+    })
+    blocked.assertStatus(422)
+    blocked.assertBodyContains({ code: 'E_PLAN_HAS_ACTIVE_LESSONS' })
+
+    await client.put(`/api/v1/lessons/${lesson.id}`).loginAs(teacher).json({ status: 'cancelled' })
+
+    const cancelled = await client.put(`/api/v1/plans/${plan.id}`).loginAs(teacher).json({
+      status: 'cancelled',
+    })
+    cancelled.assertStatus(200)
+    assert.equal(cancelled.body().data.status, 'cancelled')
+  })
+
+  test('cancels a plan with no lessons', async ({ assert, client }) => {
+    const teacher = await createTeacher()
+    const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const plan = await teacher.related('plans').create({
+      studentId: student.id,
+      package: 'pack_4',
+      lessonsTotal: 4,
+      price: 130,
+      status: 'pending',
+    })
+
+    const response = await client.put(`/api/v1/plans/${plan.id}`).loginAs(teacher).json({
+      status: 'cancelled',
+    })
+    response.assertStatus(200)
+    assert.equal(response.body().data.status, 'cancelled')
+  })
+
   test('allows a second pending plan while another is unpaid', async ({ assert, client }) => {
     const teacher = await createTeacher()
     const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })

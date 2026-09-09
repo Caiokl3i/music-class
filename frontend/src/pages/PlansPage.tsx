@@ -26,7 +26,7 @@ import { levelLabel } from '@/domain/student'
 const sellSchema = z.object({
   studentId: z.string().min(1, 'Selecione o aluno'),
   package: z.string().min(1, 'Selecione o pacote'),
-  status: z.enum(['pending', 'paid', 'cancelled']),
+  status: z.enum(['pending', 'paid']),
   notes: z.string().optional(),
 })
 
@@ -349,7 +349,6 @@ export function PlansPage() {
             options={[
               { value: 'paid', label: 'Pago agora' },
               { value: 'pending', label: 'Pendente (aulas agora, paga depois)' },
-              { value: 'cancelled', label: 'Cancelado' },
             ]}
             {...sellForm.register('status')}
           />
