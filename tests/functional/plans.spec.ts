@@ -585,26 +585,32 @@ test.group('Plans', (group) => {
   test('stops generating lessons after the plan expires', async ({ assert, client }) => {
     const teacher = await createTeacher()
     const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })
+    const firstScheduledAt = DateTime.now().plus({ days: 1 }).set({
+      hour: 14,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    })
     const plan = await teacher.related('plans').create({
       studentId: student.id,
       package: 'pack_4',
       lessonsTotal: 4,
       price: 130,
       status: 'paid',
-      paidAt: DateTime.fromISO('2026-08-01T12:00:00.000Z'),
-      expiresAt: DateTime.fromISO('2026-09-10T00:00:00.000Z'),
+      paidAt: firstScheduledAt.minus({ days: 30 }),
+      expiresAt: firstScheduledAt.plus({ days: 9 }),
     })
 
     const response = await client
       .post(`/api/v1/plans/${plan.id}/lessons/generate`)
       .loginAs(teacher)
-      .json({ firstScheduledAt: '2026-09-01T14:00:00.000Z' })
+      .json({ firstScheduledAt: firstScheduledAt.toISO() })
 
     response.assertStatus(201)
     assert.lengthOf(response.body().data, 2)
     assert.equal(
       DateTime.fromISO(response.body().data[1].scheduledAt).toUTC().toMillis(),
-      DateTime.fromISO('2026-09-08T14:00:00.000Z').toMillis()
+      firstScheduledAt.plus({ days: 7 }).toUTC().toMillis()
     )
   })
 

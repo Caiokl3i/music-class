@@ -4,7 +4,7 @@ import { lessonEnd } from '#services/lesson_schedule'
 import { packageLabelMap } from '#services/plan_types'
 import { formatMoneyBr, monthLabelPt } from '#services/billing_message'
 import { netPriceFromPlan } from '#services/plan_pricing'
-import { monthWindow, resolveStudioZone } from '#services/studio_timezone'
+import { monthWindow, resolveStudioZone, sqliteDateRange } from '#services/studio_timezone'
 import { PDF_COLORS as PDF, drawRoundedRect, resolvePdfFonts, useFont } from '#services/pdf_layout'
 import type User from '#models/user'
 import type Lesson from '#models/lesson'
@@ -72,11 +72,36 @@ export function inMonthRange(value: DateTime | null | undefined, start: DateTime
   return Boolean(value && value >= start && value <= end)
 }
 
+function plansInMonthQuery(user: User, start: string, end: string) {
+  return user
+    .related('plans')
+    .query()
+    .preload('student')
+    .preload('discounts')
+    .where((query) => {
+      query
+        .where((paid) => {
+          paid.whereNotNull('paidAt').whereBetween('paidAt', [start, end])
+        })
+        .orWhere((created) => {
+          created.whereNull('paidAt').whereBetween('createdAt', [start, end])
+        })
+    })
+    .orderBy('id', 'asc')
+}
+
 async function collectMonthRows(user: User, query: { month?: string; timezone?: string }) {
   const window = monthWindow(query.month, query.timezone)
+  const range = sqliteDateRange(window.start, window.end)
   const [lessons, plans, labels] = await Promise.all([
-    user.related('lessons').query().preload('student').preload('plan').orderBy('scheduledAt', 'asc'),
-    user.related('plans').query().preload('student').preload('discounts').orderBy('id', 'asc'),
+    user
+      .related('lessons')
+      .query()
+      .preload('student')
+      .preload('plan')
+      .whereBetween('scheduledAt', [range.start, range.end])
+      .orderBy('scheduledAt', 'asc'),
+    plansInMonthQuery(user, range.start, range.end),
     packageLabelMap(user),
   ])
 

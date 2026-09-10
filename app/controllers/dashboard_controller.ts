@@ -1,6 +1,4 @@
-import { DateTime } from 'luxon'
 import LessonTransformer from '#transformers/lesson_transformer'
-import Plan from '#models/plan'
 import {
   remainingCreditsFromCount,
   usableCreditsFromCount,
@@ -8,15 +6,17 @@ import {
   lessonsDoneFromExtras,
 } from '#services/plan_credits'
 import { EXPIRING_SOON_DAYS, LOW_CREDIT_THRESHOLD } from '#services/package_catalog'
-import { resolveStudioZone } from '#services/studio_timezone'
+import { nowInStudioZone, toSqliteDateTime } from '#services/studio_timezone'
 import { buildMonthCsv, buildMonthPdf } from '#services/month_export'
 import { netPriceFromPlan } from '#services/plan_pricing'
 import { dashboardQueryValidator } from '#validators/dashboard'
 import { exportQueryValidator } from '#validators/export'
 import { logSecurityEvent } from '#services/security_log'
+import type { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 import type Lesson from '#models/lesson'
+import type Plan from '#models/plan'
 import type Student from '#models/student'
 import type PlanDiscount from '#models/plan_discount'
 
@@ -24,58 +24,67 @@ export default class DashboardController {
   async show({ auth, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
     const { timezone } = await request.validateUsing(dashboardQueryValidator)
-    const zone = resolveStudioZone(timezone)
-    const now = DateTime.now().setZone(zone)
-    if (!now.isValid) {
-      throw new Error('Invalid timezone')
-    }
+    const now = nowInStudioZone(timezone)
     const startOfDay = now.startOf('day')
     const endOfDay = now.endOf('day')
     const startOfMonth = now.startOf('month')
     const endOfMonth = now.endOf('month')
-
-    const [studentCount, plans, scheduledCount, doneCount, scheduledLessons, recent] =
-      await Promise.all([
-        this.count(user.related('students').query().whereNull('archivedAt')),
-        user
-          .related('plans')
-          .query()
-          .preload('student')
-          .preload('discounts')
-          .withCount('lessons', (query) => {
-            query.where('status', 'done').as('done_lessons_count')
-          })
-          .withCount('lessons', (query) => {
-            query.whereNot('status', 'cancelled').as('active_lessons_count')
-          }),
-        this.count(user.related('lessons').query().where('status', 'scheduled')),
-        this.count(user.related('lessons').query().where('status', 'done')),
-        this.lessonList(user).where('status', 'scheduled').orderBy('scheduledAt', 'asc'),
-        this.lessonList(user)
-          .whereIn('status', ['done', 'no_show'])
-          .orderBy('updatedAt', 'desc')
-          .limit(5),
-      ])
-
     const startOfTomorrow = startOfDay.plus({ days: 1 })
     const endOfTomorrow = endOfDay.plus({ days: 1 })
 
-    const birthdaysToday = await user
-      .related('students')
-      .query()
-      .whereNotNull('birthdate')
-      .whereNull('archivedAt')
+    const [
+      studentCount,
+      plans,
+      scheduledCount,
+      doneCount,
+      scheduledLessons,
+      upcomingLessons,
+      recent,
+      birthdaysToday,
+    ] = await Promise.all([
+      this.count(user.related('students').query().whereNull('archivedAt')),
+      user
+        .related('plans')
+        .query()
+        .preload('student')
+        .preload('discounts')
+        .withCount('lessons', (query) => {
+          query.where('status', 'done').as('done_lessons_count')
+        })
+        .withCount('lessons', (query) => {
+          query.whereNot('status', 'cancelled').as('active_lessons_count')
+        }),
+      this.count(user.related('lessons').query().where('status', 'scheduled')),
+      this.count(user.related('lessons').query().where('status', 'done')),
+      this.lessonList(user)
+        .where('status', 'scheduled')
+        .where('scheduledAt', '<=', toSqliteDateTime(endOfTomorrow.plus({ days: 1 })))
+        .orderBy('scheduledAt', 'asc'),
+      this.lessonList(user)
+        .where('status', 'scheduled')
+        .where('scheduledAt', '>', toSqliteDateTime(endOfTomorrow.minus({ days: 1 })))
+        .orderBy('scheduledAt', 'asc')
+        .limit(15),
+      this.lessonList(user)
+        .whereIn('status', ['done', 'no_show'])
+        .orderBy('updatedAt', 'desc')
+        .limit(5),
+      user
+        .related('students')
+        .query()
+        .whereNotNull('birthdate')
+        .whereNull('archivedAt')
+        .whereRaw("strftime('%m-%d', birthdate) = ?", [now.toFormat('MM-dd')]),
+    ])
 
-    const birthdays = birthdaysToday
-      .filter((student) => student.birthdate?.month === now.month && student.birthdate?.day === now.day)
-      .map((student) => ({
-        studentId: student.id,
-        studentName: student.name,
-        studentInstrument: student.instrument,
-        studentLevel: student.level ?? null,
-        studentColor: student.color ?? '#0f766e',
-        birthdate: student.birthdate?.toISODate(),
-      }))
+    const birthdays = birthdaysToday.map((student) => ({
+      studentId: student.id,
+      studentName: student.name,
+      studentInstrument: student.instrument,
+      studentLevel: student.level ?? null,
+      studentColor: student.color ?? '#0f766e',
+      birthdate: student.birthdate?.toISODate(),
+    }))
 
     const paidPlans = plans.filter((plan) => plan.status === 'paid')
     const pendingPlans = plans.filter((plan) => plan.status === 'pending')
@@ -118,7 +127,7 @@ export default class DashboardController {
       tomorrow: LessonTransformer.transform(
         this.between(scheduledLessons, startOfTomorrow, endOfTomorrow)
       ),
-      upcoming: LessonTransformer.transform(this.after(scheduledLessons, endOfTomorrow).slice(0, 5)),
+      upcoming: LessonTransformer.transform(this.after(upcomingLessons, endOfTomorrow).slice(0, 5)),
       recent: LessonTransformer.transform(recent),
     })
   }

@@ -38,7 +38,19 @@ export async function generatePlanLessons(user: User, planId: number, firstSched
       throw new PLAN_EXPIRED()
     }
 
-    const occupied = await loadOccupiedLessons(user, trx)
+    const firstSlot = slots[0]
+    const lastSlot = slots[slots.length - 1]
+    if (!firstSlot || !lastSlot) {
+      throw new PLAN_EXPIRED()
+    }
+
+    const occupied = await loadOccupiedLessons(user, {
+      trx,
+      range: {
+        start: firstSlot,
+        end: defaultLessonEnd(lastSlot),
+      },
+    })
     for (const slot of slots) {
       await assertSlotFree(user, slot, { endsAt: defaultLessonEnd(slot), occupied, trx })
     }

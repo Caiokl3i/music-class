@@ -1,7 +1,8 @@
-import { DateTime } from 'luxon'
 import { createError } from '@adonisjs/core/exceptions'
+import type { DateTime } from 'luxon'
 import Lesson from '#models/lesson'
 import { LESSON_DURATION_MINUTES } from '#services/package_catalog'
+import { sqliteDateRange } from '#services/studio_timezone'
 import type User from '#models/user'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 
@@ -76,8 +77,30 @@ export function weeklySlots(first: DateTime, count: number, until?: DateTime | n
   return slots
 }
 
-export async function loadOccupiedLessons(user: User, trx?: TransactionClientContract) {
-  return Lesson.query({ client: trx }).where('userId', user.id).whereNot('status', 'cancelled')
+export async function loadOccupiedLessons(
+  user: User,
+  options: {
+    trx?: TransactionClientContract
+    range?: { start: DateTime; end: DateTime }
+    exceptLessonId?: number
+  } = {}
+) {
+  const query = Lesson.query({ client: options.trx })
+    .where('userId', user.id)
+    .whereNot('status', 'cancelled')
+
+  if (options.range) {
+    const range = sqliteDateRange(options.range.start, options.range.end)
+    query.where('scheduledAt', '<', range.end).where((overlap) => {
+      overlap.where('endsAt', '>', range.start).orWhereNull('endsAt')
+    })
+  }
+
+  if (options.exceptLessonId) {
+    query.whereNot('id', options.exceptLessonId)
+  }
+
+  return query
 }
 
 export async function findOverlappingLesson(
@@ -91,7 +114,13 @@ export async function findOverlappingLesson(
   } = {}
 ) {
   const endsAt = options.endsAt ?? defaultLessonEnd(scheduledAt)
-  const occupied = options.occupied ?? (await loadOccupiedLessons(user, options.trx))
+  const occupied =
+    options.occupied ??
+    (await loadOccupiedLessons(user, {
+      trx: options.trx,
+      range: { start: scheduledAt, end: endsAt },
+      exceptLessonId: options.exceptLessonId,
+    }))
 
   return (
     occupied.find((lesson) => {
