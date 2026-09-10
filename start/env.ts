@@ -19,8 +19,12 @@ export default await Env.create(new URL('../', import.meta.url), {
   LOG_LEVEL: Env.schema.string(),
 
   // App
+  APP_NAME: Env.schema.string.optional(),
   APP_KEY: Env.schema.secret(),
   APP_URL: Env.schema.string({ format: 'url', tld: false }),
+
+  // Rate limiting — unset follows NODE_ENV (off in test). 0/false off, 1/true on.
+  RATE_LIMIT_ENABLED: Env.schema.string.optional(),
 
   // Session
   SESSION_DRIVER: Env.schema.enum(['cookie', 'memory', 'database'] as const),

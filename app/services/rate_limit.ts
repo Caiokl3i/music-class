@@ -1,4 +1,5 @@
 import { createError } from '@adonisjs/core/exceptions'
+import env from '#start/env'
 
 export const TOO_MANY_REQUESTS = createError(
   'Too many requests. Try again later.',
@@ -35,14 +36,14 @@ const MAX_BUCKETS = 10_000
 const buckets = new Map<string, Bucket>()
 
 function readEnabled() {
-  const raw = process.env.RATE_LIMIT_ENABLED
+  const raw = env.get('RATE_LIMIT_ENABLED')
   if (raw === '0' || raw === 'false') {
     return false
   }
   if (raw === '1' || raw === 'true') {
     return true
   }
-  return process.env.NODE_ENV !== 'test'
+  return env.get('NODE_ENV') !== 'test'
 }
 
 let enabled = readEnabled()
