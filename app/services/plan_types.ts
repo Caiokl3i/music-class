@@ -7,6 +7,7 @@ import {
 } from '#services/package_catalog'
 import type User from '#models/user'
 import type PlanType from '#models/plan_type'
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 
 export const PLAN_TYPE_UNKNOWN = createError(
   'Unknown plan type',
@@ -20,7 +21,11 @@ export const PLAN_TYPE_IN_USE = createError(
   422
 )
 
-export async function ensureDefaultPlanTypes(user: User) {
+export async function ensureDefaultPlanTypes(user: User, trx?: TransactionClientContract) {
+  if (trx) {
+    user.useTransaction(trx)
+  }
+
   const existing = await user.related('planTypes').query().count('* as total')
   if (Number(existing[0]?.$extras.total ?? 0) > 0) {
     return

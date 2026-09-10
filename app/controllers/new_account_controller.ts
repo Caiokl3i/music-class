@@ -1,5 +1,6 @@
 import User from '#models/user'
 import env from '#start/env'
+import db from '@adonisjs/lucid/services/db'
 import { signupValidator } from '#validators/user'
 import type { HttpContext } from '@adonisjs/core/http'
 import UserTransformer from '#transformers/user_transformer'
@@ -24,8 +25,11 @@ export default class NewAccountController {
     }
 
     const { fullName, email, password } = await request.validateUsing(signupValidator)
-    const user = await User.create({ fullName, email, password })
-    await ensureDefaultPlanTypes(user)
+    const user = await db.transaction(async (trx) => {
+      const created = await User.create({ fullName, email, password }, { client: trx })
+      await ensureDefaultPlanTypes(created, trx)
+      return created
+    })
     const token = await User.accessTokens.create(user, ['*'], {
       expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     })

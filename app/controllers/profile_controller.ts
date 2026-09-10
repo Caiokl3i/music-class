@@ -3,6 +3,7 @@ import { updatePasswordValidator, updateProfileValidator } from '#validators/use
 import { revokeOtherAccessTokens } from '#services/access_tokens'
 import { logSecurityEvent } from '#services/security_log'
 import User from '#models/user'
+import db from '@adonisjs/lucid/services/db'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class ProfileController {
@@ -36,9 +37,12 @@ export default class ProfileController {
       throw error
     }
 
-    user.password = payload.password
-    await user.save()
-    await revokeOtherAccessTokens(user)
+    await db.transaction(async (trx) => {
+      user.useTransaction(trx)
+      user.password = payload.password
+      await user.save()
+      await revokeOtherAccessTokens(user, trx)
+    })
     logSecurityEvent(logger, 'info', 'auth.password.changed', { userId: user.id })
 
     return { message: 'Password updated successfully' }
