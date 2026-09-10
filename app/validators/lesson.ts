@@ -13,7 +13,7 @@ const lessonFields = {
   scheduledAt: vine.date({ formats: ['iso8601'] }),
   endsAt: vine.date({ formats: ['iso8601'] }).optional().nullable(),
   status: vine.enum(LESSON_STATUSES),
-  description: vine.string().trim().optional().nullable(),
+  description: vine.string().trim().maxLength(2000).optional().nullable(),
 }
 
 /**

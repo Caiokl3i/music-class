@@ -14,6 +14,7 @@ import {
   updateBookedLesson,
   repositionBookedLesson,
 } from '#services/lesson_booking'
+import { logSecurityEvent } from '#services/security_log'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 
@@ -112,9 +113,12 @@ export default class LessonsController {
     return serialize(LessonTransformer.transform(lesson))
   }
 
-  async destroy({ auth, params, response }: HttpContext) {
-    const lesson = await loadLesson(auth.getUserOrFail(), params.id)
+  async destroy({ auth, params, response, logger }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const lesson = await loadLesson(user, params.id)
+    const lessonId = lesson.id
     await lesson.delete()
+    logSecurityEvent(logger, 'info', 'lesson.deleted', { userId: user.id, lessonId })
 
     return response.noContent()
   }

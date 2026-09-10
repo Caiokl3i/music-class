@@ -5,17 +5,34 @@ import type { HttpContext } from '@adonisjs/core/http'
 import UserTransformer from '#transformers/user_transformer'
 import { ACCESS_TOKEN_EXPIRES_IN } from '#services/access_tokens'
 import { ensureDefaultPlanTypes } from '#services/plan_types'
+import { logSecurityEvent } from '#services/security_log'
 import { assertSignupInvite } from '#services/signup_invite'
 
 export default class NewAccountController {
-  async store({ request, serialize }: HttpContext) {
-    const { fullName, email, password, inviteCode } = await request.validateUsing(signupValidator)
-    assertSignupInvite(inviteCode, env.get('SIGNUP_INVITE_CODE'))
+  async store({ request, serialize, logger }: HttpContext) {
+    const inviteCode = request.input('inviteCode')
+    try {
+      assertSignupInvite(
+        typeof inviteCode === 'string' ? inviteCode : undefined,
+        env.get('SIGNUP_INVITE_CODE')
+      )
+    } catch (error) {
+      logSecurityEvent(logger, 'warn', 'auth.signup.denied', {
+        reason: error instanceof Error ? error.message : 'invite',
+      })
+      throw error
+    }
 
+    const { fullName, email, password } = await request.validateUsing(signupValidator)
     const user = await User.create({ fullName, email, password })
     await ensureDefaultPlanTypes(user)
     const token = await User.accessTokens.create(user, ['*'], {
       expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    })
+
+    logSecurityEvent(logger, 'info', 'auth.signup.success', {
+      userId: user.id,
+      email: user.email,
     })
 
     return serialize({

@@ -23,6 +23,7 @@ import {
   buildBillingSummary,
 } from '#services/billing_message'
 import LessonTransformer from '#transformers/lesson_transformer'
+import { logSecurityEvent } from '#services/security_log'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 
@@ -133,11 +134,16 @@ export default class PlansController {
     return serialize(summary)
   }
 
-  async billingPdf({ auth, params, request, response }: HttpContext) {
+  async billingPdf({ auth, params, request, response, logger }: HttpContext) {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(billingQueryValidator)
     const summary = await this.buildOwnedBilling(user, params.id, payload)
     const pdf = await buildBillingPdf(summary)
+    logSecurityEvent(logger, 'info', 'billing.pdf', {
+      userId: user.id,
+      planId: summary.planId,
+      month: payload.month ?? null,
+    })
 
     return response
       .header('Content-Type', 'application/pdf')
@@ -146,10 +152,13 @@ export default class PlansController {
       .send(pdf)
   }
 
-  async destroy({ auth, params, response }: HttpContext) {
-    const plan = await this.findOwnedPlan(auth.getUserOrFail(), params.id)
+  async destroy({ auth, params, response, logger }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const plan = await this.findOwnedPlan(user, params.id)
     await assertCanDeletePlan(plan)
+    const planId = plan.id
     await plan.delete()
+    logSecurityEvent(logger, 'info', 'plan.deleted', { userId: user.id, planId })
 
     return response.noContent()
   }

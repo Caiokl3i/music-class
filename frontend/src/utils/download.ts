@@ -1,12 +1,21 @@
 import { isAxiosError } from 'axios'
 
+function safeDownloadName(name: string, fallback: string) {
+  const base = name.replace(/\\/g, '/').split('/').pop()?.trim() ?? ''
+  const cleaned = base.replace(/[^\w.\- ()[\]]+/g, '_').slice(0, 120)
+  if (!cleaned || cleaned === '.' || cleaned === '..') {
+    return fallback
+  }
+  return cleaned
+}
+
 export function filenameFromDisposition(header: string | undefined, fallback: string) {
   const quoted = header?.match(/filename="([^"]+)"/)
   if (quoted?.[1]) {
-    return quoted[1]
+    return safeDownloadName(quoted[1], fallback)
   }
   const plain = header?.match(/filename=([^;]+)/)
-  return plain?.[1]?.trim() ?? fallback
+  return safeDownloadName(plain?.[1]?.trim() ?? '', fallback)
 }
 
 export function saveBlob(blob: Blob, filename: string) {

@@ -6,5 +6,5 @@ export const exportQueryValidator = vine.create({
     .trim()
     .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
     .optional(),
-  timezone: vine.string().trim().optional(),
+  timezone: vine.string().trim().maxLength(64).optional(),
 })

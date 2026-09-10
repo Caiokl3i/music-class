@@ -120,6 +120,33 @@ test.group('Students', (group) => {
     response.assertStatus(404)
   })
 
+  test('does not update a student from another teacher', async ({ client }) => {
+    const teacher = await createTeacher({ email: 'teacher@example.com' })
+    const otherTeacher = await createTeacher({ email: 'other@example.com' })
+    const student = await otherTeacher.related('students').create({
+      name: 'Bruno',
+      instrument: 'bateria',
+    })
+
+    const response = await client.put(`/api/v1/students/${student.id}`).loginAs(teacher).json({
+      name: 'Alterado',
+      instrument: 'piano',
+    })
+    response.assertStatus(404)
+  })
+
+  test('does not delete a student from another teacher', async ({ client }) => {
+    const teacher = await createTeacher({ email: 'teacher@example.com' })
+    const otherTeacher = await createTeacher({ email: 'other@example.com' })
+    const student = await otherTeacher.related('students').create({
+      name: 'Bruno',
+      instrument: 'bateria',
+    })
+
+    const response = await client.delete(`/api/v1/students/${student.id}`).loginAs(teacher)
+    response.assertStatus(404)
+  })
+
   test('updates a student owned by the teacher', async ({ client }) => {
     const teacher = await createTeacher()
     const student = await teacher.related('students').create({

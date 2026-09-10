@@ -13,6 +13,7 @@ import { buildMonthCsv, buildMonthPdf } from '#services/month_export'
 import { netPriceFromPlan } from '#services/plan_pricing'
 import { dashboardQueryValidator } from '#validators/dashboard'
 import { exportQueryValidator } from '#validators/export'
+import { logSecurityEvent } from '#services/security_log'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 import type Lesson from '#models/lesson'
@@ -122,10 +123,11 @@ export default class DashboardController {
     })
   }
 
-  async exportMonth({ auth, request, response }: HttpContext) {
+  async exportMonth({ auth, request, response, logger }: HttpContext) {
     const user = auth.getUserOrFail()
     const { month, timezone } = await request.validateUsing(exportQueryValidator)
     const csv = await buildMonthCsv(user, { month, timezone })
+    logSecurityEvent(logger, 'info', 'export.csv', { userId: user.id, month: month ?? null })
 
     return response
       .header('Content-Type', 'text/csv; charset=utf-8')
@@ -134,10 +136,11 @@ export default class DashboardController {
       .send(csv.body)
   }
 
-  async exportMonthPdf({ auth, request, response }: HttpContext) {
+  async exportMonthPdf({ auth, request, response, logger }: HttpContext) {
     const user = auth.getUserOrFail()
     const { month, timezone } = await request.validateUsing(exportQueryValidator)
     const pdf = await buildMonthPdf(user, { month, timezone })
+    logSecurityEvent(logger, 'info', 'export.pdf', { userId: user.id, month: month ?? null })
 
     return response
       .header('Content-Type', 'application/pdf')

@@ -1,7 +1,7 @@
 import db from '@adonisjs/lucid/services/db'
 import type User from '#models/user'
 
-export const ACCESS_TOKEN_EXPIRES_IN = '30 days'
+export const ACCESS_TOKEN_EXPIRES_IN = '7 days'
 
 export async function revokeOtherAccessTokens(user: User) {
   const currentId = user.currentAccessToken?.identifier

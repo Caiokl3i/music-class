@@ -245,6 +245,36 @@ test.group('Lessons', (group) => {
     response.assertStatus(404)
   })
 
+  test('does not update a lesson from another teacher', async ({ client }) => {
+    const teacher = await createTeacher({ email: 'teacher@example.com' })
+    const other = await createTeacherWithPlan({ email: 'other@example.com' })
+    const lesson = await other.teacher.related('lessons').create({
+      studentId: other.student.id,
+      planId: other.plan.id,
+      scheduledAt: DateTime.fromISO(scheduledAt),
+      status: 'scheduled',
+    })
+
+    const response = await client.put(`/api/v1/lessons/${lesson.id}`).loginAs(teacher).json({
+      status: 'done',
+    })
+    response.assertStatus(404)
+  })
+
+  test('does not delete a lesson from another teacher', async ({ client }) => {
+    const teacher = await createTeacher({ email: 'teacher@example.com' })
+    const other = await createTeacherWithPlan({ email: 'other@example.com' })
+    const lesson = await other.teacher.related('lessons').create({
+      studentId: other.student.id,
+      planId: other.plan.id,
+      scheduledAt: DateTime.fromISO(scheduledAt),
+      status: 'scheduled',
+    })
+
+    const response = await client.delete(`/api/v1/lessons/${lesson.id}`).loginAs(teacher)
+    response.assertStatus(404)
+  })
+
   test('updates a lesson owned by the teacher', async ({ client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan()
     const lesson = await teacher.related('lessons').create({

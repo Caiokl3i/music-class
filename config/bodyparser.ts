@@ -18,6 +18,11 @@ const bodyParserConfig = defineConfig({
     convertEmptyStringsToNull: true,
 
     /**
+     * Reject oversized form bodies.
+     */
+    limit: '1mb',
+
+    /**
      * Content types handled by the form parser.
      */
     types: ['application/x-www-form-urlencoded'],
@@ -31,6 +36,11 @@ const bodyParserConfig = defineConfig({
      * Normalize empty string values to null.
      */
     convertEmptyStringsToNull: true,
+
+    /**
+     * Reject oversized JSON bodies. This API does not accept file uploads.
+     */
+    limit: '1mb',
 
     /**
      * Content types handled by the JSON parser.
@@ -64,9 +74,10 @@ const bodyParserConfig = defineConfig({
     processManually: [],
 
     /**
-     * Maximum accepted payload size for multipart requests.
+     * Tight limit: no route accepts uploads. Keep multipart enabled so a
+     * crafted form-data request cannot force a large temp write.
      */
-    limit: '20mb',
+    limit: '1mb',
 
     /**
      * Content types handled by the multipart parser.

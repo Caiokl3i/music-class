@@ -13,7 +13,7 @@ const schema = z
   .object({
     fullName: z.string().optional(),
     email: z.string().email('Informe um e-mail válido'),
-    password: z.string().min(8, 'Mínimo de 8 caracteres').max(32, 'Máximo de 32 caracteres'),
+    password: z.string().min(8, 'Mínimo de 8 caracteres').max(128, 'Máximo de 128 caracteres'),
     passwordConfirmation: z.string().min(8, 'Confirme a senha'),
     inviteCode: z.string().min(1, 'Informe o código de convite'),
   })
@@ -84,7 +84,7 @@ export function SignupPage() {
           label="Senha"
           type="password"
           autoComplete="new-password"
-          hint="Entre 8 e 32 caracteres"
+          hint="Entre 8 e 128 caracteres"
           error={errors.password?.message}
           {...register('password')}
         />

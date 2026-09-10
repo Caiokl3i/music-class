@@ -350,9 +350,9 @@ export interface Registry {
       body: {}
       paramsTuple: []
       params: {}
-      query: {}
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/plan').listPlansValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['index']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/plans_controller').default['index']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'plans.store': {
@@ -422,9 +422,9 @@ export interface Registry {
       body: {}
       paramsTuple: []
       params: {}
-      query: {}
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/lesson').listLessonsValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/lessons_controller').default['index']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/lessons_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/lessons_controller').default['index']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'lessons.store': {

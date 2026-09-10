@@ -4,7 +4,7 @@ import vine from '@vinejs/vine'
  * Shared rules for email and password.
  */
 const email = () => vine.string().email().maxLength(254)
-const password = () => vine.string().minLength(8).maxLength(32)
+const password = () => vine.string().minLength(8).maxLength(128)
 
 /**
  * Validator to use when performing self-signup
@@ -23,7 +23,7 @@ export const signupValidator = vine.create({
  */
 export const loginValidator = vine.create({
   email: email(),
-  password: vine.string(),
+  password: password(),
 })
 
 export const updateProfileValidator = vine.create({
@@ -36,7 +36,7 @@ export const updateProfileValidator = vine.create({
 })
 
 export const updatePasswordValidator = vine.create({
-  currentPassword: vine.string(),
+  currentPassword: password(),
   password: password(),
   passwordConfirmation: password().sameAs('password'),
 })

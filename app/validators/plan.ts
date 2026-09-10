@@ -17,7 +17,7 @@ const planFields = {
   package: vine.string().trim().minLength(1).maxLength(64),
   status: vine.enum(PLAN_STATUSES).optional(),
   paidAt: vine.date().optional().nullable(),
-  notes: vine.string().trim().optional().nullable(),
+  notes: vine.string().trim().maxLength(2000).optional().nullable(),
 }
 
 /**

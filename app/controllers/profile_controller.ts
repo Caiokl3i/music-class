@@ -1,6 +1,7 @@
 import UserTransformer from '#transformers/user_transformer'
 import { updatePasswordValidator, updateProfileValidator } from '#validators/user'
 import { revokeOtherAccessTokens } from '#services/access_tokens'
+import { logSecurityEvent } from '#services/security_log'
 import User from '#models/user'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -24,14 +25,21 @@ export default class ProfileController {
     return serialize(UserTransformer.transform(user))
   }
 
-  async updatePassword({ auth, request }: HttpContext) {
+  async updatePassword({ auth, request, logger }: HttpContext) {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(updatePasswordValidator)
 
-    await User.verifyCredentials(user.email, payload.currentPassword)
+    try {
+      await User.verifyCredentials(user.email, payload.currentPassword)
+    } catch (error) {
+      logSecurityEvent(logger, 'warn', 'auth.password.failure', { userId: user.id })
+      throw error
+    }
+
     user.password = payload.password
     await user.save()
     await revokeOtherAccessTokens(user)
+    logSecurityEvent(logger, 'info', 'auth.password.changed', { userId: user.id })
 
     return { message: 'Password updated successfully' }
   }

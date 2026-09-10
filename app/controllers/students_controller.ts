@@ -1,5 +1,6 @@
 import StudentTransformer from '#transformers/student_transformer'
 import { assertCanDeleteStudent } from '#services/plan_credits'
+import { logSecurityEvent } from '#services/security_log'
 import {
   createStudentValidator,
   listStudentsValidator,
@@ -49,10 +50,13 @@ export default class StudentsController {
     return serialize(StudentTransformer.transform(await this.findOwnedStudent(user, student.id)))
   }
 
-  async destroy({ auth, params, response }: HttpContext) {
-    const student = await this.findOwnedStudent(auth.getUserOrFail(), params.id)
+  async destroy({ auth, params, response, logger }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const student = await this.findOwnedStudent(user, params.id)
     await assertCanDeleteStudent(student)
+    const studentId = student.id
     await student.delete()
+    logSecurityEvent(logger, 'info', 'student.deleted', { userId: user.id, studentId })
 
     return response.noContent()
   }

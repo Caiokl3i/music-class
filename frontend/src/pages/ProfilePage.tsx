@@ -34,7 +34,7 @@ const profileSchema = z.object({
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Informe a senha atual'),
-    password: z.string().min(8, 'Mínimo de 8 caracteres').max(32, 'Máximo de 32 caracteres'),
+    password: z.string().min(8, 'Mínimo de 8 caracteres').max(128, 'Máximo de 128 caracteres'),
     passwordConfirmation: z.string().min(8, 'Confirme a senha'),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
@@ -366,7 +366,7 @@ export function ProfilePage() {
                   label="Nova senha"
                   type="password"
                   autoComplete="new-password"
-                  hint="Entre 8 e 32 caracteres"
+                  hint="Entre 8 e 128 caracteres"
                   error={passwordForm.formState.errors.password?.message}
                   {...passwordForm.register('password')}
                 />

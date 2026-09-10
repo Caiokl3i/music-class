@@ -3,6 +3,7 @@ import {
   createPlanDiscountValidator,
   updatePlanDiscountValidator,
 } from '#validators/plan_discount'
+import { logSecurityEvent } from '#services/security_log'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 import PlanDiscount from '#models/plan_discount'
@@ -39,13 +40,17 @@ export default class PlanDiscountsController {
     return serialize(PlanDiscountTransformer.transform(discount))
   }
 
-  async destroy({ auth, params, response }: HttpContext) {
-    const discount = await this.findOwnedDiscount(
-      auth.getUserOrFail(),
-      params.planId,
-      params.id
-    )
+  async destroy({ auth, params, response, logger }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const discount = await this.findOwnedDiscount(user, params.planId, params.id)
+    const discountId = discount.id
+    const planId = discount.planId
     await discount.delete()
+    logSecurityEvent(logger, 'info', 'plan_discount.deleted', {
+      userId: user.id,
+      planId,
+      discountId,
+    })
     return response.noContent()
   }
 

@@ -8,6 +8,7 @@ import {
   nextSortOrder,
   uniqueSlug,
 } from '#services/plan_types'
+import { logSecurityEvent } from '#services/security_log'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'
 
@@ -49,11 +50,13 @@ export default class PlanTypesController {
     return serialize(PlanTypeTransformer.transform(await this.reload(user, type.id)))
   }
 
-  async destroy({ auth, params, response }: HttpContext) {
+  async destroy({ auth, params, response, logger }: HttpContext) {
     const user = auth.getUserOrFail()
     const type = await findOwnedPlanType(user, params.id)
     await assertPlanTypeUnused(user, type.slug)
+    const planTypeId = type.id
     await type.delete()
+    logSecurityEvent(logger, 'info', 'plan_type.deleted', { userId: user.id, planTypeId })
 
     return response.noContent()
   }

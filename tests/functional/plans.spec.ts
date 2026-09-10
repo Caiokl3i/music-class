@@ -241,6 +241,44 @@ test.group('Plans', (group) => {
     response.assertStatus(404)
   })
 
+  test('does not update a plan from another teacher', async ({ client }) => {
+    const teacher = await createTeacher({ email: 'teacher@example.com' })
+    const otherTeacher = await createTeacher({ email: 'other@example.com' })
+    const student = await otherTeacher
+      .related('students')
+      .create({ name: 'Bruno', instrument: 'bateria' })
+    const plan = await otherTeacher.related('plans').create({
+      studentId: student.id,
+      package: 'single',
+      lessonsTotal: 1,
+      price: 35,
+      status: 'pending',
+    })
+
+    const response = await client.put(`/api/v1/plans/${plan.id}`).loginAs(teacher).json({
+      status: 'paid',
+    })
+    response.assertStatus(404)
+  })
+
+  test('does not delete a plan from another teacher', async ({ client }) => {
+    const teacher = await createTeacher({ email: 'teacher@example.com' })
+    const otherTeacher = await createTeacher({ email: 'other@example.com' })
+    const student = await otherTeacher
+      .related('students')
+      .create({ name: 'Bruno', instrument: 'bateria' })
+    const plan = await otherTeacher.related('plans').create({
+      studentId: student.id,
+      package: 'single',
+      lessonsTotal: 1,
+      price: 35,
+      status: 'pending',
+    })
+
+    const response = await client.delete(`/api/v1/plans/${plan.id}`).loginAs(teacher)
+    response.assertStatus(404)
+  })
+
   test('updates package using catalog values and can mark as paid', async ({ assert, client }) => {
     const teacher = await createTeacher()
     const student = await teacher.related('students').create({ name: 'Ana', instrument: 'piano' })

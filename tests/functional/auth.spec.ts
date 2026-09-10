@@ -28,6 +28,9 @@ test.group('Auth', (group) => {
 
     const tokenRow = await db.from('auth_access_tokens').orderBy('id', 'desc').first()
     assert.isNotNull(tokenRow?.expires_at)
+    const expiresMs = new Date(tokenRow!.expires_at as string).getTime()
+    const expectedMs = Date.now() + 7 * 24 * 60 * 60 * 1000
+    assert.isBelow(Math.abs(expiresMs - expectedMs), 2 * 60 * 60 * 1000)
   })
 
   test('rejects signup without an invite code', async ({ client }) => {
@@ -37,7 +40,22 @@ test.group('Auth', (group) => {
       passwordConfirmation: 'password123',
     })
 
-    response.assertStatus(422)
+    response.assertStatus(403)
+    response.assertBodyContains({ code: 'E_INVALID_INVITE' })
+  })
+
+  test('does not reveal an existing email when the invite is wrong', async ({ client }) => {
+    await createTeacher({ email: 'maria@example.com' })
+
+    const response = await client.post('/api/v1/auth/signup').json({
+      email: 'maria@example.com',
+      password: 'password123',
+      passwordConfirmation: 'password123',
+      inviteCode: 'codigo-errado',
+    })
+
+    response.assertStatus(403)
+    response.assertBodyContains({ code: 'E_INVALID_INVITE' })
   })
 
   test('rejects signup with the wrong invite code', async ({ client }) => {
@@ -50,6 +68,18 @@ test.group('Auth', (group) => {
 
     response.assertStatus(403)
     response.assertBodyContains({ code: 'E_INVALID_INVITE' })
+  })
+
+  test('rejects a password longer than 128 characters', async ({ client }) => {
+    const tooLong = 'p'.repeat(129)
+    const response = await client.post('/api/v1/auth/signup').json({
+      email: 'longa@example.com',
+      password: tooLong,
+      passwordConfirmation: tooLong,
+      inviteCode: TEST_INVITE_CODE,
+    })
+
+    response.assertStatus(422)
   })
 
   test('rejects signup with duplicate email', async ({ client }) => {
