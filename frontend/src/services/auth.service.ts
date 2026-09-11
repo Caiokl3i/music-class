@@ -45,3 +45,12 @@ export async function updatePassword(input: {
 }) {
   await api.put('/account/password', input)
 }
+
+export async function emailBackup() {
+  const { data } = await api.post<{ message: string; to: string; filename: string }>(
+    '/account/backup-email',
+    undefined,
+    { timeout: 60_000 }
+  )
+  return data
+}

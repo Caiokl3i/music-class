@@ -1,6 +1,7 @@
 import UserTransformer from '#transformers/user_transformer'
 import { updatePasswordValidator, updateProfileValidator } from '#validators/user'
 import { revokeOtherAccessTokens } from '#services/access_tokens'
+import { emailSqliteBackup } from '#services/backup_email'
 import { logSecurityEvent } from '#services/security_log'
 import User from '#models/user'
 import db from '@adonisjs/lucid/services/db'
@@ -46,5 +47,12 @@ export default class ProfileController {
     logSecurityEvent(logger, 'info', 'auth.password.changed', { userId: user.id })
 
     return { message: 'Password updated successfully' }
+  }
+
+  async emailBackup({ auth, logger }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const result = await emailSqliteBackup()
+    logSecurityEvent(logger, 'info', 'backup.email.sent', { userId: user.id })
+    return { message: 'Backup sent', to: result.to, filename: result.filename }
   }
 }

@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
+  HardDrive,
   KeyRound,
   LogOut,
   MapPin,
@@ -67,7 +68,7 @@ const SECTIONS: Array<{
   {
     id: 'security',
     label: 'Segurança',
-    description: 'Senha e sessão',
+    description: 'Senha, backup e sessão',
     icon: Shield,
   },
 ]
@@ -87,6 +88,7 @@ export function ProfilePage() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
+  const [sendingBackup, setSendingBackup] = useState(false)
 
   const profileForm = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -149,6 +151,18 @@ export function ProfilePage() {
       toast.error(getErrorMessage(error, 'Não foi possível atualizar o perfil.'))
     } finally {
       setSavingProfile(false)
+    }
+  }
+
+  async function handleEmailBackup() {
+    setSendingBackup(true)
+    try {
+      const result = await authService.emailBackup()
+      toast.success(`Backup enviado para ${result.to}.`)
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível enviar o backup.'))
+    } finally {
+      setSendingBackup(false)
     }
   }
 
@@ -381,6 +395,24 @@ export function ProfilePage() {
                   Alterar senha
                 </Button>
               </form>
+
+              <div className="border-t border-border pt-6">
+                <h3 className="inline-flex items-center gap-2 text-sm font-semibold text-ink">
+                  <HardDrive className="size-4 text-accent" aria-hidden />
+                  Backup
+                </h3>
+                <p className="mt-1 text-sm text-ink-muted">
+                  Gera uma cópia do banco e envia para o e-mail configurado no servidor.
+                </p>
+                <Button
+                  variant="secondary"
+                  className="mt-4"
+                  loading={sendingBackup}
+                  onClick={handleEmailBackup}
+                >
+                  Enviar backup por e-mail
+                </Button>
+              </div>
 
               <div className="border-t border-border pt-6">
                 <h3 className="text-sm font-semibold text-ink">Sessão</h3>

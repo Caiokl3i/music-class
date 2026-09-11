@@ -15,6 +15,7 @@ export interface ApiDefinition {
       show: typeof routes['profile.profile.show']
       update: typeof routes['profile.profile.update']
       updatePassword: typeof routes['profile.profile.update_password']
+      emailBackup: typeof routes['profile.profile.email_backup']
     }
     accessTokens: {
       destroy: typeof routes['profile.access_tokens.destroy']

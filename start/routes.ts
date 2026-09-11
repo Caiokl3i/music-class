@@ -28,6 +28,9 @@ router
         router
           .put('password', [controllers.Profile, 'updatePassword'])
           .use(middleware.throttle(RATE_LIMITS.password))
+        router
+          .post('backup-email', [controllers.Profile, 'emailBackup'])
+          .use(middleware.throttle(RATE_LIMITS.backupEmail))
         router.post('logout', [controllers.AccessTokens, 'destroy'])
       })
       .prefix('account')

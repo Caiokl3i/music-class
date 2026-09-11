@@ -9,6 +9,7 @@ export type ScannedRoutes = {
     'profile.profile.show': { paramsTuple?: []; params?: {} }
     'profile.profile.update': { paramsTuple?: []; params?: {} }
     'profile.profile.update_password': { paramsTuple?: []; params?: {} }
+    'profile.profile.email_backup': { paramsTuple?: []; params?: {} }
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'dashboard.show': { paramsTuple?: []; params?: {} }
     'dashboard.export_month': { paramsTuple?: []; params?: {} }
@@ -83,6 +84,7 @@ export type ScannedRoutes = {
   POST: {
     'auth.new_account.store': { paramsTuple?: []; params?: {} }
     'auth.access_tokens.store': { paramsTuple?: []; params?: {} }
+    'profile.profile.email_backup': { paramsTuple?: []; params?: {} }
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'lessons.store_for_student': { paramsTuple: [ParamValue]; params: {'studentId': ParamValue} }
     'students.store': { paramsTuple?: []; params?: {} }

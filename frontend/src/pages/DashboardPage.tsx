@@ -11,6 +11,7 @@ import {
   Copy,
   Download,
   FileText,
+  HardDrive,
   CircleDollarSign,
   MessageCircle,
   Clock,
@@ -22,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react'
 import * as dashboardService from '@/services/dashboard.service'
+import * as authService from '@/services/auth.service'
 import * as lessonsService from '@/services/lessons.service'
 import type { Dashboard, Lesson, LessonStatus, PlanAlert, PlanPackage } from '@/types/api'
 import { Card, PageHeader, SectionHeader } from '@/components/Card'
@@ -58,6 +60,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null)
   const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [sendingBackup, setSendingBackup] = useState(false)
   const [month, setMonth] = useState(() => currentMonthValue())
   const [loadError, setLoadError] = useState(false)
 
@@ -93,6 +96,18 @@ export function DashboardPage() {
   const greeting = user?.fullName?.split(' ')[0] || 'Professor'
   const today = formatWeekdayLong(new Date())
 
+  async function handleEmailBackup() {
+    setSendingBackup(true)
+    try {
+      const result = await authService.emailBackup()
+      toast.success(`Backup enviado para ${result.to}.`)
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Não foi possível enviar o backup.'))
+    } finally {
+      setSendingBackup(false)
+    }
+  }
+
   async function exportMonth(format: 'csv' | 'pdf') {
     setExporting(format)
     try {
@@ -116,15 +131,26 @@ export function DashboardPage() {
       <PageHeader
         description={`Olá, ${greeting}. Resumo das suas aulas de hoje.`}
         actions={
-          <Button
-            id="export-month"
-            variant="secondary"
-            size="sm"
-            onClick={() => setExportModalOpen(true)}
-          >
-            <Download />
-            Exportar mês
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={sendingBackup}
+              onClick={() => void handleEmailBackup()}
+            >
+              <HardDrive />
+              Enviar backup
+            </Button>
+            <Button
+              id="export-month"
+              variant="secondary"
+              size="sm"
+              onClick={() => setExportModalOpen(true)}
+            >
+              <Download />
+              Exportar mês
+            </Button>
+          </>
         }
       />
 

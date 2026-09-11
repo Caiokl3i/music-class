@@ -22,6 +22,9 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   E_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
   E_SIGNUP_CLOSED: 'O cadastro está fechado. Peça um convite.',
   E_INVALID_INVITE: 'Código de convite inválido.',
+  E_BACKUP_EMAIL_NOT_CONFIGURED: 'Backup por e-mail ainda não está configurado no servidor.',
+  E_BACKUP_EMAIL_FAILED: 'Não foi possível enviar o backup. Tente de novo em instantes.',
+  E_TOO_MANY_REQUESTS: 'Muitas tentativas. Espere um pouco e tente de novo.',
 }
 
 const FIELD_LABELS: Record<string, string> = {

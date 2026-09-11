@@ -36,6 +36,12 @@ const routes = {
     tokens: [{"old":"/api/v1/account/password","type":0,"val":"api","end":""},{"old":"/api/v1/account/password","type":0,"val":"v1","end":""},{"old":"/api/v1/account/password","type":0,"val":"account","end":""},{"old":"/api/v1/account/password","type":0,"val":"password","end":""}],
     types: placeholder as Registry['profile.profile.update_password']['types'],
   },
+  'profile.profile.email_backup': {
+    methods: ["POST"],
+    pattern: '/api/v1/account/backup-email',
+    tokens: [{"old":"/api/v1/account/backup-email","type":0,"val":"api","end":""},{"old":"/api/v1/account/backup-email","type":0,"val":"v1","end":""},{"old":"/api/v1/account/backup-email","type":0,"val":"account","end":""},{"old":"/api/v1/account/backup-email","type":0,"val":"backup-email","end":""}],
+    types: placeholder as Registry['profile.profile.email_backup']['types'],
+  },
   'profile.access_tokens.destroy': {
     methods: ["POST"],
     pattern: '/api/v1/account/logout',

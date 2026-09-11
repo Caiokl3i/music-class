@@ -180,6 +180,9 @@ Definidas e validadas em [`start/env.ts`](start/env.ts). Modelo em [`.env.exampl
 | `SIGNUP_INVITE_CODE` | não | Frase do convite. Vazio = cadastro fechado. |
 | `RATE_LIMIT_ENABLED` | não | `1`/`true` liga, `0`/`false` desliga. Sem valor: ligado, **exceto** em `test`. |
 | `BACKUP_DIR` | não | Destino de `npm run db:backup` (padrão `./backups`) |
+| `RESEND_API_KEY` | não | Chave do Resend. Sem ela o botão de backup por e-mail responde 503. |
+| `RESEND_FROM` | não | Remetente. Padrão: `Music Class <onboarding@resend.dev>` |
+| `BACKUP_EMAIL_TO` | não | Destino da cópia `.sqlite3` (use o e-mail da conta Resend enquanto não houver domínio) |
 | `TZ` | recomendado | `UTC` no exemplo e no Docker. Datetimes do Lucid/SQLite são gravados sem fuso. |
 
 Frontend ([`frontend/.env.example`](frontend/.env.example)):
@@ -242,6 +245,7 @@ Grupo geral: **240 req / 15 min** por IP e por usuário.
 |--------|---------|-------|
 | `GET` `PATCH` | `/account/profile` | |
 | `PUT` | `/account/password` | 5 / 15 min; revoga os outros tokens |
+| `POST` | `/account/backup-email` | 3 / 60 min; envia a cópia SQLite por Resend |
 | `POST` | `/account/logout` | Apaga o token atual |
 | `GET` | `/dashboard` | Query `timezone` |
 | `GET` | `/export` | CSV; 15 / 15 min; query `month`, `timezone` |
@@ -304,14 +308,14 @@ node ace migration:run
 node ace migration:rollback
 ```
 
-Backup consistente (processo separado, não pela API):
+Backup consistente (`VACUUM INTO`). Pelo terminal:
 
 ```bash
 npm run db:backup          # guarda em ./backups, mantém 14 cópias
 npm run db:backup -- 30    # mantém 30
 ```
 
-Usa `VACUUM INTO` (snapshot consistente). `BACKUP_DIR` altera o destino.
+Pelo perfil: **Enviar backup por e-mail** (`POST /account/backup-email`) gera a mesma cópia e anexa no Resend. `BACKUP_DIR` altera o destino no disco.
 
 ---
 

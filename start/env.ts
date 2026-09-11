@@ -37,4 +37,8 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   // Where `npm run db:backup` writes copies. Defaults to ./backups
   BACKUP_DIR: Env.schema.string.optional(),
+
+  RESEND_API_KEY: Env.schema.string.optional(),
+  RESEND_FROM: Env.schema.string.optional(),
+  BACKUP_EMAIL_TO: Env.schema.string.optional(),
 })

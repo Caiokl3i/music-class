@@ -24,6 +24,7 @@ export const RATE_LIMITS = {
   password: { name: 'password', max: 5, windowMinutes: 15 },
   export: { name: 'export', max: 15, windowMinutes: 15 },
   generate: { name: 'generate', max: 10, windowMinutes: 15 },
+  backupEmail: { name: 'backup-email', max: 3, windowMinutes: 60 },
   api: { name: 'api', max: 240, windowMinutes: 15 },
 } satisfies Record<string, RateLimitRule>
 
