@@ -30,6 +30,7 @@ RUN npm ci --omit=dev
 FROM node:24-bookworm-slim AS production
 WORKDIR /app
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/* \

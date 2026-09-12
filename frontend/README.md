@@ -90,6 +90,8 @@ npm run build
 
 Artefatos em `dist/`. Sirva com qualquer host estático e aponte `VITE_API_URL` para a API pública no build.
 
+**Vercel:** Root Directory = `frontend`. Variável `VITE_API_URL` = URL da API (sem `/api/v1`). O [`vercel.json`](vercel.json) reescreve as rotas da SPA para `index.html`.
+
 ## Docker (API + frontend)
 
 Na raiz do monorepo:

@@ -1,0 +1,34 @@
+# API no Render. Crie o serviço pelo dashboard ou: Render → New → Blueprint.
+# Depois preencha APP_URL, CORS_ORIGIN, APP_KEY e o restante no painel.
+
+services:
+  - type: web
+    name: music-class-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: info
+      - key: SESSION_DRIVER
+        value: cookie
+      - key: TZ
+        value: UTC
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SIGNUP_INVITE_CODE
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: Music Class <onboarding@resend.dev>
+      - key: BACKUP_EMAIL_TO
+        sync: false
