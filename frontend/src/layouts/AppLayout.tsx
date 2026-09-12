@@ -62,7 +62,7 @@ export function AppLayout() {
       await logout()
       navigate('/login')
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível sair.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setLoggingOut(false)
     }

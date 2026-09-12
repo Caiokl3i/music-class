@@ -35,7 +35,7 @@ export function StudentsPage() {
   const [deleting, setDeleting] = useState<Student | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const {
     register,
@@ -49,12 +49,13 @@ export function StudentsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    setLoadError(false)
+    setLoadError(null)
     try {
       setStudents(await studentsService.listStudents({ archived: showArchived }))
     } catch (error) {
-      setLoadError(true)
-      toast.error(getErrorMessage(error, 'Não foi possível carregar os alunos.'))
+      const message = getErrorMessage(error)
+      setLoadError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -130,7 +131,7 @@ export function StudentsPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) setError(field as keyof FormValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar o aluno.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSaving(false)
     }
@@ -145,7 +146,7 @@ export function StudentsPage() {
       setDeleting(null)
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível excluir o aluno.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setDeleteLoading(false)
     }
@@ -196,8 +197,8 @@ export function StudentsPage() {
       ) : loadError ? (
         <EmptyState
           icon={<TriangleAlert className="size-8" />}
-          title="Não foi possível carregar os alunos"
-          description="Confira a conexão e tente de novo."
+          title="Não carregou os alunos"
+          description={loadError ?? 'Confira a conexão e tente de novo.'}
           actionLabel="Tentar novamente"
           onAction={() => void load()}
         />

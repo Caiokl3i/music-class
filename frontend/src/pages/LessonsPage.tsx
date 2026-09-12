@@ -113,7 +113,7 @@ export function LessonsPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<Lesson | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [filterStudentId, setFilterStudentId] = useState('')
   const [createDay, setCreateDay] = useState<Date | undefined>()
   const [selectedDay, setSelectedDay] = useState(() => {
@@ -182,7 +182,7 @@ export function LessonsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    setLoadError(false)
+    setLoadError(null)
     try {
       const [lessonsData, studentsData, plansData] = await Promise.all([
         lessonsService.listLessons(),
@@ -193,8 +193,9 @@ export function LessonsPage() {
       setStudents(studentsData)
       setPlans(plansData)
     } catch (error) {
-      setLoadError(true)
-      toast.error(getErrorMessage(error, 'Não foi possível carregar as aulas.'))
+      const message = getErrorMessage(error)
+      setLoadError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -317,7 +318,7 @@ export function LessonsPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) setError(field as keyof FormValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar a aula.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSaving(false)
     }
@@ -329,7 +330,7 @@ export function LessonsPage() {
       toast.success('Status atualizado.')
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o status.'))
+      toast.error(getErrorMessage(error))
     }
   }
 
@@ -342,7 +343,7 @@ export function LessonsPage() {
       setDeleting(null)
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível excluir a aula.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setDeleteLoading(false)
     }
@@ -405,8 +406,8 @@ export function LessonsPage() {
       ) : loadError ? (
         <EmptyState
           icon={<TriangleAlert className="size-8" />}
-          title="Não foi possível carregar as aulas"
-          description="Confira a conexão e tente de novo."
+          title="Não carregou as aulas"
+          description={loadError ?? 'Confira a conexão e tente de novo.'}
           actionLabel="Tentar novamente"
           onAction={() => void load()}
         />
@@ -922,7 +923,7 @@ export function LessonsPage() {
                 onClick={() => {
                   void copyText(formatLessonReminder(viewing))
                     .then(() => toast.success('Lembrete copiado.'))
-                    .catch(() => toast.error('Não foi possível copiar.'))
+                    .catch(() => toast.error('O navegador não deixou copiar o texto.'))
                 }}
               >
                 <Copy className="size-4" aria-hidden />

@@ -71,7 +71,7 @@ export function GenerateLessonsModal({
       onClose()
       await onGenerated()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível gerar as aulas.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSaving(false)
     }

@@ -57,7 +57,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       setCatalog(await catalogService.getCatalog())
       loadedOnce.current = true
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível carregar o catálogo de pacotes.'))
+      toast.error(getErrorMessage(error))
       if (!loadedOnce.current) {
         setCatalog(EMPTY_CATALOG)
       }

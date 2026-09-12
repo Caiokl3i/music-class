@@ -80,7 +80,7 @@ export function PlanDiscountModal({
       if (fields.name) form.setError('name', { message: fields.name })
       if (fields.amount) form.setError('amount', { message: fields.amount })
       if (fields.serviceAt) form.setError('serviceAt', { message: fields.serviceAt })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar o desconto.'))
+      toast.error(getErrorMessage(error))
     }
   }
 

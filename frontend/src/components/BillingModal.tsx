@@ -64,7 +64,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
       .catch((error) => {
         if (!cancelled) {
           setSummary(null)
-          toast.error(getErrorMessage(error, 'Não foi possível gerar a cobrança.'))
+          toast.error(getErrorMessage(error))
         }
       })
       .finally(() => {
@@ -82,7 +82,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
       await navigator.clipboard.writeText(summary.text)
       toast.success('Mensagem copiada.')
     } catch {
-      toast.error('Não foi possível copiar a mensagem.')
+      toast.error('O navegador não deixou copiar o texto.')
     }
   }
 
@@ -93,7 +93,7 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
       await plansService.downloadPlanBillingPdf(plan.id, scope === 'month' ? month : null)
       toast.success('PDF baixado.')
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível baixar o PDF.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setDownloading(false)
     }

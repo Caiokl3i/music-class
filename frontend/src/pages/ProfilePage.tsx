@@ -125,7 +125,7 @@ export function ProfilePage() {
       await logout()
       navigate('/login')
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível sair.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setLoggingOut(false)
     }
@@ -148,7 +148,7 @@ export function ProfilePage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) profileForm.setError(field as keyof ProfileValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o perfil.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingProfile(false)
     }
@@ -160,7 +160,7 @@ export function ProfilePage() {
       const result = await authService.emailBackup()
       toast.success(`Backup enviado para ${result.to}.`)
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível enviar o backup.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSendingBackup(false)
     }
@@ -177,7 +177,7 @@ export function ProfilePage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) passwordForm.setError(field as keyof PasswordValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível alterar a senha.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingPassword(false)
     }

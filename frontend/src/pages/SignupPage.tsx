@@ -54,7 +54,7 @@ export function SignupPage() {
           setError(field, { message })
         }
       })
-      toast.error(getErrorMessage(error, 'Não foi possível criar a conta.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSubmitting(false)
     }

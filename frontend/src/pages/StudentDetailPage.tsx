@@ -180,7 +180,7 @@ export function StudentDetailPage() {
     resolver: zodResolver(studentFormSchema),
     defaultValues: { color: DEFAULT_STUDENT_COLOR },
   })
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const selectedPackage = planForm.watch('package') as PlanPackage
   const availablePlans = useMemo(
@@ -204,7 +204,7 @@ export function StudentDetailPage() {
       return
     }
     setLoading(true)
-    setLoadError(false)
+    setLoadError(null)
     try {
       const studentData = await studentsService.getStudent(studentId)
       setStudent(studentData)
@@ -213,16 +213,17 @@ export function StudentDetailPage() {
         lessonsService.listLessonsForStudent(studentId),
       ])
       if (plansResult.status === 'fulfilled') setPlans(plansResult.value)
-      else toast.error(getErrorMessage(plansResult.reason, 'Não foi possível carregar os pacotes.'))
+      else toast.error(getErrorMessage(plansResult.reason))
       if (lessonsResult.status === 'fulfilled') setLessons(lessonsResult.value)
-      else toast.error(getErrorMessage(lessonsResult.reason, 'Não foi possível carregar as aulas.'))
+      else toast.error(getErrorMessage(lessonsResult.reason))
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível carregar o aluno.'))
+      const message = getErrorMessage(error)
+      toast.error(message)
       if (isAxiosError(error) && error.response?.status === 404) {
         navigate('/students')
         return
       }
-      setLoadError(true)
+      setLoadError(message)
     } finally {
       setLoading(false)
     }
@@ -351,7 +352,7 @@ export function StudentDetailPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) lessonForm.setError(field as keyof LessonFormValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar a aula.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingLesson(false)
     }
@@ -377,7 +378,7 @@ export function StudentDetailPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) repositionForm.setError(field as keyof RepositionFormValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar a reposição.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingReposition(false)
     }
@@ -401,7 +402,7 @@ export function StudentDetailPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) planForm.setError(field as keyof PlanFormValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível criar o pacote.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingPlan(false)
     }
@@ -420,7 +421,7 @@ export function StudentDetailPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) studentForm.setError(field as keyof StudentFormValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar o aluno.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingStudent(false)
     }
@@ -432,7 +433,7 @@ export function StudentDetailPage() {
       toast.success('Status atualizado.')
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o status.'))
+      toast.error(getErrorMessage(error))
     }
   }
 
@@ -442,7 +443,7 @@ export function StudentDetailPage() {
       toast.success('Pacote marcado como pago.')
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o pagamento.'))
+      toast.error(getErrorMessage(error))
     }
   }
 
@@ -455,7 +456,7 @@ export function StudentDetailPage() {
       setDeletingLesson(null)
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível excluir a aula.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setDeleteLoading(false)
     }
@@ -473,7 +474,7 @@ export function StudentDetailPage() {
       setDeletingDiscount(null)
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível remover o desconto.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setDeletingDiscountLoading(false)
     }
@@ -494,14 +495,7 @@ export function StudentDetailPage() {
       setPlanAction(null)
       await load()
     } catch (error) {
-      toast.error(
-        getErrorMessage(
-          error,
-          planAction.type === 'cancel'
-            ? 'Não foi possível cancelar o pacote.'
-            : 'Não foi possível apagar o pacote.',
-        ),
-      )
+      toast.error(getErrorMessage(error))
     } finally {
       setPlanActionLoading(false)
     }
@@ -517,7 +511,7 @@ export function StudentDetailPage() {
       setStudent(next)
       toast.success(next.archivedAt ? 'Aluno arquivado.' : 'Aluno reativado.')
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o aluno.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setArchiving(false)
     }
@@ -536,8 +530,8 @@ export function StudentDetailPage() {
     return (
       <EmptyState
         icon={<TriangleAlert className="size-8" />}
-        title="Não foi possível carregar o aluno"
-        description="Confira a conexão e tente de novo."
+        title="Não carregou o aluno"
+        description={loadError ?? 'Confira a conexão e tente de novo.'}
         actionLabel="Tentar novamente"
         onAction={() => void load()}
       />

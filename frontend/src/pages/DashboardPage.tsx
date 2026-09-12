@@ -62,18 +62,19 @@ export function DashboardPage() {
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [sendingBackup, setSendingBackup] = useState(false)
   const [month, setMonth] = useState(() => currentMonthValue())
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
-    setLoadError(false)
+    setLoadError(null)
     try {
       setData(
         await dashboardService.getDashboard(APP_TIMEZONE),
       )
     } catch (error) {
-      setLoadError(true)
-      toast.error(getErrorMessage(error, 'Não foi possível carregar o painel.'))
+      const message = getErrorMessage(error)
+      setLoadError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -89,7 +90,7 @@ export function DashboardPage() {
       toast.success('Status atualizado.')
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o status.'))
+      toast.error(getErrorMessage(error))
     }
   }
 
@@ -102,7 +103,7 @@ export function DashboardPage() {
       const result = await authService.emailBackup()
       toast.success(`Backup enviado para ${result.to}.`)
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível enviar o backup.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSendingBackup(false)
     }
@@ -120,7 +121,7 @@ export function DashboardPage() {
       }
       setExportModalOpen(false)
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível exportar o mês.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setExporting(null)
     }
@@ -159,8 +160,8 @@ export function DashboardPage() {
       ) : loadError || !data ? (
         <EmptyState
           icon={<TriangleAlert className="size-8" />}
-          title="Não foi possível carregar o painel"
-          description="Confira a conexão e tente de novo."
+          title="Não carregou o painel"
+          description={loadError ?? 'Confira a conexão e tente de novo.'}
           actionLabel="Tentar novamente"
           onAction={() => void load()}
         />
@@ -397,7 +398,7 @@ function LoadedDashboard({
                 onClick={() => {
                   void copyText(formatTomorrowReminders(data.tomorrow))
                     .then(() => toast.success('Lembretes de amanhã copiados.'))
-                    .catch(() => toast.error('Não foi possível copiar.'))
+                    .catch(() => toast.error('O navegador não deixou copiar o texto.'))
                 }}
               >
                 <Copy className="size-3.5" aria-hidden />
@@ -430,7 +431,7 @@ function LoadedDashboard({
                       onClick={() => {
                         void copyText(text)
                           .then(() => toast.success('Lembrete copiado.'))
-                          .catch(() => toast.error('Não foi possível copiar.'))
+                          .catch(() => toast.error('O navegador não deixou copiar o texto.'))
                       }}
                     >
                       <Copy className="size-3.5" aria-hidden />

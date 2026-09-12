@@ -56,7 +56,7 @@ export function PlansPage() {
   const [savingType, setSavingType] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const sellForm = useForm<SellValues>({
     resolver: zodResolver(sellSchema),
@@ -72,7 +72,7 @@ export function PlansPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    setLoadError(false)
+    setLoadError(null)
     try {
       const [studentsData, plansData] = await Promise.all([
         studentsService.listStudents(),
@@ -81,8 +81,9 @@ export function PlansPage() {
       setStudents(studentsData)
       setPlans(plansData)
     } catch (error) {
-      setLoadError(true)
-      toast.error(getErrorMessage(error, 'Não foi possível carregar os pacotes.'))
+      const message = getErrorMessage(error)
+      setLoadError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -151,7 +152,7 @@ export function PlansPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) sellForm.setError(field as keyof SellValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar o pacote.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingSell(false)
     }
@@ -174,7 +175,7 @@ export function PlansPage() {
       Object.entries(fields).forEach(([field, message]) => {
         if (field in values) typeForm.setError(field as keyof TypeValues, { message })
       })
-      toast.error(getErrorMessage(error, 'Não foi possível salvar o tipo de pacote.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSavingType(false)
     }
@@ -189,7 +190,7 @@ export function PlansPage() {
       setDeletingType(null)
       await reload()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível excluir o tipo de pacote.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setDeleting(false)
     }
@@ -202,7 +203,7 @@ export function PlansPage() {
       toast.success('Pacote marcado como pago.')
       await load()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível atualizar o pagamento.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setMarkingPaidId(null)
     }
@@ -241,8 +242,8 @@ export function PlansPage() {
         ) : loadError ? (
           <EmptyState
             icon={<TriangleAlert className="size-8" />}
-            title="Não foi possível carregar os pacotes"
-            description="Confira a conexão e tente de novo."
+            title="Não carregou os pacotes"
+            description={loadError ?? 'Confira a conexão e tente de novo.'}
             actionLabel="Tentar novamente"
             onAction={() => void load()}
           />

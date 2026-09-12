@@ -49,7 +49,7 @@ export function LoginPage() {
           setError(field, { message })
         }
       })
-      toast.error(getErrorMessage(error, 'Não foi possível entrar. Verifique suas credenciais.'))
+      toast.error(getErrorMessage(error))
     } finally {
       setSubmitting(false)
     }
