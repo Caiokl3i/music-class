@@ -4,7 +4,7 @@ Gestão para professores particulares de música: alunos, pacotes, agenda, créd
 
 Cada conta é um estúdio. Um professor não vê os dados do outro.
 
-**Interface** React · **API** AdonisJS 7 (`/api/v1`) · **Banco** SQLite
+**Interface** React · **API** AdonisJS 7 (`/api/v1`) · **Banco** SQLite (local) / PostgreSQL (produção)
 
 ---
 
@@ -24,11 +24,11 @@ Aula padrão: **1 hora**. Crédito válido por **60 dias** depois do pagamento. 
 ## Stack
 
 ```text
-React (Vite)  ── token ──►  AdonisJS  ──►  SQLite
+React (Vite)  ── token ──►  AdonisJS  ──►  SQLite local  ou  Postgres no Render
  :5173                       :3333          tmp/db.sqlite3
 ```
 
-Um processo Node, um arquivo de banco, sem fila e sem Redis. E-mail só no backup (Resend).
+Um processo Node, sem fila e sem Redis. E-mail só no backup SQLite (Resend).
 
 ---
 
@@ -65,9 +65,11 @@ Variáveis: [`.env.example`](.env.example) e [`frontend/.env.example`](frontend/
 ## Produção
 
 Site na **Vercel** (pasta `frontend`, `VITE_API_URL` = URL da API).  
-API no **Render** (Docker da raiz, `CORS_ORIGIN` = URL da Vercel).
+API no **Render** (Docker da raiz, `CORS_ORIGIN` = URL da Vercel, `DATABASE_URL` do Postgres).
 
-Suba a API primeiro. Depois o site. No plano grátis do Render o SQLite some no restart — use o backup por e-mail.
+Suba o banco e a API primeiro. Depois o site.
+
+No plano grátis, o disco do web service some quando a instância dorme ou redeploya. Contas e aulas no SQLite (`tmp/db.sqlite3`) desaparecem. O outro projeto “mantém” seed porque o seed roda de novo no boot — não porque o disco sobrevive. Crie um **PostgreSQL** no Render, ligue `DATABASE_URL` e `DB_CONNECTION=pg` (o `render.yaml` já faz isso no Blueprint).
 
 ---
 

@@ -1,5 +1,11 @@
 # API no Render. Crie o serviço pelo dashboard ou: Render → New → Blueprint.
 # Depois preencha APP_URL, CORS_ORIGIN, APP_KEY e o restante no painel.
+# SQLite no disco do web service some no sleep/redeploy — use o Postgres abaixo.
+
+databases:
+  - name: music-class-db
+    databaseName: musicclass
+    user: musicclass
 
 services:
   - type: web
@@ -18,6 +24,12 @@ services:
         value: cookie
       - key: TZ
         value: UTC
+      - key: DB_CONNECTION
+        value: pg
+      - key: DATABASE_URL
+        fromDatabase:
+          name: music-class-db
+          property: connectionString
       - key: APP_KEY
         sync: false
       - key: APP_URL

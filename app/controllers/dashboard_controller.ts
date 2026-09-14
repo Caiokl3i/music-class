@@ -6,6 +6,7 @@ import {
   lessonsDoneFromExtras,
 } from '#services/plan_credits'
 import { EXPIRING_SOON_DAYS, LOW_CREDIT_THRESHOLD } from '#services/package_catalog'
+import { isPostgres } from '#database/connection'
 import { nowInStudioZone, toSqliteDateTime } from '#services/studio_timezone'
 import { buildMonthCsv, buildMonthPdf } from '#services/month_export'
 import { netPriceFromPlan } from '#services/plan_pricing'
@@ -74,7 +75,12 @@ export default class DashboardController {
         .query()
         .whereNotNull('birthdate')
         .whereNull('archivedAt')
-        .whereRaw("strftime('%m-%d', birthdate) = ?", [now.toFormat('MM-dd')]),
+        .whereRaw(
+          isPostgres()
+            ? "to_char(birthdate, 'MM-DD') = ?"
+            : "strftime('%m-%d', birthdate) = ?",
+          [now.toFormat('MM-dd')]
+        ),
     ])
 
     const birthdays = birthdaysToday.map((student) => ({
