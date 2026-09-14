@@ -41,7 +41,7 @@ test.group('Auth', (group) => {
     })
 
     response.assertStatus(403)
-    response.assertBodyContains({ code: 'E_INVALID_INVITE' })
+    response.assertBodyContains({ code: 'E_INVITE_REQUIRED' })
   })
 
   test('does not reveal an existing email when the invite is wrong', async ({ client }) => {
@@ -115,7 +115,7 @@ test.group('Auth', (group) => {
     assert.isNotNull(tokenRow?.expires_at)
   })
 
-  test('rejects invalid login', async ({ client }) => {
+  test('rejects a wrong password without claiming the account is missing', async ({ client }) => {
     await createTeacher()
 
     const response = await client.post('/api/v1/auth/login').json({
@@ -124,6 +124,28 @@ test.group('Auth', (group) => {
     })
 
     response.assertStatus(400)
+    response.assertBodyContains({ code: 'E_INVALID_PASSWORD' })
+  })
+
+  test('rejects login when the email is not registered', async ({ client }) => {
+    const response = await client.post('/api/v1/auth/login').json({
+      email: 'nobody@example.com',
+      password: 'password123',
+    })
+
+    response.assertStatus(400)
+    response.assertBodyContains({ code: 'E_ACCOUNT_NOT_FOUND' })
+  })
+
+  test('logs in when the email case does not match the stored account', async ({ client }) => {
+    await createTeacher({ email: 'Teacher@example.com' })
+
+    const response = await client.post('/api/v1/auth/login').json({
+      email: 'teacher@example.com',
+      password: 'password123',
+    })
+
+    response.assertStatus(200)
   })
 
   test('requires authentication for profile', async ({ client }) => {
@@ -226,6 +248,7 @@ test.group('Auth', (group) => {
     })
 
     response.assertStatus(400)
+    response.assertBodyContains({ code: 'E_INVALID_CURRENT_PASSWORD' })
   })
 
   test('logs out the current token', async ({ client }) => {

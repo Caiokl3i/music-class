@@ -274,22 +274,26 @@ export function ProfilePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input
                   label="Nome completo"
+                  placeholder="Maria Silva"
                   error={profileForm.formState.errors.fullName?.message}
                   {...profileForm.register('fullName')}
                 />
                 <Input
                   label="Telefone / WhatsApp"
+                  placeholder="11 99999-9999"
                   hint="Para contato rápido com responsáveis"
                   error={profileForm.formState.errors.phone?.message}
                   {...profileForm.register('phone')}
                 />
                 <Input
                   label="Nome do estúdio"
+                  placeholder="Estúdio Norte"
                   error={profileForm.formState.errors.studioName?.message}
                   {...profileForm.register('studioName')}
                 />
                 <Input
                   label="Cidade"
+                  placeholder="São Paulo"
                   error={profileForm.formState.errors.city?.message}
                   {...profileForm.register('city')}
                 />
@@ -297,6 +301,7 @@ export function ProfilePage() {
 
               <Input
                 label="Instrumentos que ensina"
+                placeholder="piano, violão, canto"
                 hint="Separe por vírgula — ex.: piano, violão, canto"
                 error={profileForm.formState.errors.instruments?.message}
                 {...profileForm.register('instruments')}
@@ -304,6 +309,7 @@ export function ProfilePage() {
 
               <TextArea
                 label="Sobre você"
+                placeholder="Aulas particulares e em grupo"
                 hint="Uma apresentação curta para a ficha do professor"
                 rows={4}
                 error={profileForm.formState.errors.bio?.message}
@@ -373,6 +379,7 @@ export function ProfilePage() {
                   label="Senha atual"
                   type="password"
                   autoComplete="current-password"
+                  placeholder="Mínimo 8 caracteres"
                   error={passwordForm.formState.errors.currentPassword?.message}
                   {...passwordForm.register('currentPassword')}
                 />
@@ -380,6 +387,7 @@ export function ProfilePage() {
                   label="Nova senha"
                   type="password"
                   autoComplete="new-password"
+                  placeholder="Mínimo 8 caracteres"
                   hint="Entre 8 e 128 caracteres"
                   error={passwordForm.formState.errors.password?.message}
                   {...passwordForm.register('password')}
@@ -388,6 +396,7 @@ export function ProfilePage() {
                   label="Confirmar nova senha"
                   type="password"
                   autoComplete="new-password"
+                  placeholder="Mínimo 8 caracteres"
                   error={passwordForm.formState.errors.passwordConfirmation?.message}
                   {...passwordForm.register('passwordConfirmation')}
                 />

@@ -2,7 +2,7 @@ import { isAxiosError } from 'axios'
 import type { ApiErrorBody } from '@/types/api'
 
 const DOMAIN_MESSAGES: Record<string, string> = {
-  E_PLAN_NO_CREDITS: 'Este pacote já tem todas as aulas marcadas.',
+  E_PLAN_NO_CREDITS: 'Este pacote não tem mais vaga. Cancele uma aula ou venda outro pacote.',
   E_PLAN_CANCELLED: 'Não é possível agendar aulas em um pacote cancelado.',
   E_PLAN_HAS_ACTIVE_LESSONS:
     'Cancele todas as aulas deste pacote antes de cancelar o pacote.',
@@ -14,17 +14,23 @@ const DOMAIN_MESSAGES: Record<string, string> = {
     'Não é possível reduzir o pacote abaixo das aulas já agendadas.',
   E_LESSON_SCHEDULE_CONFLICT: 'Já existe uma aula nesse horário.',
   E_LESSON_INVALID_DURATION: 'O fim da aula precisa ser depois do início.',
+  E_LESSON_TOO_LONG: 'A aula não pode durar mais de 8 horas.',
   E_PLAN_EXPIRED: 'Este pacote venceu. Venda um novo para continuar agendando.',
   E_PLAN_TYPE_UNKNOWN: 'Este tipo de pacote não existe. Escolha outro ou crie um novo.',
   E_PLAN_TYPE_IN_USE: 'Não dá para excluir um tipo que já foi vendido. Edite o nome ou o preço.',
   E_LESSON_REPOSITION_REQUIRES_NO_SHOW:
     'A reposição só pode ser feita a partir de uma falta registrada.',
+  E_ACCOUNT_NOT_FOUND: 'Não existe uma conta com este e-mail.',
+  E_INVALID_PASSWORD: 'Senha incorreta.',
+  E_INVALID_CURRENT_PASSWORD: 'Senha atual incorreta.',
   E_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
-  E_SIGNUP_CLOSED: 'O cadastro está fechado no servidor. Defina SIGNUP_INVITE_CODE e use esse código.',
+  E_SIGNUP_CLOSED: 'O cadastro está fechado no momento. Peça acesso a quem administra o estúdio.',
+  E_INVITE_REQUIRED: 'Informe o código de convite.',
   E_INVALID_INVITE: 'Código de convite inválido.',
-  E_BACKUP_EMAIL_NOT_CONFIGURED:
-    'Backup por e-mail não está configurado (falta RESEND_API_KEY ou BACKUP_EMAIL_TO).',
-  E_BACKUP_EMAIL_FAILED: 'O Resend recusou o envio. Confira a chave e o e-mail de destino.',
+  E_BACKUP_EMAIL_NOT_CONFIGURED: 'Backup por e-mail ainda não está configurado.',
+  E_BACKUP_EMAIL_FAILED: 'Não foi possível enviar o backup. Tente de novo em instantes.',
+  E_BACKUP_SQLITE_ONLY:
+    'Com PostgreSQL o banco já fica no Render. O envio do arquivo SQLite não se aplica.',
   E_TOO_MANY_REQUESTS: 'Muitas tentativas. Espere um pouco e tente de novo.',
   E_ROW_NOT_FOUND: 'Registro não encontrado.',
   E_UNAUTHORIZED: 'Sessão expirada. Faça login novamente.',
@@ -33,7 +39,11 @@ const DOMAIN_MESSAGES: Record<string, string> = {
 
 const ENGLISH_MESSAGES: Record<string, string> = {
   'signup is closed': DOMAIN_MESSAGES.E_SIGNUP_CLOSED,
+  'invite code is required': DOMAIN_MESSAGES.E_INVITE_REQUIRED,
   'invalid invite code': DOMAIN_MESSAGES.E_INVALID_INVITE,
+  'no account exists with this email': DOMAIN_MESSAGES.E_ACCOUNT_NOT_FOUND,
+  'incorrect password': DOMAIN_MESSAGES.E_INVALID_PASSWORD,
+  'current password is incorrect': DOMAIN_MESSAGES.E_INVALID_CURRENT_PASSWORD,
   'invalid user credentials': DOMAIN_MESSAGES.E_INVALID_CREDENTIALS,
   'row not found': DOMAIN_MESSAGES.E_ROW_NOT_FOUND,
   'this plan has no remaining lesson credits': DOMAIN_MESSAGES.E_PLAN_NO_CREDITS,
@@ -50,6 +60,7 @@ const ENGLISH_MESSAGES: Record<string, string> = {
     DOMAIN_MESSAGES.E_STUDENT_HAS_HISTORY,
   'this time overlaps another scheduled lesson': DOMAIN_MESSAGES.E_LESSON_SCHEDULE_CONFLICT,
   'lesson end must be after the start': DOMAIN_MESSAGES.E_LESSON_INVALID_DURATION,
+  'lesson cannot last more than 8 hours': DOMAIN_MESSAGES.E_LESSON_TOO_LONG,
   'the lesson student must match the plan student': DOMAIN_MESSAGES.E_LESSON_STUDENT_MISMATCH,
   'only a no_show lesson can be repositioned': DOMAIN_MESSAGES.E_LESSON_REPOSITION_REQUIRES_NO_SHOW,
   'unknown plan type': DOMAIN_MESSAGES.E_PLAN_TYPE_UNKNOWN,
@@ -58,9 +69,19 @@ const ENGLISH_MESSAGES: Record<string, string> = {
   'too many requests. try again later.': DOMAIN_MESSAGES.E_TOO_MANY_REQUESTS,
   'backup email is not configured': DOMAIN_MESSAGES.E_BACKUP_EMAIL_NOT_CONFIGURED,
   'could not send the backup email': DOMAIN_MESSAGES.E_BACKUP_EMAIL_FAILED,
+  'file backup is only available with sqlite': DOMAIN_MESSAGES.E_BACKUP_SQLITE_ONLY,
   'unauthorized access': DOMAIN_MESSAGES.E_UNAUTHORIZED,
   'unauthorized': DOMAIN_MESSAGES.E_UNAUTHORIZED,
   'access denied': 'Acesso recusado.',
+}
+
+const FIELD_BY_CODE: Record<string, string> = {
+  E_ACCOUNT_NOT_FOUND: 'email',
+  E_INVALID_PASSWORD: 'password',
+  E_INVALID_CURRENT_PASSWORD: 'currentPassword',
+  E_INVITE_REQUIRED: 'inviteCode',
+  E_INVALID_INVITE: 'inviteCode',
+  E_SIGNUP_CLOSED: 'inviteCode',
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -124,6 +145,8 @@ function domainMessage(value?: string) {
 function translateValidationMessage(message: string, field?: string, rule?: string) {
   const label = (field && FIELD_LABELS[field]) || field || 'campo'
   const lower = message.toLowerCase()
+  const fromEnglish = domainMessage(message)
+  if (fromEnglish) return fromEnglish
 
   if (
     rule === 'database.unique' ||
@@ -159,9 +182,6 @@ function translateValidationMessage(message: string, field?: string, rule?: stri
     return `Informe um número válido em ${label}.`
   }
 
-  const fromEnglish = domainMessage(message)
-  if (fromEnglish) return fromEnglish
-
   if (/[A-Za-z]{4,}/.test(message) && !/[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]/.test(message)) {
     return `Valor inválido em ${label}.`
   }
@@ -177,10 +197,10 @@ function configuredApiUrl() {
 function apiUrlHint() {
   const url = configuredApiUrl()
   if (!url) {
-    return 'O front foi compilado sem VITE_API_URL, então está tentando localhost:3333.'
+    return 'O aplicativo foi compilado sem o endereço da API, então está tentando localhost:3333.'
   }
   if (/localhost|127\.0\.0\.1/.test(url)) {
-    return `O front no ar está chamando ${url} — isso precisa ser a URL da API (Render), não localhost.`
+    return `O aplicativo no ar está chamando ${url} — isso precisa ser o endereço da API, não localhost.`
   }
   return `API configurada: ${url}`
 }
@@ -193,24 +213,50 @@ function looksLikeHtml(value: string) {
   return /<!doctype|<html|<\/html>|<body/i.test(value)
 }
 
+function notFoundMessage(path: string) {
+  if (path.includes('/students')) return 'Aluno não encontrado.'
+  if (path.includes('/lessons')) return 'Aula não encontrada.'
+  if (path.includes('/plan-types') || path.includes('/plan_types')) {
+    return 'Tipo de pacote não encontrado.'
+  }
+  if (path.includes('/discounts')) return 'Desconto não encontrado.'
+  if (path.includes('/plans')) return 'Pacote não encontrado.'
+  if (path.includes('/account') || path.includes('/profile')) {
+    return 'Conta não encontrada. Faça login novamente.'
+  }
+  return DOMAIN_MESSAGES.E_ROW_NOT_FOUND
+}
+
 function statusMessage(status: number, path: string) {
   if (path.includes('/auth/login') && (status === 400 || status === 401)) {
-    return DOMAIN_MESSAGES.E_INVALID_CREDENTIALS
+    return 'Não foi possível entrar. Confira o e-mail e a senha.'
+  }
+  if (path.includes('/account/password') && status === 400) {
+    return DOMAIN_MESSAGES.E_INVALID_CURRENT_PASSWORD
   }
   if (path.includes('/auth/signup') && status === 403) {
-    return 'Cadastro recusado: código de convite inválido ou SIGNUP_INVITE_CODE vazio no servidor.'
+    return 'Cadastro recusado. Confira o código de convite.'
   }
-  if (status === 400) return 'Pedido inválido. Confira os dados enviados.'
+  if (status === 400) return 'Os dados enviados estão incompletos ou inválidos.'
   if (status === 401) return DOMAIN_MESSAGES.E_UNAUTHORIZED
-  if (status === 403) return 'Acesso recusado. Confira o convite, a permissão ou o CORS_ORIGIN.'
-  if (status === 404) return DOMAIN_MESSAGES.E_ROW_NOT_FOUND
+  if (status === 403) return 'Você não tem permissão para esta ação.'
+  if (status === 404) return notFoundMessage(path)
   if (status === 409) return 'Conflito com um registro que já existe.'
-  if (status === 422) return 'A API recusou os dados. Confira os campos e tente de novo.'
+  if (status === 422) return 'Confira os dados do formulário e tente de novo.'
   if (status === 429) return DOMAIN_MESSAGES.E_TOO_MANY_REQUESTS
-  if (status === 502) return 'A API falhou ao falar com um serviço externo (e-mail).'
-  if (status === 503) return 'Serviço indisponível. No Render grátis ele pode estar acordando (~1 min).'
-  if (status >= 500) return `Erro interno no servidor (HTTP ${status}).`
-  return `A API recusou a ação (HTTP ${status}).`
+  if (status === 502) return 'Não foi possível concluir o envio. Tente de novo em instantes.'
+  if (status === 503) return 'Serviço indisponível no momento. Espere um minuto e tente de novo.'
+  if (status >= 500) return 'Erro interno no servidor. Tente de novo em instantes.'
+  return 'A ação não pôde ser concluída. Tente de novo.'
+}
+
+function resolvedDomainMessage(code?: string, message?: string, path = '') {
+  const fromCode = domainMessage(code) ?? domainMessage(message)
+  if (!fromCode) return undefined
+  if (code === 'E_ROW_NOT_FOUND' || fromCode === DOMAIN_MESSAGES.E_ROW_NOT_FOUND) {
+    return notFoundMessage(path)
+  }
+  return fromCode
 }
 
 export function getErrorMessage(error: unknown): string {
@@ -225,16 +271,16 @@ export function getErrorMessage(error: unknown): string {
 
   if (!error.response) {
     if (error.code === 'ECONNABORTED') {
-      return `O servidor demorou demais para responder. No Render grátis, espere ~1 min e tente de novo. ${apiUrlHint()}`
+      return `O servidor demorou demais para responder. Espere um minuto e tente de novo. ${apiUrlHint()}`
     }
     const axiosText = `${error.code ?? ''} ${error.message ?? ''}`.toLowerCase()
     if (axiosText.includes('cors')) {
-      return `O navegador bloqueou por CORS. No Render, CORS_ORIGIN precisa ser a origem deste site. ${apiUrlHint()}`
+      return `O navegador bloqueou a conexão com a API. ${apiUrlHint()}`
     }
     if (error.code === 'ERR_NETWORK' || axiosText.includes('network error')) {
-      return `O navegador não alcançou a API (endereço errado, CORS ou a API fora do ar). ${apiUrlHint()}`
+      return `Não foi possível alcançar o servidor. Confira a conexão. ${apiUrlHint()}`
     }
-    return `Não deu para falar com a API. ${apiUrlHint()}`
+    return `Não deu para falar com o servidor. ${apiUrlHint()}`
   }
 
   const status = error.response.status
@@ -245,7 +291,7 @@ export function getErrorMessage(error: unknown): string {
     return `A resposta não veio da API (página HTML, HTTP ${status}). ${apiUrlHint()}`
   }
 
-  const fromCode = domainMessage(body?.code) ?? domainMessage(body?.message)
+  const fromCode = resolvedDomainMessage(body?.code, body?.message, path)
   if (fromCode) return fromCode
 
   if (body?.errors?.length) {
@@ -273,6 +319,17 @@ export function getFieldErrors(error: unknown): Record<string, string> {
     if (item.field) {
       result[item.field] = translateValidationMessage(item.message, item.field, item.rule)
     }
+  }
+
+  if (Object.keys(result).length) {
+    return result
+  }
+
+  const code = body?.code
+  const field = code ? FIELD_BY_CODE[code] : undefined
+  const message = resolvedDomainMessage(code, body?.message)
+  if (field && message) {
+    result[field] = message
   }
 
   return result

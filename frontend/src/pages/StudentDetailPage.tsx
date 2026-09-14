@@ -82,6 +82,7 @@ import { DEFAULT_STUDENT_COLOR, resolveStudentHex } from '@/domain/student'
 import {
   addMinutesToDatetimeLocal,
   formatPreferredSchedule,
+  isWithinMaxLessonDuration,
   moveDatetimeLocalKeepingDuration,
   preferredSlot,
 } from '@/domain/schedule'
@@ -98,6 +99,10 @@ const lessonSchema = z
     message: 'O fim precisa ser depois do início',
     path: ['endsAt'],
   })
+  .refine((values) => isWithinMaxLessonDuration(values.scheduledAt, values.endsAt), {
+    message: 'A aula não pode durar mais de 8 horas.',
+    path: ['endsAt'],
+  })
 
 const repositionSchema = z
   .object({
@@ -107,6 +112,10 @@ const repositionSchema = z
   })
   .refine((values) => values.endsAt > values.scheduledAt, {
     message: 'O fim precisa ser depois do início',
+    path: ['endsAt'],
+  })
+  .refine((values) => isWithinMaxLessonDuration(values.scheduledAt, values.endsAt), {
+    message: 'A aula não pode durar mais de 8 horas.',
     path: ['endsAt'],
   })
 
@@ -255,9 +264,7 @@ export function StudentDetailPage() {
       }
 
       flashScheduleBlocked()
-      toast.error(
-        'Pacote sem vaga: as aulas já estão marcadas ou feitas. Cancele uma aula ou venda outro pacote.',
-      )
+      toast.error('Este pacote não tem mais vaga. Cancele uma aula ou venda outro pacote.')
       return
     }
     setEditingLesson(null)
@@ -1037,6 +1044,7 @@ export function StudentDetailPage() {
           />
           <TextArea
             label="Anotações"
+            placeholder="Escala maior, revisão da última aula"
             error={lessonForm.formState.errors.description?.message}
             {...lessonForm.register('description')}
           />
@@ -1099,6 +1107,7 @@ export function StudentDetailPage() {
           </div>
           <TextArea
             label="Anotações"
+            placeholder="Escala maior, revisão da última aula"
             error={repositionForm.formState.errors.description?.message}
             {...repositionForm.register('description')}
           />
@@ -1123,6 +1132,7 @@ export function StudentDetailPage() {
         <form className="space-y-4" onSubmit={planForm.handleSubmit(onSubmitPlan)}>
           <Select
             label="Pacote"
+            placeholder="Selecione o pacote"
             error={planForm.formState.errors.package?.message}
             options={packages.map((item) => ({
               value: item.value,
@@ -1147,6 +1157,7 @@ export function StudentDetailPage() {
           />
           <TextArea
             label="Observações"
+            placeholder="Combinado no WhatsApp"
             error={planForm.formState.errors.notes?.message}
             {...planForm.register('notes')}
           />

@@ -408,6 +408,7 @@ export function PlansPage() {
               type="number"
               min={1}
               max={100}
+              placeholder="4"
               error={typeForm.formState.errors.lessons?.message}
               {...typeForm.register('lessons')}
             />
@@ -416,6 +417,7 @@ export function PlansPage() {
               type="number"
               min={0}
               step="0.01"
+              placeholder="320,00"
               error={typeForm.formState.errors.price?.message}
               {...typeForm.register('price')}
             />
@@ -458,6 +460,7 @@ export function PlansPage() {
           />
           <Select
             label="Pacote"
+            placeholder="Selecione o pacote"
             error={sellForm.formState.errors.package?.message}
             options={packages.map((item) => ({
               value: item.value,
@@ -478,7 +481,12 @@ export function PlansPage() {
             ]}
             {...sellForm.register('status')}
           />
-          <TextArea label="Observações" error={sellForm.formState.errors.notes?.message} {...sellForm.register('notes')} />
+          <TextArea
+            label="Observações"
+            placeholder="Combinado no WhatsApp"
+            error={sellForm.formState.errors.notes?.message}
+            {...sellForm.register('notes')}
+          />
         </form>
       </Modal>
 

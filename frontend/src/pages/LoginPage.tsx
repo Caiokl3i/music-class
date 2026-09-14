@@ -66,6 +66,7 @@ export function LoginPage() {
           label="E-mail"
           type="email"
           autoComplete="email"
+          placeholder="olivia.t@example.org"
           error={errors.email?.message}
           {...register('email')}
         />
@@ -73,6 +74,7 @@ export function LoginPage() {
           label="Senha"
           type="password"
           autoComplete="current-password"
+          placeholder="Mínimo 8 caracteres"
           error={errors.password?.message}
           {...register('password')}
         />

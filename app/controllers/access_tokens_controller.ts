@@ -3,6 +3,7 @@ import { loginValidator } from '#validators/user'
 import type { HttpContext } from '@adonisjs/core/http'
 import UserTransformer from '#transformers/user_transformer'
 import { ACCESS_TOKEN_EXPIRES_IN } from '#services/access_tokens'
+import { authenticateLogin } from '#services/auth_credentials'
 import { logSecurityEvent } from '#services/security_log'
 
 export default class AccessTokensController {
@@ -10,7 +11,7 @@ export default class AccessTokensController {
     const { email, password } = await request.validateUsing(loginValidator)
 
     try {
-      const user = await User.verifyCredentials(email, password)
+      const user = await authenticateLogin(email, password)
       const token = await User.accessTokens.create(user, ['*'], {
         expiresIn: ACCESS_TOKEN_EXPIRES_IN,
       })

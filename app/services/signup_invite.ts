@@ -3,6 +3,8 @@ import { createError } from '@adonisjs/core/exceptions'
 
 export const SIGNUP_CLOSED = createError('Signup is closed', 'E_SIGNUP_CLOSED', 403)
 
+export const INVITE_REQUIRED = createError('Invite code is required', 'E_INVITE_REQUIRED', 403)
+
 export const INVALID_INVITE = createError('Invalid invite code', 'E_INVALID_INVITE', 403)
 
 function digest(value: string) {
@@ -20,7 +22,11 @@ export function assertSignupInvite(provided: string | undefined, expected: strin
   }
 
   const code = provided?.trim()
-  if (!code || !inviteMatches(code, secret)) {
+  if (!code) {
+    throw new INVITE_REQUIRED()
+  }
+
+  if (!inviteMatches(code, secret)) {
     throw new INVALID_INVITE()
   }
 }

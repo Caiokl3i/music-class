@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/Button'
+import { DateTimeField } from '@/components/DateTimeField'
 import { Input } from '@/components/Input'
 import { TextArea } from '@/components/TextArea'
 import * as plansService from '@/services/plans.service'
@@ -55,7 +56,7 @@ export function PlanDiscountModal({
     if (!plan) return
     const amount = Number(values.amount.replace(',', '.'))
     if (!Number.isFinite(amount) || amount <= 0) {
-      form.setError('amount', { message: 'Valor inválido' })
+        form.setError('amount', { message: 'Informe um valor numérico válido.' })
       return
     }
 
@@ -114,14 +115,20 @@ export function PlanDiscountModal({
           error={form.formState.errors.amount?.message}
           {...form.register('amount')}
         />
-        <Input
+        <DateTimeField
           label="Data do serviço"
-          type="date"
+          kind="date"
           hint="Opcional — aparece na cobrança do mês"
+          value={form.watch('serviceAt')}
           error={form.formState.errors.serviceAt?.message}
-          {...form.register('serviceAt')}
+          onChange={(next) => form.setValue('serviceAt', next, { shouldValidate: true, shouldDirty: true })}
         />
-        <TextArea label="Observações" rows={2} {...form.register('notes')} />
+        <TextArea
+          label="Observações"
+          rows={2}
+          placeholder="Combinado com o responsável"
+          {...form.register('notes')}
+        />
       </form>
     </Modal>
   )

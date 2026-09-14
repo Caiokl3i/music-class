@@ -5,6 +5,14 @@ import {
 } from '@/utils/format'
 
 export const FALLBACK_LESSON_TIME = '14:00'
+export const MAX_LESSON_MINUTES = 8 * 60
+
+export function isWithinMaxLessonDuration(start: string, end: string) {
+  const startMs = Date.parse(start)
+  const endMs = Date.parse(end)
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return true
+  return (endMs - startMs) / 60_000 <= MAX_LESSON_MINUTES
+}
 
 export const WEEKDAY_OPTIONS = [
   { value: 1, label: 'Segunda' },

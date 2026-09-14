@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Copy, Download, MessageCircle } from 'lucide-react'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/Button'
+import { DateTimeField } from '@/components/DateTimeField'
 import { Select } from '@/components/Select'
 import * as plansService from '@/services/plans.service'
 import type { BillingSummary, Plan, Student } from '@/types/api'
@@ -145,14 +146,12 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
             {...form.register('scope')}
           />
           {scope === 'month' ? (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ink">Mês</span>
-              <input
-                type="month"
-                className="h-11 w-full min-w-0 rounded-md border border-border bg-surface-raised px-3 text-base text-ink focus:border-accent sm:h-10 sm:text-sm"
-                {...form.register('month')}
-              />
-            </label>
+            <DateTimeField
+              label="Mês"
+              kind="month"
+              value={month}
+              onChange={(next) => form.setValue('month', next, { shouldValidate: true, shouldDirty: true })}
+            />
           ) : (
             <div className="hidden sm:block" />
           )}

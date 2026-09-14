@@ -38,14 +38,24 @@ export function StudentFormFields({
 }) {
   return (
     <div className="space-y-4">
-      <Input label="Nome" error={errors.name?.message} {...register('name')} />
-      <Input label="Instrumento" error={errors.instrument?.message} {...register('instrument')} />
+      <Input label="Nome" placeholder="Ana Souza" error={errors.name?.message} {...register('name')} />
+      <Input
+        label="Instrumento"
+        placeholder="piano"
+        error={errors.instrument?.message}
+        {...register('instrument')}
+      />
       <StudentColorPicker
         value={watch('color') ?? DEFAULT_STUDENT_COLOR}
         error={errors.color?.message}
         onChange={(next) => setValue('color', next, { shouldDirty: true, shouldValidate: false })}
       />
-      <Input label="Telefone" error={errors.phone?.message} {...register('phone')} />
+      <Input
+        label="Telefone"
+        placeholder="11 99999-9999"
+        error={errors.phone?.message}
+        {...register('phone')}
+      />
       <DateTimeField
         label="Data de nascimento"
         kind="date"
@@ -66,6 +76,7 @@ export function StudentFormFields({
         />
         <Input
           label="Etiquetas"
+          placeholder="particular, vestibular"
           hint="Separe por vírgula"
           error={errors.tags?.message}
           {...register('tags')}
@@ -93,7 +104,12 @@ export function StudentFormFields({
           onChange={(next) => setValue('preferredTime', next, { shouldValidate: true })}
         />
       </div>
-      <TextArea label="Observações" error={errors.description?.message} {...register('description')} />
+      <TextArea
+        label="Observações"
+        placeholder="Prefere aula no fim da tarde"
+        error={errors.description?.message}
+        {...register('description')}
+      />
     </div>
   )
 }

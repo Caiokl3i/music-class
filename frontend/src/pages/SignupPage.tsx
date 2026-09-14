@@ -70,6 +70,7 @@ export function SignupPage() {
         <Input
           label="Nome completo"
           autoComplete="name"
+          placeholder="Maria Silva"
           error={errors.fullName?.message}
           {...register('fullName')}
         />
@@ -77,6 +78,7 @@ export function SignupPage() {
           label="E-mail"
           type="email"
           autoComplete="email"
+          placeholder="olivia.t@example.org"
           error={errors.email?.message}
           {...register('email')}
         />
@@ -84,6 +86,7 @@ export function SignupPage() {
           label="Senha"
           type="password"
           autoComplete="new-password"
+          placeholder="Mínimo 8 caracteres"
           hint="Entre 8 e 128 caracteres"
           error={errors.password?.message}
           {...register('password')}
@@ -92,12 +95,14 @@ export function SignupPage() {
           label="Confirmar senha"
           type="password"
           autoComplete="new-password"
+          placeholder="Mínimo 8 caracteres"
           error={errors.passwordConfirmation?.message}
           {...register('passwordConfirmation')}
         />
         <Input
           label="Código de convite"
           autoComplete="one-time-code"
+          placeholder="código que você recebeu"
           hint="Quem já usa o sistema te passa esse código"
           error={errors.inviteCode?.message}
           {...register('inviteCode')}

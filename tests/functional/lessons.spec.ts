@@ -554,6 +554,19 @@ test.group('Lessons', (group) => {
     response.assertBodyContains({ code: 'E_LESSON_INVALID_DURATION' })
   })
 
+  test('rejects a lesson longer than 8 hours', async ({ client }) => {
+    const { teacher, student, plan } = await createTeacherWithPlan()
+
+    const response = await client.post('/api/v1/lessons').loginAs(teacher).json({
+      studentId: student.id,
+      planId: plan.id,
+      scheduledAt,
+      endsAt: '2026-09-01T23:00:00.000Z',
+    })
+    response.assertStatus(422)
+    response.assertBodyContains({ code: 'E_LESSON_TOO_LONG' })
+  })
+
   test('rejects two lessons in the same hour', async ({ client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan()
 

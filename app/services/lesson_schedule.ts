@@ -20,6 +20,12 @@ export const LESSON_INVALID_DURATION = createError(
   422
 )
 
+export const LESSON_TOO_LONG = createError(
+  'Lesson cannot last more than 8 hours',
+  'E_LESSON_TOO_LONG',
+  422
+)
+
 export function defaultLessonEnd(start: DateTime) {
   return start.plus({ minutes: LESSON_DURATION_MINUTES })
 }
@@ -58,7 +64,7 @@ export function assertValidLessonWindow(start: DateTime, endsAt: DateTime) {
   }
 
   if (endsAt.diff(start, 'minutes').minutes > MAX_LESSON_MINUTES) {
-    throw new LESSON_INVALID_DURATION()
+    throw new LESSON_TOO_LONG()
   }
 }
 

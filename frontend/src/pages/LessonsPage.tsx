@@ -46,6 +46,7 @@ import {
   brazilMonthAnchor,
   brazilWeekAnchor,
   brazilWeekDays,
+  isWithinMaxLessonDuration,
   moveDatetimeLocalKeepingDuration,
   preferredSlot,
   sameBrazilMonth,
@@ -67,6 +68,10 @@ const schema = z
   })
   .refine((values) => values.endsAt > values.scheduledAt, {
     message: 'O fim precisa ser depois do início',
+    path: ['endsAt'],
+  })
+  .refine((values) => isWithinMaxLessonDuration(values.scheduledAt, values.endsAt), {
+    message: 'A aula não pode durar mais de 8 horas.',
     path: ['endsAt'],
   })
 
@@ -820,7 +825,12 @@ export function LessonsPage() {
             ]}
             {...register('status')}
           />
-          <TextArea label="Anotações" error={errors.description?.message} {...register('description')} />
+          <TextArea
+            label="Anotações"
+            placeholder="Escala maior, revisão da última aula"
+            error={errors.description?.message}
+            {...register('description')}
+          />
         </form>
       </Modal>
 

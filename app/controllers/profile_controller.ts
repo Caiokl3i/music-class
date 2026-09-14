@@ -2,8 +2,8 @@ import UserTransformer from '#transformers/user_transformer'
 import { updatePasswordValidator, updateProfileValidator } from '#validators/user'
 import { revokeOtherAccessTokens } from '#services/access_tokens'
 import { emailSqliteBackup } from '#services/backup_email'
+import { assertCurrentPassword } from '#services/auth_credentials'
 import { logSecurityEvent } from '#services/security_log'
-import User from '#models/user'
 import db from '@adonisjs/lucid/services/db'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -32,7 +32,7 @@ export default class ProfileController {
     const payload = await request.validateUsing(updatePasswordValidator)
 
     try {
-      await User.verifyCredentials(user.email, payload.currentPassword)
+      await assertCurrentPassword(user, payload.currentPassword)
     } catch (error) {
       logSecurityEvent(logger, 'warn', 'auth.password.failure', { userId: user.id })
       throw error

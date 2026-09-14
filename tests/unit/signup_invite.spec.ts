@@ -1,5 +1,10 @@
 import { test } from '@japa/runner'
-import { assertSignupInvite, INVALID_INVITE, SIGNUP_CLOSED } from '#services/signup_invite'
+import {
+  assertSignupInvite,
+  INVALID_INVITE,
+  INVITE_REQUIRED,
+  SIGNUP_CLOSED,
+} from '#services/signup_invite'
 
 test.group('Signup invite', () => {
   test('rejects signup when no invite is configured', ({ assert }) => {
@@ -8,7 +13,8 @@ test.group('Signup invite', () => {
   })
 
   test('rejects a missing or wrong code', ({ assert }) => {
-    assert.throws(() => assertSignupInvite(undefined, 'segredo'), INVALID_INVITE)
+    assert.throws(() => assertSignupInvite(undefined, 'segredo'), INVITE_REQUIRED)
+    assert.throws(() => assertSignupInvite('   ', 'segredo'), INVITE_REQUIRED)
     assert.throws(() => assertSignupInvite('outro', 'segredo'), INVALID_INVITE)
   })
 

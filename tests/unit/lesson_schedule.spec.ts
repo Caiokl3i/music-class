@@ -6,6 +6,7 @@ import {
   defaultLessonEnd,
   resolveLessonWindow,
   LESSON_INVALID_DURATION,
+  LESSON_TOO_LONG,
 } from '#services/lesson_schedule'
 import {
   expiresAtFromPaidAt,
@@ -46,6 +47,10 @@ test.group('Lesson schedule', () => {
     assert.throws(
       () => resolveLessonWindow(start, DateTime.fromISO('2026-09-01T13:00:00.000Z')),
       LESSON_INVALID_DURATION
+    )
+    assert.throws(
+      () => resolveLessonWindow(start, DateTime.fromISO('2026-09-01T23:00:00.000Z')),
+      LESSON_TOO_LONG
     )
   })
 
