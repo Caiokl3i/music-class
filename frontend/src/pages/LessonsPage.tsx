@@ -3,11 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  format,
-} from 'date-fns'
+import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Copy, List, Plus, TriangleAlert } from 'lucide-react'
+import {
+  CalendarDays,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  List,
+  Plus,
+  TriangleAlert,
+} from 'lucide-react'
 import * as lessonsService from '@/services/lessons.service'
 import * as studentsService from '@/services/students.service'
 import * as plansService from '@/services/plans.service'
@@ -83,7 +90,9 @@ function brazilWeekLabel(weekDate: Date) {
   const start = brazilTodayParts(days[0])
   const end = brazilTodayParts(days[6])
   const startLabel = format(new Date(start.year, start.month - 1, start.day), 'd', { locale: ptBR })
-  const endLabel = format(new Date(end.year, end.month - 1, end.day), "d 'de' MMMM", { locale: ptBR })
+  const endLabel = format(new Date(end.year, end.month - 1, end.day), "d 'de' MMMM", {
+    locale: ptBR,
+  })
   if (start.month === end.month && start.year === end.year) {
     return `${startLabel}–${endLabel}`
   }
@@ -155,7 +164,7 @@ export function LessonsPage() {
     if (!studentId) return []
     return bookablePlans(
       plans.filter((plan) => plan.studentId === studentId),
-      editing?.planId,
+      editing?.planId
     )
   }, [plans, formStudentId, editing])
 
@@ -174,10 +183,7 @@ export function LessonsPage() {
       const fromList = studentsMap.get(lesson.studentId)
       byId.set(lesson.studentId, {
         id: lesson.studentId,
-        name:
-          lesson.studentName ??
-          fromList?.name ??
-          `Aluno #${lesson.studentId}`,
+        name: lesson.studentName ?? fromList?.name ?? `Aluno #${lesson.studentId}`,
         level: lesson.studentLevel ?? fromList?.level ?? null,
         color: lesson.studentColor ?? fromList?.color ?? null,
       })
@@ -225,7 +231,7 @@ export function LessonsPage() {
   function scheduleForStudent(studentId: string, day?: Date) {
     const student = students.find((item) => String(item.id) === studentId)
     return toDatetimeLocalFromDate(
-      preferredSlot(student ?? {}, day ?? new Date(), { lockDate: Boolean(day) }),
+      preferredSlot(student ?? {}, day ?? new Date(), { lockDate: Boolean(day) })
     )
   }
 
@@ -394,11 +400,11 @@ export function LessonsPage() {
             ...students
               .filter((student) => !student.archivedAt)
               .map((student) => ({
-              value: student.id,
-              label: levelLabel(student.level)
-                ? `${student.name} · ${levelLabel(student.level)}`
-                : student.name,
-            })),
+                value: student.id,
+                label: levelLabel(student.level)
+                  ? `${student.name} · ${levelLabel(student.level)}`
+                  : student.name,
+              })),
           ]}
         />
       </div>
@@ -515,7 +521,9 @@ export function LessonsPage() {
                         <p className="text-sm font-semibold capitalize text-ink">
                           {formatWeekdayLong(day).split(',')[0]}
                         </p>
-                        <p className="text-xs text-ink-muted">{formatWeekdayLong(day).split(', ')[1]}</p>
+                        <p className="text-xs text-ink-muted">
+                          {formatWeekdayLong(day).split(', ')[1]}
+                        </p>
                       </div>
                       <Button size="sm" variant="secondary" onClick={() => scheduleOnDay(day)}>
                         Agendar
@@ -533,11 +541,15 @@ export function LessonsPage() {
                               className="w-full truncate rounded-md px-3 py-2.5 text-left text-sm font-semibold"
                               style={studentChipStyle(
                                 lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
-                                lesson.studentId,
+                                lesson.studentId
                               )}
                             >
                               {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
-                              {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
+                              {
+                                (
+                                  lesson.studentName ?? studentsMap.get(lesson.studentId)?.name
+                                )?.split(' ')[0]
+                              }
                             </button>
                           </li>
                         ))}
@@ -564,7 +576,13 @@ export function LessonsPage() {
                   const selected = brazilDateKey(selectedDay) === dayKey
                   const todayPartsNow = brazilTodayParts()
                   const todayKey = brazilDateKey(
-                    fromBrazilWallTime(todayPartsNow.year, todayPartsNow.month, todayPartsNow.day, 12, 0),
+                    fromBrazilWallTime(
+                      todayPartsNow.year,
+                      todayPartsNow.month,
+                      todayPartsNow.day,
+                      12,
+                      0
+                    )
                   )
                   return (
                     <button
@@ -599,7 +617,7 @@ export function LessonsPage() {
                             className="size-1.5 rounded-full"
                             style={studentDotStyle(
                               lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
-                              lesson.studentId,
+                              lesson.studentId
                             )}
                           />
                         ))}
@@ -629,11 +647,15 @@ export function LessonsPage() {
                           className="w-full truncate rounded-md px-3 py-2.5 text-left text-sm font-semibold"
                           style={studentChipStyle(
                             lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
-                            lesson.studentId,
+                            lesson.studentId
                           )}
                         >
                           {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
-                          {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
+                          {
+                            (lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(
+                              ' '
+                            )[0]
+                          }
                         </button>
                       </li>
                     ))}
@@ -659,7 +681,7 @@ export function LessonsPage() {
               {visibleCalendarDays.map((day) => {
                 const dayKey = brazilDateKey(day)
                 const dayLessons = filteredLessons.filter(
-                  (lesson) => brazilDateKey(lesson.scheduledAt) === dayKey,
+                  (lesson) => brazilDateKey(lesson.scheduledAt) === dayKey
                 )
                 const inMonth = view === 'week' || sameBrazilMonth(day, month)
                 return (
@@ -678,7 +700,9 @@ export function LessonsPage() {
                       view === 'week' ? 'min-h-[160px]' : 'min-h-[88px]'
                     } ${inMonth ? 'bg-surface-raised' : 'bg-surface-muted'}`}
                   >
-                    <span className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-ink-muted'}`}>
+                    <span
+                      className={`mb-1 text-xs font-medium ${inMonth ? 'text-ink' : 'text-ink-muted'}`}
+                    >
                       {brazilTodayParts(day).day}
                     </span>
                     <div className="flex flex-col gap-1 overflow-hidden">
@@ -695,11 +719,15 @@ export function LessonsPage() {
                           }`}
                           style={studentChipStyle(
                             lesson.studentColor ?? studentsMap.get(lesson.studentId)?.color,
-                            lesson.studentId,
+                            lesson.studentId
                           )}
                         >
                           {formatTimeRange(lesson.scheduledAt, lesson.endsAt)}{' '}
-                          {(lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(' ')[0]}
+                          {
+                            (lesson.studentName ?? studentsMap.get(lesson.studentId)?.name)?.split(
+                              ' '
+                            )[0]
+                          }
                         </button>
                       ))}
                       {dayLessons.length > chipLimit ? (
@@ -746,11 +774,11 @@ export function LessonsPage() {
             options={students
               .filter((student) => !student.archivedAt || String(student.id) === formStudentId)
               .map((student) => ({
-              value: student.id,
-              label: levelLabel(student.level)
-                ? `${student.name} · ${levelLabel(student.level)}`
-                : student.name,
-            }))}
+                value: student.id,
+                label: levelLabel(student.level)
+                  ? `${student.name} · ${levelLabel(student.level)}`
+                  : student.name,
+              }))}
             {...register('studentId', {
               onChange: (event) => {
                 setValue('planId', '')
@@ -764,9 +792,7 @@ export function LessonsPage() {
           />
           <Select
             label="Pacote"
-            placeholder={
-              formStudentId ? 'Pacote com vaga' : 'Selecione o aluno antes'
-            }
+            placeholder={formStudentId ? 'Pacote com vaga' : 'Selecione o aluno antes'}
             error={errors.planId?.message}
             options={availablePlans.map((plan) => ({
               value: plan.id,
@@ -799,9 +825,9 @@ export function LessonsPage() {
                     previousStart.current,
                     getValues('endsAt'),
                     next,
-                    lessonDurationMinutes,
+                    lessonDurationMinutes
                   ),
-                  { shouldValidate: true },
+                  { shouldValidate: true }
                 )
                 previousStart.current = next
               }}

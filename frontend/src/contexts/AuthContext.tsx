@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStoredToken(result.token)
       setUser(result.user)
     },
-    [],
+    []
   )
 
   const logout = useCallback(async () => {
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await authService.updateProfile(input)
       setUser(profile)
     },
-    [],
+    []
   )
 
   const value = useMemo(
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       updateProfile,
     }),
-    [user, isBootstrapping, login, signup, logout, refreshProfile, updateProfile],
+    [user, isBootstrapping, login, signup, logout, refreshProfile, updateProfile]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

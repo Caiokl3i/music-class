@@ -11,14 +11,11 @@ export function formatLessonReminder(lesson: ReminderLesson, heading = 'Olá! Le
   const name = lesson.studentName?.trim() || 'Aluno'
   const instrument = lesson.studentInstrument?.trim()
 
-  const weekday = formatWeekdayLong(lesson.scheduledAt).split(',')[0] ?? formatWeekdayLong(lesson.scheduledAt)
+  const weekday =
+    formatWeekdayLong(lesson.scheduledAt).split(',')[0] ?? formatWeekdayLong(lesson.scheduledAt)
   const when = `${weekday}, ${formatDate(lesson.scheduledAt, 'dd/MM')} às ${formatTimeRange(lesson.scheduledAt, lesson.endsAt)}`
 
-  return [
-    heading,
-    instrument ? `${name} · ${instrument}` : name,
-    when,
-  ].join('\n')
+  return [heading, instrument ? `${name} · ${instrument}` : name, when].join('\n')
 }
 
 export function formatTomorrowReminders(lessons: ReminderLesson[]) {
@@ -28,7 +25,9 @@ export function formatTomorrowReminders(lessons: ReminderLesson[]) {
     const name = lesson.studentName?.trim() || 'Aluno'
     const instrument = lesson.studentInstrument?.trim()
     lines.push(instrument ? `${name} · ${instrument}` : name)
-    lines.push(`${formatDate(lesson.scheduledAt, 'dd/MM')} às ${formatTimeRange(lesson.scheduledAt, lesson.endsAt)}`)
+    lines.push(
+      `${formatDate(lesson.scheduledAt, 'dd/MM')} às ${formatTimeRange(lesson.scheduledAt, lesson.endsAt)}`
+    )
     lines.push('')
   }
   return lines.join('\n').trim()

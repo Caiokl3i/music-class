@@ -4,7 +4,15 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'motion/react'
-import { BookOpen, CircleDollarSign, Package, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react'
+import {
+  BookOpen,
+  CircleDollarSign,
+  Package,
+  Pencil,
+  Plus,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react'
 import * as plansService from '@/services/plans.service'
 import * as planTypesService from '@/services/plan-types.service'
 import * as studentsService from '@/services/students.service'
@@ -101,13 +109,13 @@ export function PlansPage() {
 
   const activeStudents = useMemo(
     () => students.filter((student) => !student.archivedAt),
-    [students],
+    [students]
   )
-  const pendingPlans = useMemo(
-    () => plans.filter((plan) => plan.status === 'pending'),
-    [plans],
+  const pendingPlans = useMemo(() => plans.filter((plan) => plan.status === 'pending'), [plans])
+  const studentsMap = useMemo(
+    () => new Map(students.map((student) => [student.id, student])),
+    [students]
   )
-  const studentsMap = useMemo(() => new Map(students.map((student) => [student.id, student])), [students])
 
   function openSell(pack?: PlanPackage) {
     sellForm.reset({
@@ -230,12 +238,9 @@ export function PlansPage() {
       <section id="receber" className="scroll-mt-6 space-y-3">
         <div>
           <h2 className="inline-flex items-center gap-2 text-base font-semibold text-ink">
-            <CircleDollarSign className="size-4 text-accent" aria-hidden />
-            A receber
+            <CircleDollarSign className="size-4 text-accent" aria-hidden />A receber
           </h2>
-          <p className="mt-0.5 text-sm text-ink-muted">
-            Pacotes pendentes de todos os alunos.
-          </p>
+          <p className="mt-0.5 text-sm text-ink-muted">Pacotes pendentes de todos os alunos.</p>
         </div>
         {loading ? (
           <Skeleton className="h-16 w-full rounded-lg" />
@@ -268,8 +273,8 @@ export function PlansPage() {
                       {student?.name ?? `Aluno #${plan.studentId}`}
                     </Link>
                     <p className="mt-0.5 text-sm text-ink-muted">
-                      {optionFor(plan.package).label} · {plan.lessonsDone}/{plan.lessonsTotal}{' '}
-                      aulas feitas · {formatCurrency(Number(plan.netPrice ?? plan.price))}
+                      {optionFor(plan.package).label} · {plan.lessonsDone}/{plan.lessonsTotal} aulas
+                      feitas · {formatCurrency(Number(plan.netPrice ?? plan.price))}
                     </p>
                   </div>
                   <Button
@@ -292,92 +297,98 @@ export function PlansPage() {
           <h2 className="text-base font-semibold text-ink">Tipos de pacote</h2>
           <p className="mt-0.5 text-sm text-ink-muted">O que você vende no estúdio.</p>
         </div>
-      {catalogLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          <Skeleton className="h-48 rounded-lg" />
-          <Skeleton className="h-48 rounded-lg" />
-          <Skeleton className="h-48 rounded-lg" />
-        </div>
-      ) : packages.length === 0 ? (
-        <EmptyState
-          icon={<Package className="size-8" />}
-          title="Nenhum tipo de pacote"
-          description="Crie o primeiro tipo — avulsa, mensal ou o formato que você cobra."
-          actionLabel="Novo tipo"
-          onAction={openCreateType}
-        />
-      ) : (
-        <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {packages.map((item, index) => {
-            const perLesson = item.lessons > 0 ? item.price / item.lessons : 0
-            return (
-              <motion.li
-                key={item.value}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, delay: index * 0.04 }}
-                className="stat-card flex flex-col"
-              >
-                <div className="mb-4 flex items-start justify-between gap-2">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-accent-soft text-accent">
-                    {item.lessons === 1 ? (
-                      <BookOpen className="size-5" aria-hidden />
-                    ) : (
-                      <Package className="size-5" aria-hidden />
-                    )}
+        {catalogLoading ? (
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <Skeleton className="h-48 rounded-lg" />
+            <Skeleton className="h-48 rounded-lg" />
+            <Skeleton className="h-48 rounded-lg" />
+          </div>
+        ) : packages.length === 0 ? (
+          <EmptyState
+            icon={<Package className="size-8" />}
+            title="Nenhum tipo de pacote"
+            description="Crie o primeiro tipo — avulsa, mensal ou o formato que você cobra."
+            actionLabel="Novo tipo"
+            onAction={openCreateType}
+          />
+        ) : (
+          <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {packages.map((item, index) => {
+              const perLesson = item.lessons > 0 ? item.price / item.lessons : 0
+              return (
+                <motion.li
+                  key={item.value}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, delay: index * 0.04 }}
+                  className="stat-card flex flex-col"
+                >
+                  <div className="mb-4 flex items-start justify-between gap-2">
+                    <div className="flex size-10 items-center justify-center rounded-lg bg-accent-soft text-accent">
+                      {item.lessons === 1 ? (
+                        <BookOpen className="size-5" aria-hidden />
+                      ) : (
+                        <Package className="size-5" aria-hidden />
+                      )}
+                    </div>
+                    <div className="sm:hidden">
+                      <ActionMenu
+                        items={[
+                          { label: 'Editar', icon: <Pencil />, onClick: () => openEditType(item) },
+                          {
+                            label: 'Excluir',
+                            icon: <Trash2 />,
+                            tone: 'danger',
+                            onClick: () => setDeletingType(item),
+                          },
+                        ]}
+                      />
+                    </div>
+                    <div className="hidden gap-1 sm:flex">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditType(item)}
+                        aria-label={`Editar ${item.label}`}
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-danger hover:bg-danger/10 hover:text-danger"
+                        onClick={() => setDeletingType(item)}
+                        aria-label={`Excluir ${item.label}`}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="sm:hidden">
-                    <ActionMenu
-                      items={[
-                        { label: 'Editar', icon: <Pencil />, onClick: () => openEditType(item) },
-                        {
-                          label: 'Excluir',
-                          icon: <Trash2 />,
-                          tone: 'danger',
-                          onClick: () => setDeletingType(item),
-                        },
-                      ]}
-                    />
-                  </div>
-                  <div className="hidden gap-1 sm:flex">
+                  <h3 className="text-lg font-semibold text-ink">{item.label}</h3>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    {item.lessons} aula{item.lessons === 1 ? '' : 's'} · válidas por{' '}
+                    {creditValidityDays} dias
+                  </p>
+                  <p className="mt-4 text-2xl font-semibold tracking-tight text-ink">
+                    {formatCurrency(item.price)}
+                  </p>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    {formatCurrency(perLesson)} por aula
+                  </p>
+                  <div className="mt-auto pt-5">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditType(item)}
-                      aria-label={`Editar ${item.label}`}
+                      className="w-full"
+                      variant="secondary"
+                      onClick={() => openSell(item.value)}
                     >
-                      <Pencil />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-danger hover:bg-danger/10 hover:text-danger"
-                      onClick={() => setDeletingType(item)}
-                      aria-label={`Excluir ${item.label}`}
-                    >
-                      <Trash2 />
+                      Vender este
                     </Button>
                   </div>
-                </div>
-                <h3 className="text-lg font-semibold text-ink">{item.label}</h3>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {item.lessons} aula{item.lessons === 1 ? '' : 's'} · válidas por {creditValidityDays}{' '}
-                  dias
-                </p>
-                <p className="mt-4 text-2xl font-semibold tracking-tight text-ink">
-                  {formatCurrency(item.price)}
-                </p>
-                <p className="mt-1 text-xs text-ink-muted">{formatCurrency(perLesson)} por aula</p>
-                <div className="mt-auto pt-5">
-                  <Button className="w-full" variant="secondary" onClick={() => openSell(item.value)}>
-                    Vender este
-                  </Button>
-                </div>
-              </motion.li>
-            )
-          })}
-        </ul>
-      )}
+                </motion.li>
+              )
+            })}
+          </ul>
+        )}
       </section>
 
       <Modal

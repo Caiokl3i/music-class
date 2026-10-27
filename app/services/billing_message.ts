@@ -294,7 +294,10 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
     drawRoundedRect(doc, margin, metaTop, contentWidth, metaHeight, 8, PDF.surface)
 
     useFont(doc, fonts, 'regular')
-    doc.fillColor(PDF.muted).fontSize(9).text('ALUNO', margin + 16, metaTop + 12)
+    doc
+      .fillColor(PDF.muted)
+      .fontSize(9)
+      .text('ALUNO', margin + 16, metaTop + 12)
     useFont(doc, fonts, 'bold')
     doc
       .fillColor(PDF.ink)
@@ -384,7 +387,10 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
     doc.restore()
 
     useFont(doc, fonts, 'regular')
-    doc.fillColor(PDF.muted).fontSize(9).text('VALOR TOTAL', margin + 18, totalTop + 12)
+    doc
+      .fillColor(PDF.muted)
+      .fontSize(9)
+      .text('VALOR TOTAL', margin + 18, totalTop + 12)
     useFont(doc, fonts, 'bold')
     doc
       .fillColor(PDF.accent)
@@ -410,12 +416,13 @@ export async function buildBillingPdf(summary: BillingSummary): Promise<Buffer> 
 }
 
 export function billingFilename(summary: BillingSummary) {
-  const student = (summary.studentName ?? 'aluno')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase() || 'aluno'
+  const student =
+    (summary.studentName ?? 'aluno')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'aluno'
   const monthPart = summary.month ?? 'pacote'
   return `cobranca-${student}-${monthPart}.pdf`
 }

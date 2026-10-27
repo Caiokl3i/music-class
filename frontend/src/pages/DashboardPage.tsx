@@ -39,7 +39,12 @@ import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCatalog } from '@/contexts/CatalogContext'
 import { getErrorMessage } from '@/utils/errors'
-import { copyText, formatLessonReminder, formatTomorrowReminders, whatsappReminderUrl } from '@/domain/reminder'
+import {
+  copyText,
+  formatLessonReminder,
+  formatTomorrowReminders,
+  whatsappReminderUrl,
+} from '@/domain/reminder'
 import {
   APP_TIMEZONE,
   brazilTodayParts,
@@ -68,9 +73,7 @@ export function DashboardPage() {
     setLoading(true)
     setLoadError(null)
     try {
-      setData(
-        await dashboardService.getDashboard(APP_TIMEZONE),
-      )
+      setData(await dashboardService.getDashboard(APP_TIMEZONE))
     } catch (error) {
       const message = getErrorMessage(error)
       setLoadError(message)
@@ -166,12 +169,7 @@ export function DashboardPage() {
           onAction={() => void load()}
         />
       ) : (
-        <LoadedDashboard
-          data={data}
-          today={today}
-          labelFor={labelFor}
-          onStatus={setStatus}
-        />
+        <LoadedDashboard data={data} today={today} labelFor={labelFor} onStatus={setStatus} />
       )}
 
       <Modal
@@ -211,15 +209,10 @@ export function DashboardPage() {
       >
         <div className="space-y-3">
           <p className="text-sm text-ink-muted">
-            Escolha o mês. O CSV e o PDF trazem as aulas e os pacotes desse período — o PDF no
-            mesmo visual da cobrança.
+            Escolha o mês. O CSV e o PDF trazem as aulas e os pacotes desse período — o PDF no mesmo
+            visual da cobrança.
           </p>
-          <DateTimeField
-            label="Mês"
-            kind="month"
-            value={month}
-            onChange={setMonth}
-          />
+          <DateTimeField label="Mês" kind="month" value={month} onChange={setMonth} />
         </div>
       </Modal>
     </div>
@@ -411,7 +404,10 @@ function LoadedDashboard({
               const text = formatLessonReminder(lesson, 'Olá! Lembrete da aula de amanhã.')
               const wa = whatsappReminderUrl(lesson.studentPhone, text)
               return (
-                <li key={lesson.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <li
+                  key={lesson.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div className="min-w-0">
                     <Link
                       to={`/students/${lesson.studentId}`}
@@ -758,7 +754,12 @@ function LessonListRow({
         </Button>
       </div>
       <div className="flex items-center gap-2 sm:hidden">
-        <Button size="sm" variant="secondary" className="flex-1" onClick={() => onStatus(lesson, 'done')}>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="flex-1"
+          onClick={() => onStatus(lesson, 'done')}
+        >
           Concluir
         </Button>
         <ActionMenu

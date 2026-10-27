@@ -8,7 +8,18 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
 export class AuthAccessTokenSchema extends BaseModel {
-  static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
+  static $columns = [
+    'abilities',
+    'createdAt',
+    'expiresAt',
+    'hash',
+    'id',
+    'lastUsedAt',
+    'name',
+    'tokenableId',
+    'type',
+    'updatedAt',
+  ] as const
   $columns = AuthAccessTokenSchema.$columns
   @column()
   declare abilities: string
@@ -33,7 +44,18 @@ export class AuthAccessTokenSchema extends BaseModel {
 }
 
 export class LessonSchema extends BaseModel {
-  static $columns = ['createdAt', 'description', 'endsAt', 'id', 'planId', 'scheduledAt', 'status', 'studentId', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'createdAt',
+    'description',
+    'endsAt',
+    'id',
+    'planId',
+    'scheduledAt',
+    'status',
+    'studentId',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = LessonSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -58,7 +80,17 @@ export class LessonSchema extends BaseModel {
 }
 
 export class PlanDiscountSchema extends BaseModel {
-  static $columns = ['amount', 'createdAt', 'id', 'name', 'notes', 'planId', 'serviceAt', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'amount',
+    'createdAt',
+    'id',
+    'name',
+    'notes',
+    'planId',
+    'serviceAt',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = PlanDiscountSchema.$columns
   @column()
   declare amount: number
@@ -81,7 +113,17 @@ export class PlanDiscountSchema extends BaseModel {
 }
 
 export class PlanTypeSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'label', 'lessons', 'price', 'slug', 'sortOrder', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'createdAt',
+    'id',
+    'label',
+    'lessons',
+    'price',
+    'slug',
+    'sortOrder',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = PlanTypeSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -104,7 +146,20 @@ export class PlanTypeSchema extends BaseModel {
 }
 
 export class PlanSchema extends BaseModel {
-  static $columns = ['createdAt', 'expiresAt', 'id', 'lessonsTotal', 'notes', 'package', 'paidAt', 'price', 'status', 'studentId', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'createdAt',
+    'expiresAt',
+    'id',
+    'lessonsTotal',
+    'notes',
+    'package',
+    'paidAt',
+    'price',
+    'status',
+    'studentId',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = PlanSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -133,7 +188,23 @@ export class PlanSchema extends BaseModel {
 }
 
 export class StudentSchema extends BaseModel {
-  static $columns = ['archivedAt', 'birthdate', 'color', 'createdAt', 'description', 'id', 'instrument', 'level', 'name', 'phone', 'preferredTime', 'preferredWeekday', 'tags', 'updatedAt', 'userId'] as const
+  static $columns = [
+    'archivedAt',
+    'birthdate',
+    'color',
+    'createdAt',
+    'description',
+    'id',
+    'instrument',
+    'level',
+    'name',
+    'phone',
+    'preferredTime',
+    'preferredWeekday',
+    'tags',
+    'updatedAt',
+    'userId',
+  ] as const
   $columns = StudentSchema.$columns
   @column.dateTime()
   declare archivedAt: DateTime | null
@@ -168,7 +239,19 @@ export class StudentSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['bio', 'city', 'createdAt', 'email', 'fullName', 'id', 'instruments', 'password', 'phone', 'studioName', 'updatedAt'] as const
+  static $columns = [
+    'bio',
+    'city',
+    'createdAt',
+    'email',
+    'fullName',
+    'id',
+    'instruments',
+    'password',
+    'phone',
+    'studioName',
+    'updatedAt',
+  ] as const
   $columns = UserSchema.$columns
   @column()
   declare bio: string | null

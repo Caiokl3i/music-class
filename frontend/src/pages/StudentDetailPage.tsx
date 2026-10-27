@@ -50,7 +50,11 @@ import { EmptyState } from '@/components/EmptyState'
 import { LessonStatusBadge, PlanStatusBadge } from '@/components/StatusBadges'
 import { StudentLevelBadge } from '@/components/StudentLevelBadge'
 import { GenerateLessonsModal } from '@/components/GenerateLessonsModal'
-import { StudentFormFields, studentFormSchema, type StudentFormValues } from '@/components/StudentFormFields'
+import {
+  StudentFormFields,
+  studentFormSchema,
+  type StudentFormValues,
+} from '@/components/StudentFormFields'
 import { BillingModal } from '@/components/BillingModal'
 import { PlanDiscountModal } from '@/components/PlanDiscountModal'
 import { CreditBar } from '@/components/CreditBar'
@@ -163,7 +167,7 @@ export function StudentDetailPage() {
   } | null>(null)
   const [deletingDiscountLoading, setDeletingDiscountLoading] = useState(false)
   const [planAction, setPlanAction] = useState<{ plan: Plan; type: 'cancel' | 'delete' } | null>(
-    null,
+    null
   )
   const [planActionLoading, setPlanActionLoading] = useState(false)
   const [archiving, setArchiving] = useState(false)
@@ -172,7 +176,13 @@ export function StudentDetailPage() {
 
   const lessonForm = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
-    defaultValues: { planId: '', scheduledAt: '', endsAt: '', status: 'scheduled', description: '' },
+    defaultValues: {
+      planId: '',
+      scheduledAt: '',
+      endsAt: '',
+      status: 'scheduled',
+      description: '',
+    },
   })
 
   const repositionForm = useForm<RepositionFormValues>({
@@ -194,16 +204,16 @@ export function StudentDetailPage() {
   const selectedPackage = planForm.watch('package') as PlanPackage
   const availablePlans = useMemo(
     () => bookablePlans(plans, editingLesson?.planId),
-    [plans, editingLesson],
+    [plans, editingLesson]
   )
 
   const upcomingLessons = useMemo(
     () => lessons.filter((lesson) => lesson.status === 'scheduled'),
-    [lessons],
+    [lessons]
   )
   const pastLessons = useMemo(
     () => lessons.filter((lesson) => lesson.status !== 'scheduled'),
-    [lessons],
+    [lessons]
   )
 
   const load = useCallback(async () => {
@@ -383,7 +393,8 @@ export function StudentDetailPage() {
     } catch (error) {
       const fields = getFieldErrors(error)
       Object.entries(fields).forEach(([field, message]) => {
-        if (field in values) repositionForm.setError(field as keyof RepositionFormValues, { message })
+        if (field in values)
+          repositionForm.setError(field as keyof RepositionFormValues, { message })
       })
       toast.error(getErrorMessage(error))
     } finally {
@@ -473,10 +484,7 @@ export function StudentDetailPage() {
     if (!deletingDiscount) return
     setDeletingDiscountLoading(true)
     try {
-      await plansService.deletePlanDiscount(
-        deletingDiscount.plan.id,
-        deletingDiscount.discount.id,
-      )
+      await plansService.deletePlanDiscount(deletingDiscount.plan.id, deletingDiscount.discount.id)
       toast.success('Desconto removido.')
       setDeletingDiscount(null)
       await load()
@@ -547,7 +555,12 @@ export function StudentDetailPage() {
 
   return (
     <div>
-      <Button variant="ghost" size="sm" className="mb-4 -ml-2" onClick={() => navigate('/students')}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mb-4 -ml-2"
+        onClick={() => navigate('/students')}
+      >
         <ArrowLeft className="size-4" />
         Alunos
       </Button>
@@ -689,7 +702,9 @@ export function StudentDetailPage() {
             }
           />
           {plans.length === 0 ? (
-            <p className="text-sm text-ink-muted">Nenhum pacote ainda. Crie um para agendar aulas.</p>
+            <p className="text-sm text-ink-muted">
+              Nenhum pacote ainda. Crie um para agendar aulas.
+            </p>
           ) : (
             <ul className="space-y-3">
               {plans.map((plan) => {
@@ -749,160 +764,174 @@ export function StudentDetailPage() {
                           className="overflow-hidden"
                         >
                           <div className="mt-3 space-y-2 border-t border-border pt-3">
-                        {expired && plan.lessonsRemaining > 0 ? (
-                          <p className="text-xs text-warning">
-                            Pacote vencido. Não agenda mais aulas novas.
-                          </p>
-                        ) : null}
-                        {!expired && plan.lessonsRemaining === 1 && planHoldsCredits(plan) ? (
-                          <p className="text-xs text-warning">Resta 1 aula a fazer.</p>
-                        ) : null}
-                        {plan.paidAt ? (
-                          <p className="text-xs text-ink-muted">
-                            Pago em {formatDateTime(plan.paidAt)}
-                          </p>
-                        ) : null}
-                        {plan.notes ? (
-                          <p className="text-sm text-ink-muted whitespace-pre-wrap">{plan.notes}</p>
-                        ) : null}
+                            {expired && plan.lessonsRemaining > 0 ? (
+                              <p className="text-xs text-warning">
+                                Pacote vencido. Não agenda mais aulas novas.
+                              </p>
+                            ) : null}
+                            {!expired && plan.lessonsRemaining === 1 && planHoldsCredits(plan) ? (
+                              <p className="text-xs text-warning">Resta 1 aula a fazer.</p>
+                            ) : null}
+                            {plan.paidAt ? (
+                              <p className="text-xs text-ink-muted">
+                                Pago em {formatDateTime(plan.paidAt)}
+                              </p>
+                            ) : null}
+                            {plan.notes ? (
+                              <p className="text-sm text-ink-muted whitespace-pre-wrap">
+                                {plan.notes}
+                              </p>
+                            ) : null}
 
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-medium text-ink">Descontos de troca</p>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setDiscountPlan(plan)
-                                setEditingDiscount(null)
-                              }}
-                            >
-                              <Plus className="size-4" aria-hidden />
-                              Adicionar
-                            </Button>
-                          </div>
-                          {(plan.discounts ?? []).length === 0 ? (
-                            <p className="text-xs text-ink-muted">Nenhum desconto neste pacote.</p>
-                          ) : (
-                            <ul className="space-y-1.5">
-                              {(plan.discounts ?? []).map((discount) => (
-                                <li
-                                  key={discount.id}
-                                  className="flex items-start justify-between gap-2 rounded-md border border-border bg-surface-muted px-2.5 py-2 text-sm"
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-xs font-medium text-ink">Descontos de troca</p>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setDiscountPlan(plan)
+                                    setEditingDiscount(null)
+                                  }}
                                 >
-                                  <div className="min-w-0">
-                                    <p className="font-medium text-ink">{discount.name}</p>
-                                    <p className="text-xs text-ink-muted">
-                                      {formatCurrency(Number(discount.amount))}
-                                      {discount.serviceAt
-                                        ? ` · ${formatDate(discount.serviceAt)}`
-                                        : ''}
-                                    </p>
-                                  </div>
-                                  <span className="flex shrink-0 gap-1">
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      aria-label="Editar desconto"
-                                      onClick={() => {
-                                        setDiscountPlan(plan)
-                                        setEditingDiscount(discount)
-                                      }}
+                                  <Plus className="size-4" aria-hidden />
+                                  Adicionar
+                                </Button>
+                              </div>
+                              {(plan.discounts ?? []).length === 0 ? (
+                                <p className="text-xs text-ink-muted">
+                                  Nenhum desconto neste pacote.
+                                </p>
+                              ) : (
+                                <ul className="space-y-1.5">
+                                  {(plan.discounts ?? []).map((discount) => (
+                                    <li
+                                      key={discount.id}
+                                      className="flex items-start justify-between gap-2 rounded-md border border-border bg-surface-muted px-2.5 py-2 text-sm"
                                     >
-                                      <Pencil className="size-3.5" aria-hidden />
-                                    </Button>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      aria-label="Remover desconto"
-                                      onClick={() => setDeletingDiscount({ plan, discount })}
-                                    >
-                                      <Trash2 className="size-3.5" aria-hidden />
-                                    </Button>
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-ink">{discount.name}</p>
+                                        <p className="text-xs text-ink-muted">
+                                          {formatCurrency(Number(discount.amount))}
+                                          {discount.serviceAt
+                                            ? ` · ${formatDate(discount.serviceAt)}`
+                                            : ''}
+                                        </p>
+                                      </div>
+                                      <span className="flex shrink-0 gap-1">
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          aria-label="Editar desconto"
+                                          onClick={() => {
+                                            setDiscountPlan(plan)
+                                            setEditingDiscount(discount)
+                                          }}
+                                        >
+                                          <Pencil className="size-3.5" aria-hidden />
+                                        </Button>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          aria-label="Remover desconto"
+                                          onClick={() => setDeletingDiscount({ plan, discount })}
+                                        >
+                                          <Trash2 className="size-3.5" aria-hidden />
+                                        </Button>
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              {(plan.discountTotal ?? 0) > 0 ? (
+                                <p className="text-xs text-ink-muted">
+                                  Pacote {formatCurrency(Number(plan.price))} − descontos{' '}
+                                  {formatCurrency(Number(plan.discountTotal))} ={' '}
+                                  <span className="font-medium text-ink">
+                                    {formatCurrency(Number(plan.netPrice))}
                                   </span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          {(plan.discountTotal ?? 0) > 0 ? (
-                            <p className="text-xs text-ink-muted">
-                              Pacote {formatCurrency(Number(plan.price))} − descontos{' '}
-                              {formatCurrency(Number(plan.discountTotal))} ={' '}
-                              <span className="font-medium text-ink">
-                                {formatCurrency(Number(plan.netPrice))}
-                              </span>
-                            </p>
-                          ) : null}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          <Button size="sm" variant="secondary" onClick={() => setBillingPlan(plan)}>
-                            Gerar cobrança
-                          </Button>
-                          {canMarkPaid ? (
-                            <Button size="sm" variant="secondary" onClick={() => markPaid(plan)}>
-                              Marcar pago
-                            </Button>
-                          ) : null}
-                          {canGenerate ? (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => setGeneratingPlan(plan)}
-                            >
-                              Gerar aulas
-                            </Button>
-                          ) : null}
-                          <div className="hidden sm:contents">
-                            {allowCancel ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-danger hover:bg-danger/10 hover:text-danger"
-                                onClick={() => setPlanAction({ plan, type: 'cancel' })}
-                              >
-                                Cancelar pacote
-                              </Button>
-                            ) : null}
-                            {allowDelete ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-danger hover:bg-danger/10 hover:text-danger"
-                                onClick={() => setPlanAction({ plan, type: 'delete' })}
-                              >
-                                Apagar pacote
-                              </Button>
-                            ) : null}
-                          </div>
-                          {allowCancel || allowDelete ? (
-                            <div className="sm:hidden">
-                              <ActionMenu
-                                items={[
-                                  allowCancel
-                                    ? {
-                                        label: 'Cancelar pacote',
-                                        tone: 'danger' as const,
-                                        onClick: () => setPlanAction({ plan, type: 'cancel' }),
-                                      }
-                                    : null,
-                                  allowDelete
-                                    ? {
-                                        label: 'Apagar pacote',
-                                        tone: 'danger' as const,
-                                        onClick: () => setPlanAction({ plan, type: 'delete' }),
-                                      }
-                                    : null,
-                                ].filter((item): item is NonNullable<typeof item> => item !== null)}
-                              />
+                                </p>
+                              ) : null}
                             </div>
-                          ) : null}
-                        </div>
-                        {blockedByActiveLessons ? (
-                          <p className="text-xs text-ink-muted">
-                            Para cancelar este pacote, cancele antes todas as aulas dele.
-                          </p>
-                        ) : null}
+
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => setBillingPlan(plan)}
+                              >
+                                Gerar cobrança
+                              </Button>
+                              {canMarkPaid ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => markPaid(plan)}
+                                >
+                                  Marcar pago
+                                </Button>
+                              ) : null}
+                              {canGenerate ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => setGeneratingPlan(plan)}
+                                >
+                                  Gerar aulas
+                                </Button>
+                              ) : null}
+                              <div className="hidden sm:contents">
+                                {allowCancel ? (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-danger hover:bg-danger/10 hover:text-danger"
+                                    onClick={() => setPlanAction({ plan, type: 'cancel' })}
+                                  >
+                                    Cancelar pacote
+                                  </Button>
+                                ) : null}
+                                {allowDelete ? (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-danger hover:bg-danger/10 hover:text-danger"
+                                    onClick={() => setPlanAction({ plan, type: 'delete' })}
+                                  >
+                                    Apagar pacote
+                                  </Button>
+                                ) : null}
+                              </div>
+                              {allowCancel || allowDelete ? (
+                                <div className="sm:hidden">
+                                  <ActionMenu
+                                    items={[
+                                      allowCancel
+                                        ? {
+                                            label: 'Cancelar pacote',
+                                            tone: 'danger' as const,
+                                            onClick: () => setPlanAction({ plan, type: 'cancel' }),
+                                          }
+                                        : null,
+                                      allowDelete
+                                        ? {
+                                            label: 'Apagar pacote',
+                                            tone: 'danger' as const,
+                                            onClick: () => setPlanAction({ plan, type: 'delete' }),
+                                          }
+                                        : null,
+                                    ].filter(
+                                      (item): item is NonNullable<typeof item> => item !== null
+                                    )}
+                                  />
+                                </div>
+                              ) : null}
+                            </div>
+                            {blockedByActiveLessons ? (
+                              <p className="text-xs text-ink-muted">
+                                Para cancelar este pacote, cancele antes todas as aulas dele.
+                              </p>
+                            ) : null}
                           </div>
                         </motion.div>
                       ) : null}
@@ -983,7 +1012,11 @@ export function StudentDetailPage() {
         onClose={() => setLessonModalOpen(false)}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setLessonModalOpen(false)} disabled={savingLesson}>
+            <Button
+              variant="secondary"
+              onClick={() => setLessonModalOpen(false)}
+              disabled={savingLesson}
+            >
               Fechar
             </Button>
             <Button loading={savingLesson} onClick={lessonForm.handleSubmit(onSubmitLesson)}>
@@ -1016,9 +1049,9 @@ export function StudentDetailPage() {
                     previousStart.current,
                     lessonForm.getValues('endsAt'),
                     next,
-                    lessonDurationMinutes,
+                    lessonDurationMinutes
                   ),
-                  { shouldValidate: true },
+                  { shouldValidate: true }
                 )
                 previousStart.current = next
               }}
@@ -1070,7 +1103,10 @@ export function StudentDetailPage() {
             >
               Fechar
             </Button>
-            <Button loading={savingReposition} onClick={repositionForm.handleSubmit(onSubmitReposition)}>
+            <Button
+              loading={savingReposition}
+              onClick={repositionForm.handleSubmit(onSubmitReposition)}
+            >
               Salvar
             </Button>
           </>
@@ -1090,9 +1126,9 @@ export function StudentDetailPage() {
                     repositionStart.current,
                     repositionForm.getValues('endsAt'),
                     next,
-                    lessonDurationMinutes,
+                    lessonDurationMinutes
                   ),
-                  { shouldValidate: true },
+                  { shouldValidate: true }
                 )
                 repositionStart.current = next
               }}
@@ -1120,7 +1156,11 @@ export function StudentDetailPage() {
         onClose={() => setPlanModalOpen(false)}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setPlanModalOpen(false)} disabled={savingPlan}>
+            <Button
+              variant="secondary"
+              onClick={() => setPlanModalOpen(false)}
+              disabled={savingPlan}
+            >
               Fechar
             </Button>
             <Button loading={savingPlan} onClick={planForm.handleSubmit(onSubmitPlan)}>
@@ -1170,7 +1210,11 @@ export function StudentDetailPage() {
         onClose={() => setStudentModalOpen(false)}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setStudentModalOpen(false)} disabled={savingStudent}>
+            <Button
+              variant="secondary"
+              onClick={() => setStudentModalOpen(false)}
+              disabled={savingStudent}
+            >
               Fechar
             </Button>
             <Button loading={savingStudent} onClick={studentForm.handleSubmit(onSubmitStudent)}>
@@ -1351,11 +1395,21 @@ function LessonItem({
       </div>
       <div className="flex items-center gap-2 sm:hidden">
         {scheduled && onComplete ? (
-          <Button size="sm" variant="secondary" className="flex-1" onClick={() => onComplete(lesson)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="flex-1"
+            onClick={() => onComplete(lesson)}
+          >
             Concluir
           </Button>
         ) : lesson.status === 'no_show' && onReposition ? (
-          <Button size="sm" variant="secondary" className="flex-1" onClick={() => onReposition(lesson)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="flex-1"
+            onClick={() => onReposition(lesson)}
+          >
             Reposição
           </Button>
         ) : null}
@@ -1365,7 +1419,12 @@ function LessonItem({
             scheduled && onCancel ? { label: 'Cancelar', onClick: () => onCancel(lesson) } : null,
             onEdit ? { label: 'Editar', icon: <Pencil />, onClick: () => onEdit(lesson) } : null,
             onDelete
-              ? { label: 'Excluir', icon: <Trash2 />, tone: 'danger' as const, onClick: () => onDelete(lesson) }
+              ? {
+                  label: 'Excluir',
+                  icon: <Trash2 />,
+                  tone: 'danger' as const,
+                  onClick: () => onDelete(lesson),
+                }
               : null,
           ].filter((item): item is NonNullable<typeof item> => item !== null)}
         />

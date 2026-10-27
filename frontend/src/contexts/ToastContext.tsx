@@ -1,15 +1,7 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { CheckCircle2, AlertCircle, X } from 'lucide-react'
 import { toastMotion } from '@/utils/motion'
-
 
 type ToastKind = 'success' | 'error'
 
@@ -41,7 +33,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       setToasts((current) => [...current, { id, kind, message }])
       window.setTimeout(() => remove(id), 4200)
     },
-    [remove],
+    [remove]
   )
 
   const value = useMemo(
@@ -49,7 +41,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       success: (message: string) => push('success', message),
       error: (message: string) => push('error', message),
     }),
-    [push],
+    [push]
   )
 
   return (

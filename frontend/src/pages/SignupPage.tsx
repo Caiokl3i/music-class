@@ -63,9 +63,7 @@ export function SignupPage() {
   return (
     <div>
       <h1 className="text-center text-2xl font-bold text-ink">Criar conta</h1>
-      <p className="mt-1 text-center text-sm text-ink-muted">
-        Cadastro só com código de convite
-      </p>
+      <p className="mt-1 text-center text-sm text-ink-muted">Cadastro só com código de convite</p>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Input
           label="Nome completo"

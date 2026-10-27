@@ -233,10 +233,7 @@ export function ProfilePage() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav
-          className="grid grid-cols-3 gap-2 lg:flex lg:flex-col"
-          aria-label="Seções do perfil"
-        >
+        <nav className="grid grid-cols-3 gap-2 lg:flex lg:flex-col" aria-label="Seções do perfil">
           {SECTIONS.map((item) => {
             const active = section === item.id
             const Icon = item.icon
@@ -254,7 +251,9 @@ export function ProfilePage() {
                 <Icon className="size-4 shrink-0 lg:mt-0.5" aria-hidden />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">{item.label}</span>
-                  <span className="mt-0.5 hidden text-xs opacity-80 lg:block">{item.description}</span>
+                  <span className="mt-0.5 hidden text-xs opacity-80 lg:block">
+                    {item.description}
+                  </span>
                 </span>
               </button>
             )
@@ -333,7 +332,9 @@ export function ProfilePage() {
             <div className="space-y-5">
               <header className="space-y-1">
                 <h2 className="text-lg font-semibold text-ink">Preferências</h2>
-                <p className="text-sm text-ink-muted">Ajuste a aparência do Music Class neste dispositivo.</p>
+                <p className="text-sm text-ink-muted">
+                  Ajuste a aparência do Music Class neste dispositivo.
+                </p>
               </header>
 
               <fieldset>

@@ -17,8 +17,8 @@ npm install
 
 ## Variáveis de ambiente
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
+| Variável       | Descrição                         | Exemplo                 |
+| -------------- | --------------------------------- | ----------------------- |
 | `VITE_API_URL` | URL base da API **sem** `/api/v1` | `http://localhost:3333` |
 
 O cliente HTTP usa `${VITE_API_URL}/api/v1`.
@@ -42,11 +42,11 @@ Abra `http://localhost:5173`.
 
 ## Scripts
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Servidor Vite |
-| `npm run build` | Typecheck + build de produção |
-| `npm run preview` | Preview do build |
+| Comando           | Descrição                     |
+| ----------------- | ----------------------------- |
+| `npm run dev`     | Servidor Vite                 |
+| `npm run build`   | Typecheck + build de produção |
+| `npm run preview` | Preview do build              |
 
 ## Estrutura
 

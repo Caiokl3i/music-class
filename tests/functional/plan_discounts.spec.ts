@@ -10,14 +10,11 @@ test.group('Plan discounts and billing', (group) => {
   test('creates updates and deletes a named discount on a plan', async ({ assert, client }) => {
     const { teacher, plan } = await createTeacherWithPlan({ planStatus: 'pending' })
 
-    const created = await client
-      .post(`/api/v1/plans/${plan.id}/discounts`)
-      .loginAs(teacher)
-      .json({
-        name: 'Desconto sobrancelhas',
-        amount: 25,
-        serviceAt: '2026-02-14',
-      })
+    const created = await client.post(`/api/v1/plans/${plan.id}/discounts`).loginAs(teacher).json({
+      name: 'Desconto sobrancelhas',
+      amount: 25,
+      serviceAt: '2026-02-14',
+    })
 
     created.assertStatus(201)
     created.assertBodyContains({
@@ -49,7 +46,13 @@ test.group('Plan discounts and billing', (group) => {
       .delete(`/api/v1/plans/${plan.id}/discounts/${discountId}`)
       .loginAs(teacher)
     deleted.assertStatus(204)
-    assert.equal(await PlanDiscount.query().where('id', discountId).count('* as total').then((rows) => Number(rows[0].$extras.total)), 0)
+    assert.equal(
+      await PlanDiscount.query()
+        .where('id', discountId)
+        .count('* as total')
+        .then((rows) => Number(rows[0].$extras.total)),
+      0
+    )
   })
 
   test('rejects discount on another teacher plan', async ({ client }) => {
@@ -95,14 +98,19 @@ test.group('Plan discounts and billing', (group) => {
       },
     ])
 
-    await teacher.related('plans').query().where('id', plan.id).firstOrFail().then((owned) =>
-      owned.related('discounts').create({
-        userId: teacher.id,
-        name: 'Desconto sobrancelhas',
-        amount: 25,
-        serviceAt: DateTime.fromISO('2026-02-14'),
-      })
-    )
+    await teacher
+      .related('plans')
+      .query()
+      .where('id', plan.id)
+      .firstOrFail()
+      .then((owned) =>
+        owned.related('discounts').create({
+          userId: teacher.id,
+          name: 'Desconto sobrancelhas',
+          amount: 25,
+          serviceAt: DateTime.fromISO('2026-02-14'),
+        })
+      )
 
     // Override price to match the WhatsApp example math: 2 × 27.50 = 55
     plan.price = 110

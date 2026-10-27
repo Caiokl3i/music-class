@@ -15,7 +15,11 @@ import { Skeleton } from '@/components/Skeleton'
 import { StudentLevelBadge } from '@/components/StudentLevelBadge'
 import { ActionMenu } from '@/components/ActionMenu'
 import { SegmentedControl } from '@/components/SegmentedControl'
-import { StudentFormFields, studentFormSchema, type StudentFormValues } from '@/components/StudentFormFields'
+import {
+  StudentFormFields,
+  studentFormSchema,
+  type StudentFormValues,
+} from '@/components/StudentFormFields'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage, getFieldErrors } from '@/utils/errors'
 import { ageFromBirthdate } from '@/utils/format'
@@ -306,7 +310,9 @@ export function StudentsPage() {
                       )}
                     </td>
                     <td className="px-5 py-3 text-center text-ink-muted">{student.instrument}</td>
-                    <td className="px-5 py-3 text-center">{creditsCell(student.creditsRemaining)}</td>
+                    <td className="px-5 py-3 text-center">
+                      {creditsCell(student.creditsRemaining)}
+                    </td>
                     <td className="px-5 py-3" onClick={(event) => event.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <Button

@@ -62,16 +62,19 @@ export default class StudentsController {
   }
 
   private studentsQuery(user: User) {
-    return user.related('students').query().preload('plans', (plans) => {
-      plans
-        .whereNot('status', 'cancelled')
-        .withCount('lessons', (query) => {
-          query.where('status', 'done').as('done_lessons_count')
-        })
-        .withCount('lessons', (query) => {
-          query.whereNot('status', 'cancelled').as('active_lessons_count')
-        })
-    })
+    return user
+      .related('students')
+      .query()
+      .preload('plans', (plans) => {
+        plans
+          .whereNot('status', 'cancelled')
+          .withCount('lessons', (query) => {
+            query.where('status', 'done').as('done_lessons_count')
+          })
+          .withCount('lessons', (query) => {
+            query.whereNot('status', 'cancelled').as('active_lessons_count')
+          })
+      })
   }
 
   private findOwnedStudent(user: User, id: number | string) {

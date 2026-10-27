@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  STUDENT_COLOR_PRESETS,
-  isHexColor,
-  resolveStudentHex,
-} from '@/domain/student'
+import { STUDENT_COLOR_PRESETS, isHexColor, resolveStudentHex } from '@/domain/student'
 
 type StudentColorPickerProps = {
   value: string
@@ -87,7 +83,9 @@ export function StudentColorPicker({ value, onChange, error }: StudentColorPicke
           />
           <span className="text-sm text-ink">
             <span className="font-medium">Escolher cor</span>
-            <span className="mt-0.5 block font-mono text-xs text-ink-muted uppercase">{preview}</span>
+            <span className="mt-0.5 block font-mono text-xs text-ink-muted uppercase">
+              {preview}
+            </span>
           </span>
           <input
             type="color"

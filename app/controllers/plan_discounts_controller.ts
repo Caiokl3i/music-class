@@ -1,8 +1,5 @@
 import PlanDiscountTransformer from '#transformers/plan_discount_transformer'
-import {
-  createPlanDiscountValidator,
-  updatePlanDiscountValidator,
-} from '#validators/plan_discount'
+import { createPlanDiscountValidator, updatePlanDiscountValidator } from '#validators/plan_discount'
 import { logSecurityEvent } from '#services/security_log'
 import type { HttpContext } from '@adonisjs/core/http'
 import type User from '#models/user'

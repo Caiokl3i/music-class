@@ -38,7 +38,12 @@ export function StudentFormFields({
 }) {
   return (
     <div className="space-y-4">
-      <Input label="Nome" placeholder="Ana Souza" error={errors.name?.message} {...register('name')} />
+      <Input
+        label="Nome"
+        placeholder="Ana Souza"
+        error={errors.name?.message}
+        {...register('name')}
+      />
       <Input
         label="Instrumento"
         placeholder="piano"

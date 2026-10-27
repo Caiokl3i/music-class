@@ -117,7 +117,12 @@ export default class DemoSeeder extends BaseSeeder {
       { days: -21, hour: 9, status: 'done' },
       { days: -14, hour: 9, status: 'done' },
       { days: -7, hour: 9, status: 'done', description: 'Solo da música nova.' },
-      { days: 0, hour: 9, status: 'scheduled', description: 'Fechar o pacote e conversar o próximo.' },
+      {
+        days: 0,
+        hour: 9,
+        status: 'scheduled',
+        description: 'Fechar o pacote e conversar o próximo.',
+      },
     ])
 
     const clara = await this.student(teacher, {
@@ -174,9 +179,16 @@ export default class DemoSeeder extends BaseSeeder {
       preferredWeekday: 5,
       preferredTime: '11:00',
     })
-    const elenaExpired = await this.plan(teacher, elena, 'pack_4', 'paid', now.minus({ days: 75 }), {
-      notes: 'Pacote vencido com crédito parado.',
-    })
+    const elenaExpired = await this.plan(
+      teacher,
+      elena,
+      'pack_4',
+      'paid',
+      now.minus({ days: 75 }),
+      {
+        notes: 'Pacote vencido com crédito parado.',
+      }
+    )
     await this.lessons(teacher, elena, elenaExpired, [
       { days: -70, hour: 11, status: 'done' },
       { days: -63, hour: 11, status: 'done' },
@@ -198,15 +210,29 @@ export default class DemoSeeder extends BaseSeeder {
       preferredWeekday: 3,
       preferredTime: '10:00',
     })
-    const felipeCancelled = await this.plan(teacher, felipe, 'pack_4', 'cancelled', now.minus({ days: 90 }), {
-      notes: 'Cancelado — mudou de cidade por um tempo.',
-    })
+    const felipeCancelled = await this.plan(
+      teacher,
+      felipe,
+      'pack_4',
+      'cancelled',
+      now.minus({ days: 90 }),
+      {
+        notes: 'Cancelado — mudou de cidade por um tempo.',
+      }
+    )
     await this.lessons(teacher, felipe, felipeCancelled, [
       { days: -80, hour: 10, status: 'cancelled', description: 'Não chegou a começar.' },
     ])
-    const felipeAvulsa = await this.plan(teacher, felipe, 'single', 'paid', now.minus({ days: 1 }), {
-      notes: 'Primeira aula da volta.',
-    })
+    const felipeAvulsa = await this.plan(
+      teacher,
+      felipe,
+      'single',
+      'paid',
+      now.minus({ days: 1 }),
+      {
+        notes: 'Primeira aula da volta.',
+      }
+    )
     await this.lessons(teacher, felipe, felipeAvulsa, [
       { days: 1, hour: 10, status: 'scheduled', description: 'Relembrar walking bass.' },
     ])
@@ -223,9 +249,16 @@ export default class DemoSeeder extends BaseSeeder {
       preferredWeekday: 1,
       preferredTime: '18:00',
     })
-    const gabrielaPack = await this.plan(teacher, gabriela, 'pack_4', 'paid', now.minus({ days: 40 }), {
-      notes: 'Uma aula cancelada — ainda tem 1 crédito.',
-    })
+    const gabrielaPack = await this.plan(
+      teacher,
+      gabriela,
+      'pack_4',
+      'paid',
+      now.minus({ days: 40 }),
+      {
+        notes: 'Uma aula cancelada — ainda tem 1 crédito.',
+      }
+    )
     await this.lessons(teacher, gabriela, gabrielaPack, [
       { days: -28, hour: 18, status: 'done' },
       { days: -21, hour: 18, status: 'done' },

@@ -17,9 +17,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 function safeInternalPath(value: unknown) {
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
-    ? value
-    : '/'
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/'
 }
 
 export function LoginPage() {

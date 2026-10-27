@@ -36,7 +36,13 @@ function parseValue(value: string | undefined, kind: FieldKind): Parts | null {
     const match = /^(\d{2}):(\d{2})/.exec(value)
     if (!match) return null
     const today = brazilTodayParts()
-    return { year: today.year, month: today.month, day: today.day, hour: Number(match[1]), minute: Number(match[2]) }
+    return {
+      year: today.year,
+      month: today.month,
+      day: today.day,
+      hour: Number(match[1]),
+      minute: Number(match[2]),
+    }
   }
   if (kind === 'month') {
     const match = /^(\d{4})-(\d{2})/.exec(value)
@@ -119,7 +125,9 @@ export function DateTimeField({
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
-  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 640
+  )
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({})
   const selected = parseValue(value, kind)
   const [cursor, setCursor] = useState(() => selected ?? todayParts())
@@ -149,7 +157,10 @@ export function DateTimeField({
       const anchor = rootRef.current
       if (!anchor) return
       const rect = anchor.getBoundingClientRect()
-      const width = Math.min(kind === 'datetime' ? 360 : kind === 'time' ? 220 : 288, window.innerWidth - 24)
+      const width = Math.min(
+        kind === 'datetime' ? 360 : kind === 'time' ? 220 : 288,
+        window.innerWidth - 24
+      )
       const left = Math.min(rect.left, window.innerWidth - width - 12)
       const below = rect.bottom + 8
       const top = below + 340 > window.innerHeight ? Math.max(12, rect.top - 348) : below
@@ -207,7 +218,12 @@ export function DateTimeField({
   }
 
   function pickDay(day: number) {
-    commit({ ...cursor, day, hour: selected?.hour ?? cursor.hour, minute: selected?.minute ?? cursor.minute })
+    commit({
+      ...cursor,
+      day,
+      hour: selected?.hour ?? cursor.hour,
+      minute: selected?.minute ?? cursor.minute,
+    })
   }
 
   return (
@@ -248,62 +264,21 @@ export function DateTimeField({
                   onClick={() => setOpen(false)}
                 />
               ) : null}
-            <motion.div
-              ref={panelRef}
-              style={panelStyle}
-              {...popoverMotion}
-              className={`overflow-y-auto border border-border bg-surface-raised p-4 shadow-lg shadow-black/10 ${
-                narrow ? 'safe-bottom rounded-t-lg' : 'rounded-lg p-3'
-              }`}
-              role="dialog"
-              aria-label={label}
-            >
-              <div className={showCalendar && showTime ? 'grid gap-3 sm:grid-cols-[1fr_auto]' : ''}>
-                {showMonth ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
-                      onClick={() =>
-                        setCursor((current) =>
-                          current.month === 1
-                            ? { ...current, year: current.year - 1, month: 12 }
-                            : { ...current, month: current.month - 1 },
-                        )
-                      }
-                      aria-label="Mês anterior"
-                    >
-                      <ChevronLeft className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-md px-3 py-2 text-sm font-semibold capitalize text-ink transition-colors hover:bg-accent-soft hover:text-accent"
-                      onClick={() => {
-                        commit({ ...cursor, day: 1 })
-                        setOpen(false)
-                      }}
-                    >
-                      {format(new Date(cursor.year, cursor.month - 1, 1), 'MMMM yyyy', { locale: ptBR })}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
-                      onClick={() =>
-                        setCursor((current) =>
-                          current.month === 12
-                            ? { ...current, year: current.year + 1, month: 1 }
-                            : { ...current, month: current.month + 1 },
-                        )
-                      }
-                      aria-label="Próximo mês"
-                    >
-                      <ChevronRight className="size-4" />
-                    </button>
-                  </div>
-                ) : null}
-                {showCalendar ? (
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
+              <motion.div
+                ref={panelRef}
+                style={panelStyle}
+                {...popoverMotion}
+                className={`overflow-y-auto border border-border bg-surface-raised p-4 shadow-lg shadow-black/10 ${
+                  narrow ? 'safe-bottom rounded-t-lg' : 'rounded-lg p-3'
+                }`}
+                role="dialog"
+                aria-label={label}
+              >
+                <div
+                  className={showCalendar && showTime ? 'grid gap-3 sm:grid-cols-[1fr_auto]' : ''}
+                >
+                  {showMonth ? (
+                    <div className="flex items-center justify-between gap-2">
                       <button
                         type="button"
                         className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
@@ -311,16 +286,25 @@ export function DateTimeField({
                           setCursor((current) =>
                             current.month === 1
                               ? { ...current, year: current.year - 1, month: 12 }
-                              : { ...current, month: current.month - 1 },
+                              : { ...current, month: current.month - 1 }
                           )
                         }
                         aria-label="Mês anterior"
                       >
                         <ChevronLeft className="size-4" />
                       </button>
-                      <p className="text-sm font-semibold capitalize text-ink">
-                        {format(new Date(cursor.year, cursor.month - 1, 1), 'MMMM yyyy', { locale: ptBR })}
-                      </p>
+                      <button
+                        type="button"
+                        className="rounded-md px-3 py-2 text-sm font-semibold capitalize text-ink transition-colors hover:bg-accent-soft hover:text-accent"
+                        onClick={() => {
+                          commit({ ...cursor, day: 1 })
+                          setOpen(false)
+                        }}
+                      >
+                        {format(new Date(cursor.year, cursor.month - 1, 1), 'MMMM yyyy', {
+                          locale: ptBR,
+                        })}
+                      </button>
                       <button
                         type="button"
                         className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
@@ -328,7 +312,7 @@ export function DateTimeField({
                           setCursor((current) =>
                             current.month === 12
                               ? { ...current, year: current.year + 1, month: 1 }
-                              : { ...current, month: current.month + 1 },
+                              : { ...current, month: current.month + 1 }
                           )
                         }
                         aria-label="Próximo mês"
@@ -336,103 +320,143 @@ export function DateTimeField({
                         <ChevronRight className="size-4" />
                       </button>
                     </div>
-                    <div className="mb-1 grid grid-cols-7 text-center text-[11px] font-medium uppercase tracking-wide text-ink-muted">
-                      {WEEKDAYS.map((day) => (
-                        <div key={day} className="py-1">
-                          {day}
-                        </div>
-                      ))}
+                  ) : null}
+                  {showCalendar ? (
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <button
+                          type="button"
+                          className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
+                          onClick={() =>
+                            setCursor((current) =>
+                              current.month === 1
+                                ? { ...current, year: current.year - 1, month: 12 }
+                                : { ...current, month: current.month - 1 }
+                            )
+                          }
+                          aria-label="Mês anterior"
+                        >
+                          <ChevronLeft className="size-4" />
+                        </button>
+                        <p className="text-sm font-semibold capitalize text-ink">
+                          {format(new Date(cursor.year, cursor.month - 1, 1), 'MMMM yyyy', {
+                            locale: ptBR,
+                          })}
+                        </p>
+                        <button
+                          type="button"
+                          className="flex size-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink active:bg-surface-hover sm:size-8"
+                          onClick={() =>
+                            setCursor((current) =>
+                              current.month === 12
+                                ? { ...current, year: current.year + 1, month: 1 }
+                                : { ...current, month: current.month + 1 }
+                            )
+                          }
+                          aria-label="Próximo mês"
+                        >
+                          <ChevronRight className="size-4" />
+                        </button>
+                      </div>
+                      <div className="mb-1 grid grid-cols-7 text-center text-[11px] font-medium uppercase tracking-wide text-ink-muted">
+                        {WEEKDAYS.map((day) => (
+                          <div key={day} className="py-1">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-0.5">
+                        {grid.map((cell, index) => {
+                          if (!cell) {
+                            return <div key={`empty-${index}`} className="h-10 sm:h-8" />
+                          }
+                          const isSelected =
+                            selected &&
+                            selected.year === cursor.year &&
+                            selected.month === cursor.month &&
+                            selected.day === cell.day
+                          const isToday =
+                            today.year === cursor.year &&
+                            today.month === cursor.month &&
+                            today.day === cell.day
+                          return (
+                            <button
+                              key={`${cursor.year}-${cursor.month}-${cell.day}`}
+                              type="button"
+                              onClick={() => pickDay(cell.day)}
+                              className={`h-10 rounded-md text-sm font-medium transition-colors sm:h-8 sm:text-xs ${
+                                isSelected
+                                  ? 'bg-accent text-white'
+                                  : isToday
+                                    ? 'bg-accent-soft text-accent'
+                                    : 'text-ink hover:bg-surface-hover'
+                              }`}
+                            >
+                              {cell.day}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-7 gap-0.5">
-                      {grid.map((cell, index) => {
-                        if (!cell) {
-                          return <div key={`empty-${index}`} className="h-10 sm:h-8" />
+                  ) : null}
+
+                  {showTime ? (
+                    <div className="flex gap-2">
+                      <TimeColumn
+                        label="Hora"
+                        values={HOURS}
+                        selected={selected?.hour ?? cursor.hour}
+                        onSelect={(hour) =>
+                          commit({
+                            ...(selected ?? cursor),
+                            hour,
+                            minute: selected?.minute ?? cursor.minute,
+                          })
                         }
-                        const isSelected =
-                          selected &&
-                          selected.year === cursor.year &&
-                          selected.month === cursor.month &&
-                          selected.day === cell.day
-                        const isToday =
-                          today.year === cursor.year && today.month === cursor.month && today.day === cell.day
-                        return (
-                          <button
-                            key={`${cursor.year}-${cursor.month}-${cell.day}`}
-                            type="button"
-                            onClick={() => pickDay(cell.day)}
-                            className={`h-10 rounded-md text-sm font-medium transition-colors sm:h-8 sm:text-xs ${
-                              isSelected
-                                ? 'bg-accent text-white'
-                                : isToday
-                                  ? 'bg-accent-soft text-accent'
-                                  : 'text-ink hover:bg-surface-hover'
-                            }`}
-                          >
-                            {cell.day}
-                          </button>
-                        )
-                      })}
+                      />
+                      <TimeColumn
+                        label="Min"
+                        values={MINUTES}
+                        selected={selected?.minute ?? cursor.minute}
+                        onSelect={(minute) =>
+                          commit({
+                            ...(selected ?? cursor),
+                            hour: selected?.hour ?? cursor.hour,
+                            minute,
+                          })
+                        }
+                      />
                     </div>
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
 
-                {showTime ? (
-                  <div className="flex gap-2">
-                    <TimeColumn
-                      label="Hora"
-                      values={HOURS}
-                      selected={selected?.hour ?? cursor.hour}
-                      onSelect={(hour) =>
-                        commit({
-                          ...(selected ?? cursor),
-                          hour,
-                          minute: selected?.minute ?? cursor.minute,
-                        })
-                      }
-                    />
-                    <TimeColumn
-                      label="Min"
-                      values={MINUTES}
-                      selected={selected?.minute ?? cursor.minute}
-                      onSelect={(minute) =>
-                        commit({
-                          ...(selected ?? cursor),
-                          hour: selected?.hour ?? cursor.hour,
-                          minute,
-                        })
-                      }
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                <button
-                  type="button"
-                  className="min-h-10 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
-                  onClick={() => {
-                    onChange?.('')
-                    setOpen(false)
-                  }}
-                >
-                  Limpar
-                </button>
-                <button
-                  type="button"
-                  className="min-h-10 text-sm font-medium text-accent transition-opacity hover:opacity-80"
-                  onClick={() => {
-                    commit(todayParts())
-                    setOpen(false)
-                  }}
-                >
-                  Hoje
-                </button>
-              </div>
-            </motion.div>
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                  <button
+                    type="button"
+                    className="min-h-10 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+                    onClick={() => {
+                      onChange?.('')
+                      setOpen(false)
+                    }}
+                  >
+                    Limpar
+                  </button>
+                  <button
+                    type="button"
+                    className="min-h-10 text-sm font-medium text-accent transition-opacity hover:opacity-80"
+                    onClick={() => {
+                      commit(todayParts())
+                      setOpen(false)
+                    }}
+                  >
+                    Hoje
+                  </button>
+                </div>
+              </motion.div>
             </>
           ) : null}
         </AnimatePresence>,
-        document.body,
+        document.body
       )}
     </div>
   )
@@ -451,7 +475,9 @@ function TimeColumn({
 }) {
   return (
     <div className="min-w-16 flex-1 sm:flex-none">
-      <p className="mb-1 text-center text-[11px] font-medium uppercase tracking-wide text-ink-muted">{label}</p>
+      <p className="mb-1 text-center text-[11px] font-medium uppercase tracking-wide text-ink-muted">
+        {label}
+      </p>
       <div className="max-h-48 overflow-auto rounded-md border border-border">
         {values.map((value) => (
           <button

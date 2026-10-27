@@ -76,7 +76,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       ...catalog,
       loading,
       reload: load,
-      labelFor: (value) => (value ? map.get(value)?.label ?? value : 'Pacote'),
+      labelFor: (value) => (value ? (map.get(value)?.label ?? value) : 'Pacote'),
       optionFor: (value) => map.get(value) ?? unknownPackage(value),
     }
   }, [catalog, loading, load])

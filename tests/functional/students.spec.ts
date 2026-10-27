@@ -45,10 +45,13 @@ test.group('Students', (group) => {
   test('saves and updates a chosen calendar color', async ({ assert, client }) => {
     const user = await createTeacher()
 
-    const created = await client.post('/api/v1/students').loginAs(user).json({
-      ...studentPayload,
-      color: '#b45309',
-    })
+    const created = await client
+      .post('/api/v1/students')
+      .loginAs(user)
+      .json({
+        ...studentPayload,
+        color: '#b45309',
+      })
 
     created.assertStatus(201)
     assert.equal(created.body().data.color, '#b45309')
@@ -60,7 +63,8 @@ test.group('Students', (group) => {
 
     updated.assertStatus(200)
     assert.equal(updated.body().data.color, '#dc2626')
-    assert.equal((await Student.findOrFail(studentId)).color, '#dc2626')
+    const reloaded = await Student.findOrFail(studentId)
+    assert.equal(reloaded.color, '#dc2626')
   })
 
   test('rejects invalid payloads', async ({ client }) => {
@@ -208,11 +212,14 @@ test.group('Students', (group) => {
   test('stores a preferred weekday and time on create', async ({ client }) => {
     const user = await createTeacher()
 
-    const response = await client.post('/api/v1/students').loginAs(user).json({
-      ...studentPayload,
-      preferredWeekday: 3,
-      preferredTime: '09:30',
-    })
+    const response = await client
+      .post('/api/v1/students')
+      .loginAs(user)
+      .json({
+        ...studentPayload,
+        preferredWeekday: 3,
+        preferredTime: '09:30',
+      })
 
     response.assertStatus(201)
     response.assertBodyContains({

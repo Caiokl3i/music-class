@@ -53,7 +53,7 @@ type MonthExportRow = {
 }
 
 export function csvEscape(value: string | number | null | undefined) {
-  const text = value == null ? '' : String(value)
+  const text = value === null || value === undefined ? '' : String(value)
   if (/[";\n\r]/.test(text)) {
     return `"${text.replaceAll('"', '""')}"`
   }
@@ -135,7 +135,7 @@ export async function buildMonthCsv(user: User, query: { month?: string; timezon
         row.instrument,
         row.packageLabel,
         row.status,
-        row.amount == null ? '' : formatCsvAmount(row.amount),
+        row.amount === null || row.amount === undefined ? '' : formatCsvAmount(row.amount),
         row.notes,
       ])
     ),
@@ -307,12 +307,9 @@ function renderMonthPdf(input: {
     })
     doc.fontSize(20).text(title, margin, 50, { width: contentWidth })
     useFont(doc, fonts, 'regular')
-    doc
-      .fontSize(10)
-      .fillColor('#d1fae5')
-      .text('Resumo mensal de aulas e pacotes', margin, 78, {
-        width: contentWidth,
-      })
+    doc.fontSize(10).fillColor('#d1fae5').text('Resumo mensal de aulas e pacotes', margin, 78, {
+      width: contentWidth,
+    })
 
     doc.y = 128
 
@@ -330,9 +327,12 @@ function renderMonthPdf(input: {
     metaItems.forEach((item, index) => {
       const x = margin + 16 + col * index
       useFont(doc, fonts, 'regular')
-      doc.fillColor(PDF.muted).fontSize(9).text(item.label, x, metaTop + 14, {
-        width: col - 24,
-      })
+      doc
+        .fillColor(PDF.muted)
+        .fontSize(9)
+        .text(item.label, x, metaTop + 14, {
+          width: col - 24,
+        })
       useFont(doc, fonts, 'bold')
       doc
         .fillColor(index === 2 ? PDF.accent : PDF.ink)
@@ -355,12 +355,9 @@ function renderMonthPdf(input: {
         drawRow(doc, fonts, left, lesson.status)
         if (lesson.notes) {
           useFont(doc, fonts, 'regular')
-          doc
-            .fillColor(PDF.muted)
-            .fontSize(9)
-            .text(lesson.notes, doc.page.margins.left, doc.y, {
-              width: contentWidth,
-            })
+          doc.fillColor(PDF.muted).fontSize(9).text(lesson.notes, doc.page.margins.left, doc.y, {
+            width: contentWidth,
+          })
           doc.moveDown(0.35)
         }
       }
@@ -375,15 +372,17 @@ function renderMonthPdf(input: {
     } else {
       for (const plan of input.plans) {
         const left = `${plan.dateLabel} · ${plan.student || '—'} · ${plan.packageLabel} · ${plan.status}`
-        drawRow(doc, fonts, left, plan.amount == null ? '—' : formatMoneyBr(plan.amount))
+        drawRow(
+          doc,
+          fonts,
+          left,
+          plan.amount === null || plan.amount === undefined ? '—' : formatMoneyBr(plan.amount)
+        )
         if (plan.notes) {
           useFont(doc, fonts, 'regular')
-          doc
-            .fillColor(PDF.muted)
-            .fontSize(9)
-            .text(plan.notes, doc.page.margins.left, doc.y, {
-              width: contentWidth,
-            })
+          doc.fillColor(PDF.muted).fontSize(9).text(plan.notes, doc.page.margins.left, doc.y, {
+            width: contentWidth,
+          })
           doc.moveDown(0.35)
         }
       }
@@ -399,7 +398,10 @@ function renderMonthPdf(input: {
     doc.restore()
 
     useFont(doc, fonts, 'regular')
-    doc.fillColor(PDF.muted).fontSize(9).text('TOTAL DOS PACOTES', margin + 18, totalTop + 12)
+    doc
+      .fillColor(PDF.muted)
+      .fontSize(9)
+      .text('TOTAL DOS PACOTES', margin + 18, totalTop + 12)
     useFont(doc, fonts, 'bold')
     doc
       .fillColor(PDF.accent)

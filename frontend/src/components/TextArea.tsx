@@ -8,7 +8,7 @@ type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 
 export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
   { label, error, hint, id, className = '', ...props },
-  ref,
+  ref
 ) {
   const areaId = id ?? props.name
 

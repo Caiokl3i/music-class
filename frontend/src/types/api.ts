@@ -34,7 +34,6 @@ export type Student = {
 
 export type StudentColor = string
 
-
 export type PlanPackage = string
 export type PlanStatus = 'pending' | 'paid' | 'cancelled'
 

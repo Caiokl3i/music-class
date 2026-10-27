@@ -11,7 +11,7 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   { label, error, options, placeholder, id, className = '', ...props },
-  ref,
+  ref
 ) {
   const selectId = id ?? props.name
 

@@ -9,11 +9,7 @@ import type User from '#models/user'
 import type PlanType from '#models/plan_type'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 
-export const PLAN_TYPE_UNKNOWN = createError(
-  'Unknown plan type',
-  'E_PLAN_TYPE_UNKNOWN',
-  422
-)
+export const PLAN_TYPE_UNKNOWN = createError('Unknown plan type', 'E_PLAN_TYPE_UNKNOWN', 422)
 
 export const PLAN_TYPE_IN_USE = createError(
   'This plan type is used by existing packages and cannot be deleted',

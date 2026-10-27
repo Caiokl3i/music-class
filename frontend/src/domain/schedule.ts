@@ -1,8 +1,4 @@
-import {
-  brazilTodayParts,
-  fromBrazilWallTime,
-  toDatetimeLocalFromDate,
-} from '@/utils/format'
+import { brazilTodayParts, fromBrazilWallTime, toDatetimeLocalFromDate } from '@/utils/format'
 
 export const FALLBACK_LESSON_TIME = '14:00'
 export const MAX_LESSON_MINUTES = 8 * 60
@@ -26,7 +22,7 @@ export const WEEKDAY_OPTIONS = [
 
 export function formatPreferredSchedule(
   weekday: number | null | undefined,
-  time: string | null | undefined,
+  time: string | null | undefined
 ) {
   const day = WEEKDAY_OPTIONS.find((item) => item.value === weekday)
   if (day && time) return `${day.label} às ${time}`
@@ -61,13 +57,20 @@ export function nextDateOnIsoWeekday(from: Date, isoWeekday: number) {
   const wall = brazilTodayParts(from)
   const currentIso = brazilIsoWeekday(from)
   const delta = (isoWeekday - currentIso + 7) % 7
-  return fromBrazilWallTime(wall.year, wall.month, wall.day + delta, wall.hour, wall.minute, wall.second)
+  return fromBrazilWallTime(
+    wall.year,
+    wall.month,
+    wall.day + delta,
+    wall.hour,
+    wall.minute,
+    wall.second
+  )
 }
 
 export function preferredSlot(
   student: { preferredWeekday?: number | null; preferredTime?: string | null },
   from: Date = new Date(),
-  options?: { lockDate?: boolean },
+  options?: { lockDate?: boolean }
 ) {
   const base =
     !options?.lockDate && student.preferredWeekday
@@ -89,7 +92,7 @@ export function moveDatetimeLocalKeepingDuration(
   previousStart: string,
   previousEnd: string,
   nextStart: string,
-  fallbackMinutes: number,
+  fallbackMinutes: number
 ) {
   if (!nextStart) return ''
   const startMatch = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(previousStart)
@@ -101,14 +104,14 @@ export function moveDatetimeLocalKeepingDuration(
       Number(startMatch[2]),
       Number(startMatch[3]),
       Number(startMatch[4]),
-      Number(startMatch[5]),
+      Number(startMatch[5])
     )
     const end = fromBrazilWallTime(
       Number(endMatch[1]),
       Number(endMatch[2]),
       Number(endMatch[3]),
       Number(endMatch[4]),
-      Number(endMatch[5]),
+      Number(endMatch[5])
     )
     const diff = (end.getTime() - start.getTime()) / 60_000
     if (diff > 0) minutes = diff
@@ -141,7 +144,7 @@ export function brazilWeekDays(weekDate: Date) {
   const start = brazilWeekAnchor(weekDate)
   const parts = brazilTodayParts(start)
   return Array.from({ length: 7 }, (_, index) =>
-    fromBrazilWallTime(parts.year, parts.month, parts.day + index, 12, 0),
+    fromBrazilWallTime(parts.year, parts.month, parts.day + index, 12, 0)
   )
 }
 
@@ -177,7 +180,14 @@ export function weeklySlots(first: Date, count: number, until?: Date | null) {
     }
     slots.push(new Date(current.getTime()))
     const wall = brazilTodayParts(current)
-    current = fromBrazilWallTime(wall.year, wall.month, wall.day + 7, wall.hour, wall.minute, wall.second)
+    current = fromBrazilWallTime(
+      wall.year,
+      wall.month,
+      wall.day + 7,
+      wall.hour,
+      wall.minute,
+      wall.second
+    )
   }
 
   return slots

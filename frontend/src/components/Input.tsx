@@ -8,7 +8,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, error, hint, id, className = '', ...props },
-  ref,
+  ref
 ) {
   const inputId = id ?? props.name
 

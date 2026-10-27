@@ -17,7 +17,7 @@ export async function downloadMonthCsv(month: string, timezone: string) {
     })
     const filename = filenameFromDisposition(
       response.headers['content-disposition'],
-      `music-class-${month}.csv`,
+      `music-class-${month}.csv`
     )
     saveBlob(response.data, filename)
   } catch (error) {
@@ -34,7 +34,7 @@ export async function downloadMonthPdf(month: string, timezone: string) {
     })
     const filename = filenameFromDisposition(
       response.headers['content-disposition'],
-      `music-class-${month}.pdf`,
+      `music-class-${month}.pdf`
     )
     saveBlob(response.data, filename)
   } catch (error) {

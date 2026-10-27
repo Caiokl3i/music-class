@@ -77,11 +77,10 @@ export async function updateBookedLesson(
     const planId = payload.planId ?? lesson.planId
     const status = (payload.status ?? lesson.status) as LessonStatus
     const previousStatus = lesson.status
-    const window = resolveLessonWindow(
-      payload.scheduledAt ?? lesson.scheduledAt,
-      payload.endsAt,
-      { scheduledAt: lesson.scheduledAt, endsAt: lesson.endsAt }
-    )
+    const window = resolveLessonWindow(payload.scheduledAt ?? lesson.scheduledAt, payload.endsAt, {
+      scheduledAt: lesson.scheduledAt,
+      endsAt: lesson.endsAt,
+    })
 
     const { plan } = await loadOwnedStudentAndPlan(user, studentId, planId, trx)
     plan.useTransaction(trx)

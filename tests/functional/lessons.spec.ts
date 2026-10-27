@@ -49,9 +49,7 @@ test.group('Lessons', (group) => {
       status: 'scheduled',
     })
 
-    const response = await client
-      .get(`/api/v1/students/${student.id}/lessons`)
-      .loginAs(teacher)
+    const response = await client.get(`/api/v1/students/${student.id}/lessons`).loginAs(teacher)
 
     response.assertStatus(200)
     response.assertBodyContains({
@@ -398,9 +396,7 @@ test.group('Lessons', (group) => {
       },
     })
 
-    const oldLesson = await client
-      .get(`/api/v1/lessons/${noShow.body().data.id}`)
-      .loginAs(teacher)
+    const oldLesson = await client.get(`/api/v1/lessons/${noShow.body().data.id}`).loginAs(teacher)
     oldLesson.assertStatus(200)
     oldLesson.assertBodyContains({ data: { status: 'cancelled' } })
 
@@ -507,10 +503,7 @@ test.group('Lessons', (group) => {
     )
   })
 
-  test('accepts a custom duration and conflicts on the real window', async ({
-    assert,
-    client,
-  }) => {
+  test('accepts a custom duration and conflicts on the real window', async ({ assert, client }) => {
     const { teacher, student, plan } = await createTeacherWithPlan()
 
     const long = await client.post('/api/v1/lessons').loginAs(teacher).json({

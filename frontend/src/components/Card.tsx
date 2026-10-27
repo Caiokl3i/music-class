@@ -1,12 +1,6 @@
 import type { ReactNode } from 'react'
 
-export function Card({
-  children,
-  className = '',
-}: {
-  children: ReactNode
-  className?: string
-}) {
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={`rounded-lg border border-border bg-surface-raised p-5 shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-border hover:shadow-md ${className}`}

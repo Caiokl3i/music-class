@@ -41,7 +41,9 @@ test.group('Catalog', (group) => {
     response.assertStatus(200)
     response.assertBodyContains({
       data: {
-        packages: [{ value: 'aula_experimental', lessons: 1, price: 20, label: 'Aula experimental' }],
+        packages: [
+          { value: 'aula_experimental', lessons: 1, price: 20, label: 'Aula experimental' },
+        ],
       },
     })
   })

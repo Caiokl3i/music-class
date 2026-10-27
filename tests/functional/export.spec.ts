@@ -63,9 +63,7 @@ test.group('Month export', (group) => {
       description: 'AULA_ALHEIA',
     })
 
-    const response = await client
-      .get('/api/v1/export?month=2026-09&timezone=UTC')
-      .loginAs(teacher)
+    const response = await client.get('/api/v1/export?month=2026-09&timezone=UTC').loginAs(teacher)
 
     response.assertStatus(200)
     assert.include(String(response.header('content-type')), 'text/csv')
@@ -76,7 +74,10 @@ test.group('Month export', (group) => {
 
     const csv = response.text()
     assert.include(csv, 'tipo;data;aluno;instrumento;pacote;status;valor;anotação')
-    assert.include(csv, 'aula;2026-09-08 17:00–18:00;Ana;piano;Pacote mensal 1;Concluída;;Escala maior')
+    assert.include(
+      csv,
+      'aula;2026-09-08 17:00–18:00;Ana;piano;Pacote mensal 1;Concluída;;Escala maior'
+    )
     assert.include(csv, 'pacote;2026-09-01 15:00;Ana;piano;Pacote mensal 1;Pago;130,00;PIX')
     assert.notInclude(csv, 'Fora do mes')
     assert.notInclude(csv, 'Espiao')

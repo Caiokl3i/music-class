@@ -8,7 +8,10 @@ const BACKUP_SUFFIX = '.sqlite3'
 
 export function backupDestination(directory: string, at = DateTime.now()) {
   const stamp = at.toFormat('yyyyMMdd-HHmmss')
-  return join(directory, `${BACKUP_PREFIX}${stamp}-${randomBytes(3).toString('hex')}${BACKUP_SUFFIX}`)
+  return join(
+    directory,
+    `${BACKUP_PREFIX}${stamp}-${randomBytes(3).toString('hex')}${BACKUP_SUFFIX}`
+  )
 }
 
 export function isBackupFile(name: string) {

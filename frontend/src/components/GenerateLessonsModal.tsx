@@ -4,7 +4,12 @@ import { DateTimeField } from '@/components/DateTimeField'
 import { Modal } from '@/components/Modal'
 import * as plansService from '@/services/plans.service'
 import type { Plan } from '@/types/api'
-import { applyPreferredTime, nextDateOnIsoWeekday, preferredSlot, weeklySlots } from '@/domain/schedule'
+import {
+  applyPreferredTime,
+  nextDateOnIsoWeekday,
+  preferredSlot,
+  weeklySlots,
+} from '@/domain/schedule'
 import { useToast } from '@/contexts/ToastContext'
 import { getErrorMessage } from '@/utils/errors'
 import {
@@ -13,10 +18,7 @@ import {
   toDatetimeLocalFromDate,
 } from '@/utils/format'
 
-function defaultFirstSlot(
-  preferredWeekday?: number | null,
-  preferredTime?: string | null,
-) {
+function defaultFirstSlot(preferredWeekday?: number | null, preferredTime?: string | null) {
   if (preferredWeekday) {
     return toDatetimeLocalFromDate(preferredSlot({ preferredWeekday, preferredTime }, new Date()))
   }
@@ -61,12 +63,15 @@ export function GenerateLessonsModal({
     if (!plan) return
     setSaving(true)
     try {
-      const created = await plansService.generatePlanLessons(plan.id, fromDatetimeLocalValue(firstAt))
+      const created = await plansService.generatePlanLessons(
+        plan.id,
+        fromDatetimeLocalValue(firstAt)
+      )
       const skipped = plan.lessonsSchedulable - created.length
       toast.success(
         skipped > 0
           ? `${created.length} aula(s) criadas. ${skipped} ficaram fora da validade.`
-          : `${created.length} aula(s) criadas.`,
+          : `${created.length} aula(s) criadas.`
       )
       onClose()
       await onGenerated()
@@ -95,13 +100,10 @@ export function GenerateLessonsModal({
     >
       <div className="space-y-4">
         <p className="text-sm text-ink-muted">
-          Cria as {plan?.lessonsSchedulable ?? 0} aula(s) que ainda faltam marcar, toda semana no mesmo horário.
+          Cria as {plan?.lessonsSchedulable ?? 0} aula(s) que ainda faltam marcar, toda semana no
+          mesmo horário.
         </p>
-        <DateTimeField
-          label="Primeira aula"
-          value={firstAt}
-          onChange={setFirstAt}
-        />
+        <DateTimeField label="Primeira aula" value={firstAt} onChange={setFirstAt} />
         {preview.length === 0 ? (
           <p className="text-sm text-warning">Nenhuma data cabe na validade deste pacote.</p>
         ) : (
@@ -113,8 +115,8 @@ export function GenerateLessonsModal({
         )}
         {plan && preview.length < plan.lessonsSchedulable ? (
           <p className="text-xs text-ink-muted">
-            {plan.lessonsSchedulable - preview.length} aula(s) ficam de fora porque a data cai depois da
-            validade.
+            {plan.lessonsSchedulable - preview.length} aula(s) ficam de fora porque a data cai
+            depois da validade.
           </p>
         ) : null}
       </div>

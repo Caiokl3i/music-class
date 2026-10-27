@@ -25,7 +25,10 @@ export async function createLesson(input: CreateLessonInput) {
   return data.data
 }
 
-export async function createLessonForStudent(studentId: number, input: CreateLessonForStudentInput) {
+export async function createLessonForStudent(
+  studentId: number,
+  input: CreateLessonForStudentInput
+) {
   const { data } = await api.post<ApiData<Lesson>>(`/students/${studentId}/lessons`, input)
   return data.data
 }

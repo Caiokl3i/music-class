@@ -7,7 +7,7 @@ export const api = axios.create({
   baseURL,
   timeout: 15000,
   headers: {
-    Accept: 'application/json',
+    'Accept': 'application/json',
     'Content-Type': 'application/json',
   },
 })
@@ -34,5 +34,5 @@ api.interceptors.response.use(
       onUnauthorized?.()
     }
     return Promise.reject(error)
-  },
+  }
 )

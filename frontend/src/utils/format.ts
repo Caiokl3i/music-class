@@ -57,7 +57,7 @@ export function fromBrazilWallTime(
   day: number,
   hour = 0,
   minute = 0,
-  second = 0,
+  second = 0
 ) {
   const wanted = Date.UTC(year, month - 1, day, hour, minute, second)
   let utc = wanted
@@ -70,7 +70,7 @@ export function fromBrazilWallTime(
       zoned.day,
       zoned.hour,
       zoned.minute,
-      zoned.second,
+      zoned.second
     )
     utc += wanted - asUtc
   }

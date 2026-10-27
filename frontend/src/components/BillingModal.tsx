@@ -128,7 +128,11 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
             <Copy className="size-4" aria-hidden />
             Copiar
           </Button>
-          <Button onClick={() => void downloadPdf()} disabled={!plan || downloading} loading={downloading}>
+          <Button
+            onClick={() => void downloadPdf()}
+            disabled={!plan || downloading}
+            loading={downloading}
+          >
             <Download className="size-4" aria-hidden />
             Baixar PDF
           </Button>
@@ -150,7 +154,9 @@ export function BillingModal({ open, plan, student, onClose }: BillingModalProps
               label="Mês"
               kind="month"
               value={month}
-              onChange={(next) => form.setValue('month', next, { shouldValidate: true, shouldDirty: true })}
+              onChange={(next) =>
+                form.setValue('month', next, { shouldValidate: true, shouldDirty: true })
+              }
             />
           ) : (
             <div className="hidden sm:block" />

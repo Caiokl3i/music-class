@@ -27,7 +27,10 @@ export function planHoldsCredits(plan: { status: PlanStatus }) {
 }
 
 /** Aulas que ainda ocupam vaga no pacote (não canceladas). */
-export function planHasActiveLessons(planId: number, lessons: { planId: number; status: string }[]) {
+export function planHasActiveLessons(
+  planId: number,
+  lessons: { planId: number; status: string }[]
+) {
   return lessons.some((lesson) => lesson.planId === planId && lesson.status !== 'cancelled')
 }
 
@@ -37,7 +40,7 @@ export function planHasAnyLessons(planId: number, lessons: { planId: number }[])
 
 export function canCancelPlan(
   plan: { id: number; status: PlanStatus },
-  lessons: { planId: number; status: string }[],
+  lessons: { planId: number; status: string }[]
 ) {
   return plan.status !== 'cancelled' && !planHasActiveLessons(plan.id, lessons)
 }

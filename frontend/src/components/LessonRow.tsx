@@ -35,7 +35,12 @@ export function LessonRow({
     scheduled && onCancel ? { label: 'Cancelar', onClick: () => onCancel(lesson) } : null,
     onEdit ? { label: 'Editar', icon: <Pencil />, onClick: () => onEdit(lesson) } : null,
     onDelete
-      ? { label: 'Excluir', icon: <Trash2 />, tone: 'danger' as const, onClick: () => onDelete(lesson) }
+      ? {
+          label: 'Excluir',
+          icon: <Trash2 />,
+          tone: 'danger' as const,
+          onClick: () => onDelete(lesson),
+        }
       : null,
   ].filter((item): item is NonNullable<typeof item> => item !== null)
 
@@ -50,12 +55,19 @@ export function LessonRow({
         </div>
         <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">
           {showStudent ? (
-            <Link to={`/students/${lesson.studentId}`} className="font-medium text-accent transition-opacity hover:opacity-80">
+            <Link
+              to={`/students/${lesson.studentId}`}
+              className="font-medium text-accent transition-opacity hover:opacity-80"
+            >
               {name}
             </Link>
           ) : null}
           {showStudent ? <StudentLevelBadge level={lesson.studentLevel} /> : null}
-          {showStudent && planLabel ? <span>· {planLabel}</span> : planLabel ? <span>{planLabel}</span> : null}
+          {showStudent && planLabel ? (
+            <span>· {planLabel}</span>
+          ) : planLabel ? (
+            <span>{planLabel}</span>
+          ) : null}
         </p>
         {lesson.description ? <p className="mt-1 text-sm text-ink">{lesson.description}</p> : null}
       </div>
@@ -88,7 +100,12 @@ export function LessonRow({
       </div>
       <div className="flex items-center gap-2 sm:hidden">
         {scheduled && onComplete ? (
-          <Button size="sm" variant="secondary" className="flex-1" onClick={() => onComplete(lesson)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="flex-1"
+            onClick={() => onComplete(lesson)}
+          >
             Concluir
           </Button>
         ) : null}

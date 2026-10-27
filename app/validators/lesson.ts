@@ -11,7 +11,10 @@ const lessonFields = {
   studentId: vine.number().positive(),
   planId: vine.number().positive(),
   scheduledAt: vine.date({ formats: ['iso8601'] }),
-  endsAt: vine.date({ formats: ['iso8601'] }).optional().nullable(),
+  endsAt: vine
+    .date({ formats: ['iso8601'] })
+    .optional()
+    .nullable(),
   status: vine.enum(LESSON_STATUSES),
   description: vine.string().trim().maxLength(2000).optional().nullable(),
 }

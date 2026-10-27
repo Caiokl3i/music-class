@@ -17,11 +17,7 @@ import {
   expiresAtFromPaidAt,
 } from '#services/plan_credits'
 import { generatePlanLessons } from '#services/lesson_generate'
-import {
-  billingFilename,
-  buildBillingPdf,
-  buildBillingSummary,
-} from '#services/billing_message'
+import { billingFilename, buildBillingPdf, buildBillingSummary } from '#services/billing_message'
 import LessonTransformer from '#transformers/lesson_transformer'
 import { logSecurityEvent } from '#services/security_log'
 import type { HttpContext } from '@adonisjs/core/http'

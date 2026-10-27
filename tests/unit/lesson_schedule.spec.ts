@@ -26,7 +26,9 @@ test.group('Lesson schedule', () => {
     assert.isFalse(windowsOverlap(two, three, three, four))
     assert.isFalse(windowsOverlap(three, four, two, three))
     assert.isTrue(windowsOverlap(two, three, two, three))
-    assert.isTrue(windowsOverlap(two, three, halfPast, DateTime.fromISO('2026-09-01T15:30:00.000Z')))
+    assert.isTrue(
+      windowsOverlap(two, three, halfPast, DateTime.fromISO('2026-09-01T15:30:00.000Z'))
+    )
     assert.isTrue(windowsOverlap(two, four, three, DateTime.fromISO('2026-09-01T15:30:00.000Z')))
     assert.isFalse(windowsOverlap(two, halfPast, halfPast, three))
     assert.equal(defaultLessonEnd(two).toISO(), three.toISO())
@@ -37,11 +39,10 @@ test.group('Lesson schedule', () => {
     const created = resolveLessonWindow(start)
     assert.equal(created.endsAt.toUTC().toISO(), '2026-09-01T15:00:00.000Z')
 
-    const moved = resolveLessonWindow(
-      DateTime.fromISO('2026-09-08T10:00:00.000Z'),
-      undefined,
-      { scheduledAt: start, endsAt: DateTime.fromISO('2026-09-01T15:30:00.000Z') }
-    )
+    const moved = resolveLessonWindow(DateTime.fromISO('2026-09-08T10:00:00.000Z'), undefined, {
+      scheduledAt: start,
+      endsAt: DateTime.fromISO('2026-09-01T15:30:00.000Z'),
+    })
     assert.equal(moved.endsAt.toUTC().toISO(), '2026-09-08T11:30:00.000Z')
 
     assert.throws(
@@ -65,7 +66,10 @@ test.group('Lesson schedule', () => {
 
     const clipped = weeklySlots(first, 4, until)
     assert.lengthOf(clipped, 2)
-    assert.equal(clipped[1].toUTC().toMillis(), DateTime.fromISO('2026-09-08T14:00:00.000Z').toMillis())
+    assert.equal(
+      clipped[1].toUTC().toMillis(),
+      DateTime.fromISO('2026-09-08T14:00:00.000Z').toMillis()
+    )
   })
 })
 
@@ -75,12 +79,7 @@ test.group('Plan expiry', () => {
     const created = expiresAtFromPaidAt('paid', paidAt)
     assert.equal(created?.toISO(), paidAt.plus({ days: CREDIT_VALIDITY_DAYS }).toISO())
 
-    const kept = expiresAtFromPaidAt(
-      'paid',
-      paidAt,
-      paidAt.plus({ days: 10 }),
-      'paid'
-    )
+    const kept = expiresAtFromPaidAt('paid', paidAt, paidAt.plus({ days: 10 }), 'paid')
     assert.equal(kept?.toISO(), paidAt.plus({ days: 10 }).toISO())
 
     const grandfathered = expiresAtFromPaidAt('paid', paidAt, null, 'paid')
@@ -93,9 +92,7 @@ test.group('Plan expiry', () => {
     assert.isTrue(isNewCreditConsumption('scheduled'))
     assert.isFalse(isNewCreditConsumption('done', 'scheduled'))
     assert.isTrue(isNewCreditConsumption('scheduled', 'cancelled'))
-    assert.isTrue(
-      planIsExpired({ expiresAt: DateTime.now().minus({ days: 1 }) })
-    )
+    assert.isTrue(planIsExpired({ expiresAt: DateTime.now().minus({ days: 1 }) }))
     assert.equal(
       usableCreditsFromCount(
         { status: 'paid', expiresAt: DateTime.now().minus({ days: 1 }), lessonsTotal: 4 },

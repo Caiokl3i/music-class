@@ -15,8 +15,15 @@ const studentFields = {
   color: vine.string().trim().regex(HEX_COLOR).optional(),
   tags: vine.string().trim().maxLength(500).optional().nullable(),
   preferredWeekday: vine.number().withoutDecimals().min(1).max(7).optional().nullable(),
-  preferredTime: vine.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional().nullable(),
-  archivedAt: vine.date({ formats: ['iso8601'] }).optional().nullable(),
+  preferredTime: vine
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .optional()
+    .nullable(),
+  archivedAt: vine
+    .date({ formats: ['iso8601'] })
+    .optional()
+    .nullable(),
 }
 
 /**

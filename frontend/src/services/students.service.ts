@@ -1,6 +1,12 @@
 import { api } from '@/services/api'
 import { DEFAULT_STUDENT_COLOR } from '@/domain/student'
-import type { ApiData, CreateStudentInput, Student, StudentColor, UpdateStudentInput } from '@/types/api'
+import type {
+  ApiData,
+  CreateStudentInput,
+  Student,
+  StudentColor,
+  UpdateStudentInput,
+} from '@/types/api'
 
 export async function listStudents(params?: { archived?: boolean }) {
   const { data } = await api.get<ApiData<Student[]>>('/students', {

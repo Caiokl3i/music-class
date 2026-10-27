@@ -1,14 +1,7 @@
-import {
-  contrastingTextColor,
-  hexToRgba,
-  resolveStudentHex,
-} from '@/domain/student'
+import { contrastingTextColor, hexToRgba, resolveStudentHex } from '@/domain/student'
 
 function initialsFrom(name: string | null | undefined) {
-  const parts = (name ?? '')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
+  const parts = (name ?? '').split(' ').filter(Boolean).slice(0, 2)
   if (parts.length === 0) return '?'
   return parts.map((part) => part[0]?.toUpperCase() ?? '').join('') || '?'
 }
@@ -32,8 +25,7 @@ export function Avatar({
     lg: 'size-14 text-lg',
   }
 
-  const hex =
-    color || studentId != null ? resolveStudentHex(color, studentId) : null
+  const hex = color || studentId != null ? resolveStudentHex(color, studentId) : null
 
   return (
     <span

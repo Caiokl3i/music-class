@@ -32,11 +32,7 @@ export async function createTeacherWithPlan(
   const catalog = PACKAGES[pack]
   const status = overrides.planStatus ?? 'paid'
   const paidAt =
-    overrides.paidAt !== undefined
-      ? overrides.paidAt
-      : status === 'paid'
-        ? DateTime.now()
-        : null
+    overrides.paidAt !== undefined ? overrides.paidAt : status === 'paid' ? DateTime.now() : null
 
   const plan = await teacher.related('plans').create({
     studentId: student.id,

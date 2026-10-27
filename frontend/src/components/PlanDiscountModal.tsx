@@ -56,7 +56,7 @@ export function PlanDiscountModal({
     if (!plan) return
     const amount = Number(values.amount.replace(',', '.'))
     if (!Number.isFinite(amount) || amount <= 0) {
-        form.setError('amount', { message: 'Informe um valor numérico válido.' })
+      form.setError('amount', { message: 'Informe um valor numérico válido.' })
       return
     }
 
@@ -121,7 +121,9 @@ export function PlanDiscountModal({
           hint="Opcional — aparece na cobrança do mês"
           value={form.watch('serviceAt')}
           error={form.formState.errors.serviceAt?.message}
-          onChange={(next) => form.setValue('serviceAt', next, { shouldValidate: true, shouldDirty: true })}
+          onChange={(next) =>
+            form.setValue('serviceAt', next, { shouldValidate: true, shouldDirty: true })
+          }
         />
         <TextArea
           label="Observações"

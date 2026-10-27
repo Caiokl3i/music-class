@@ -30,7 +30,11 @@ export default class extends BaseSchema {
         await db
           .from(this.tableName)
           .where('id', row.id)
-          .update({ ends_at: start.plus({ minutes: LESSON_DURATION_MINUTES }).toSQL({ includeOffset: false }) })
+          .update({
+            ends_at: start
+              .plus({ minutes: LESSON_DURATION_MINUTES })
+              .toSQL({ includeOffset: false }),
+          })
       }
     })
   }

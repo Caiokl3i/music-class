@@ -54,11 +54,11 @@ export async function createPlanDiscount(planId: number, input: CreatePlanDiscou
 export async function updatePlanDiscount(
   planId: number,
   discountId: number,
-  input: UpdatePlanDiscountInput,
+  input: UpdatePlanDiscountInput
 ) {
   const { data } = await api.patch<ApiData<PlanDiscount>>(
     `/plans/${planId}/discounts/${discountId}`,
-    input,
+    input
   )
   return data.data
 }
@@ -89,7 +89,7 @@ export async function downloadPlanBillingPdf(planId: number, month?: string | nu
 
     const filename = filenameFromDisposition(
       response.headers['content-disposition'],
-      `cobranca-${planId}.pdf`,
+      `cobranca-${planId}.pdf`
     )
     saveBlob(response.data, filename)
   } catch (error) {

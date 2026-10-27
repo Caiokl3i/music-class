@@ -12,11 +12,7 @@ import {
  * routes can also key on the teacher id.
  */
 export default class RateLimitMiddleware {
-  async handle(
-    ctx: HttpContext,
-    next: NextFn,
-    options: RateLimitRule = RATE_LIMITS.login
-  ) {
+  async handle(ctx: HttpContext, next: NextFn, options: RateLimitRule = RATE_LIMITS.login) {
     const ip = ctx.request.ip()
     this.assertAllowed(ctx, consumeRateLimit(`${options.name}:ip:${ip}`, options), options)
 
@@ -36,11 +32,7 @@ export default class RateLimitMiddleware {
 
     const user = ctx.auth.user
     if (user) {
-      this.assertAllowed(
-        ctx,
-        consumeRateLimit(`${options.name}:user:${user.id}`, options),
-        options
-      )
+      this.assertAllowed(ctx, consumeRateLimit(`${options.name}:user:${user.id}`, options), options)
     }
 
     return next()

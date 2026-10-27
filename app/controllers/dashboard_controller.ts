@@ -76,9 +76,7 @@ export default class DashboardController {
         .whereNotNull('birthdate')
         .whereNull('archivedAt')
         .whereRaw(
-          isPostgres()
-            ? "to_char(birthdate, 'MM-DD') = ?"
-            : "strftime('%m-%d', birthdate) = ?",
+          isPostgres() ? "to_char(birthdate, 'MM-DD') = ?" : "strftime('%m-%d', birthdate) = ?",
           [now.toFormat('MM-dd')]
         ),
     ])
