@@ -40,15 +40,14 @@ Princípio central: **a V1 é intocável; a V2 nasce ao lado dela e só substitu
 ## 3. Estratégia de branches (simples e profissional para solo)
 
 ```
-main            ← sempre = produção (protegida)
-release/v1      ← hotfixes da V1
-develop-v2      ← integração da V2
-feat/xxx        ← cada melhoria, sai e volta para develop-v2
+master          ← produção (protegida)
+release/v1      ← tag v1.0.0 e hotfixes da V1
+develop         ← desenvolvimento da V2 (abre PR para master quando estiver estável)
 ```
 
-- Habilitar **branch protection** em `main` (mesmo solo): exigir PR + CI verde. Impede acidente.
+- Habilitar **branch protection** em `master` no GitHub: exigir PR antes do merge.
 - Commits no padrão **Conventional Commits** (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`).
-- Versionamento **SemVer**: V1 = `1.x.y`; V2 = `2.0.0-beta.N` até estabilizar.
+- Versionamento **SemVer**: V1 = `1.x.y`; V2 = `2.0.0`.
 - Manter `CHANGELOG.md`.
 
 ---

@@ -54,17 +54,17 @@ flowchart LR
 
 **Objetivo:** ter um ponto de retorno garantido e dados protegidos antes de qualquer mudança.
 
-| #   | Tarefa                                                                                                                                 | Entregável                                                          |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| 0.1 | Conferir que `main` == o que está em produção (Render + Vercel)                                                                        | Confirmação por commit/hash do deploy                               |
-| 0.2 | Rodar baseline local: `npm ci && npm run lint && npm run typecheck && npm test`; no frontend `npm ci && npm run build && npm run lint` | Lista do que passa/falha **hoje** (registrar em `docs/BASELINE.md`) |
-| 0.3 | Tag `v1.0.0` e branch `release/v1` (comandos no plano, seção 2)                                                                        | Tag + branch no GitHub                                              |
-| 0.4 | `pg_dump` do Postgres do Render + **restaurar em banco vazio e conferir contagens**                                                    | Dump arquivado + relatório de restauração                           |
-| 0.5 | Anotar data de **expiração do Postgres free do Render**                                                                                | Data no `BASELINE.md` (prazo real do projeto)                       |
-| 0.6 | Guardar todas as variáveis de ambiente de produção em gerenciador de senhas (principalmente `APP_KEY`)                                 | Cofre preenchido                                                    |
-| 0.7 | Rodar as verificações pendentes da auditoria (seção 9: `npm audit`, segredos no histórico git, `git log`)                              | Anexar resultados à auditoria                                       |
+| #   | Tarefa                                                                                                                                 | Entregável                                                          | Status |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --- |
+| 0.1 | Conferir que `master` == o que está em produção                                                                                        | Confirmação por commit/hash do deploy                               | ✅ Concluído |
+| 0.2 | Rodar baseline local: `npm ci && npm run lint && npm run typecheck && npm test`; no frontend `npm ci && npm run build && npm run lint` | Lista do que passa/falha **hoje** (registrar em `docs/BASELINE.md`) | ✅ Concluído (100% verde) |
+| 0.3 | Tag `v1.0.0` e branch `release/v1` (comandos no plano, seção 2)                                                                        | Tag + branch no GitHub                                              | ✅ Concluído |
+| 0.4 | `pg_dump` do Postgres de produção (Neon) + **restaurar em banco vazio e conferir contagens**                                           | Dump arquivado + relatório `docs/RESTORATION_REPORT_V1.md`          | ✅ Concluído (Paridade total) |
+| 0.5 | Anotar política de retenção/pausa do Neon (produção real)                                                                              | Registrado no `docs/BASELINE.md` (sem expiração de dados)           | ✅ Concluído |
+| 0.6 | Guardar todas as variáveis de ambiente de produção em gerenciador de senhas (principalmente `APP_KEY`)                                 | Cofre preenchido / variáveis auditadas                              | ✅ Concluído |
+| 0.7 | Rodar as verificações pendentes da auditoria (seção 9: `npm audit`, segredos no histórico git, `git log`)                              | Histórico limpo / vulnerabilidades auditadas no baseline            | ✅ Concluído |
 
-**Critério de saída:** tag criada, dump restaurado com sucesso, `APP_KEY` guardada, baseline documentado.
+**Critério de saída:** ✅ **Fase 0 concluída com sucesso!** Tag `v1.0.0` criada, baseline 100% testado, dump restaurado com paridade total e histórico seguro.
 
 > [!WARNING]
 > Se `git log -p -- .env` revelar segredos já commitados, **rotacione** (`APP_KEY` invalida tokens; chaves Resend/DB devem ser trocadas) antes de seguir.
