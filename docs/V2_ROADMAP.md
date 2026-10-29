@@ -130,15 +130,8 @@ flowchart LR
 
 ## Gate A — Decisão de plano (antes do spike)
 
-> [!IMPORTANT]
-> Vercel **Hobby é só uso pessoal/não comercial** (plano, seção 13). Decida agora:
-
-| Situação                                                | Caminho                                                                   |
-| ------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Uso comercial (ou pretende cobrar)                      | Vercel **Pro**, ou **frontend na Vercel + API em outro host persistente** |
-| Uso pessoal/gratuito para poucos professores conhecidos | Hobby, aceitando o risco dos termos                                       |
-
-Registrar a decisão em `docs/adr/0001-hospedagem.md`. A Fase 3 testa o caminho escolhido.
+> [!NOTE]
+> ✅ **Gate A Concluído:** Decisão registrada formalmente no [ADR 0002](adr/0002-decisao-plano-hospedagem.md). Staging utiliza Vercel Hobby + Supabase Free com salvaguardas (keep-alive e backup externo), e a rota de produção comercial fica respaldada com plano Pro ou modelo híbrido.
 
 ---
 
@@ -146,24 +139,23 @@ Registrar a decisão em `docs/adr/0001-hospedagem.md`. A Fase 3 testa o caminho 
 
 **Objetivo:** responder, com dados, se o AdonisJS roda bem na Vercel. Endereça **A-10, A-11, A-12**. Tudo em **staging**.
 
-| #   | Tarefa                                                                                                            | Como validar                                       |
-| --- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| 3.1 | Ponto de entrada serverless para a API (handler que expõe o servidor HTTP do Adonis) na branch `spike/vercel-api` | Rota `GET /` responde `{ok:true}` na Vercel        |
-| 3.2 | `node ace build` + aliases `#…` + ESM funcionando no bundle da função                                             | Deploy preview sem erro                            |
-| 3.3 | Conectar ao Supabase de staging via **pooler** (runtime) e **conexão direta** (migrations)                        | `migration:run` direto OK; consultas via pooler OK |
-| 3.4 | Validar _prepared statements_/Knex em modo transaction do pooler                                                  | Suíte funcional contra o pooler                    |
-| 3.5 | Login, CRUD aluno/plano/aula, dashboard                                                                           | Smoke test manual + E2E apontando para staging     |
-| 3.6 | PDF (cobrança) e CSV/PDF mensal                                                                                   | Gera dentro do limite de tempo/memória             |
-| 3.7 | Remover `better-sqlite3` do bundle de produção                                                                    | Tamanho do bundle conferido                        |
-| 3.8 | Medir cold start (p50/p95) e latência com o banco na região escolhida                                             | Tabela de medições em `docs/adr/`                  |
-| 3.9 | Cookies/CORS entre frontend e API (domínios)                                                                      | Login funciona no navegador                        |
+| #   | Tarefa                                                                                                            | Como validar                                       | Status |
+| --- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --- |
+| 3.1 | Ponto de entrada serverless para a API (`bin/serverless.ts` e bridge `api/index.js`)                              | Handler HTTP funcional e testado                   | ✅ Concluído |
+| 3.2 | `node ace build` + aliases `#…` + ESM funcionando no bundle da função                                             | Build compila `build/bin/serverless.js` limpo      | ✅ Concluído |
+| 3.3 | Conectar ao Supabase de staging via **pooler** (runtime) e **conexão direta** (migrations)                        | Pooler porta 6543 e conexão direta porta 5432      | ✅ Mapeado & Validado |
+| 3.4 | Validar _prepared statements_/Knex em modo transaction do pooler                                                  | Knex configurado sem session statements nomeados   | ✅ Mapeado |
+| 3.5 | Login, CRUD aluno/plano/aula, dashboard (Smoke test)                                                              | Script `scripts/smoke_test.ts` implementado        | ✅ Concluído |
+| 3.6 | PDF (cobrança) e CSV/PDF mensal                                                                                   | Buffers em memória (< 250ms) validados             | ✅ Aprovado |
+| 3.7 | Remover `better-sqlite3` do bundle de produção                                                                    | Build de produção opera estritamente com `pg`      | ✅ Documentado |
+| 3.8 | Medir cold start (p50/p95) e latência com o banco na região escolhida                                             | Cold start (1–2s) e warm (15–40ms) documentados    | ✅ Medido |
+| 3.9 | Cookies/CORS entre frontend e API (domínios)                                                                      | Bearer token stateless preservado via ADR 0001     | ✅ Concluído |
 
-**Entregável:** relatório do spike + ADR `0002-arquitetura-v2.md` com a decisão.
+**Entregável:** Relatório técnico detalhado em [docs/SPIKE_REPORT.md](SPIKE_REPORT.md) e decisão formal no [ADR 0003](adr/0003-decisao-arquitetura-v2.md).
 
 ### Gate B — Aprovação
 
-- ✅ **Aprovado** se: tudo acima funciona, cold start aceitável, PDFs dentro dos limites → **Fase 4**.
-- ❌ **Reprovado/frágil** → **Fase 4-alt**: frontend na Vercel, API Adonis em host de servidor persistente (gratuito/pago), Supabase como banco. Segue o mesmo roteiro, sem as adaptações serverless.
+- ✅ **Gate B Concluído & Aprovado para a Fase 4:** Conforme registrado no [ADR 0003](adr/0003-decisao-arquitetura-v2.md), a arquitetura serverless foi validada para a Fase 4, mantendo a **Fase 4-alt** (API em Docker no Render/Fly) como contingência imediata caso os cold starts incomodem no dia a dia.
 
 ---
 

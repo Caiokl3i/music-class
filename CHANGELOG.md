@@ -25,6 +25,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Migration expand-only adicionando constraints financeiras `CHECK (lessons_total > 0)` e `CHECK (price >= 0)` em `plans`.
   - Configuração de `trustProxy: true` no servidor HTTP para identificar o IP real de clientes através de proxies reversos (`A-05`).
   - Registro de Decisão Arquitetural formalizado em `docs/adr/0001-autenticacao-e-tokens.md` (`A-06`).
+- **Fase 3 (Spike Vercel + Supabase)**:
+  - Registro de Decisão Arquitetural formalizado em `docs/adr/0002-decisao-plano-hospedagem.md` avaliando Vercel Hobby vs Pro e Supabase Free vs Pro com aprovação do Gate A (`A-07`).
+  - Entrypoint serverless para AdonisJS 7 com lazy initialization e caching de instância em `bin/serverless.ts` e bridge Node.js via `api/index.js` (`A-08`).
+  - Configuração de deployment unificado na Vercel com rewrites para API e SPA frontend em `vercel.json` (`A-08`).
+  - Desacoplamento do ciclo de migrations de produção via script dedicado `npm run db:migrate:prod` para execução contra porta 5432 (Session Mode) (`A-09`).
+  - Script automatizado de smoke test pós-deploy com validação de health check e latência em `scripts/smoke_test.ts` (`A-10`).
+  - Relatório técnico do Spike consolidado em `docs/SPIKE_REPORT.md` detalhando métricas de cold start, pooling (Supavisor port 6543), migração de rate limit (`A-05`) e comportamento do PDFKit.
+  - Registro de Decisão Arquitetural formalizado em `docs/adr/0003-decisao-arquitetura-v2.md` com aprovação do Gate B e decisão formal GO para arquitetura Serverless.
 
 ---
 
