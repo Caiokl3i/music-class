@@ -24,6 +24,8 @@
     "db:seed": "node ace db:seed",
     "db:migrate:prod": "node ace migration:run --force",
     "db:verify:parity": "node --import=@poppinss/ts-exec scripts/verify_migration_parity.ts",
+    "cutover:execute": "bash scripts/execute_cutover.sh",
+    "cutover:archive-v1": "bash scripts/decommission_v1_archive.sh",
     "smoke:test": "node --import=@poppinss/ts-exec scripts/smoke_test.ts",
     "lgpd:export": "node ace lgpd:student"
   },

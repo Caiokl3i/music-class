@@ -5,13 +5,14 @@
 |
 | Validates essential HTTP endpoints against a running target instance
 | (local dev, staging preview, or production). Supports optional bearer
-| token persistence check (APP_KEY / auth_access_tokens) and authenticated
-| E2E checks (login, dashboard, students, CSV & PDF exports).
+| token persistence check (APP_KEY / auth_access_tokens), authenticated
+| read/export checks, and --cutover-full mode (creates & deletes a temporary
+| student, plan, and lesson + validates plan billing PDF).
 |
 | Usage:
-|   TARGET_URL=https://music-class.vercel.app npm run smoke:test
-|   SMOKE_TEST_TOKEN="oat_..." SMOKE_TEST_EMAIL="..." SMOKE_TEST_PASSWORD="..." \
-|     TARGET_URL=http://localhost:3333 npm run smoke:test
+|   TARGET_URL=https://music-class-api.vercel.app npm run smoke:test
+|   SMOKE_TEST_EMAIL="..." SMOKE_TEST_PASSWORD="..." \
+|     TARGET_URL=https://music-class-api.vercel.app npm run smoke:test -- --cutover-full
 |
 */
 
@@ -25,9 +26,15 @@ const targetUrl = (
 const existingToken = process.env.SMOKE_TEST_TOKEN
 const smokeEmail = process.env.SMOKE_TEST_EMAIL
 const smokePassword = process.env.SMOKE_TEST_PASSWORD
+const cutoverFull =
+  process.argv.includes('--cutover-full') ||
+  process.env.SMOKE_CUTOVER_FULL === 'true' ||
+  process.env.SMOKE_CUTOVER_FULL === '1'
 const currentMonth = new Date().toISOString().slice(0, 7)
 
-console.log(`\n🔍 Iniciando Smoke Test contra: ${targetUrl}\n`)
+console.log(
+  `\n🔍 Iniciando Smoke Test contra: ${targetUrl} ${cutoverFull ? '(Modo Completo Pós-Cutover)' : ''}\n`
+)
 
 type CheckResult = {
   name: string
@@ -124,8 +131,24 @@ async function main() {
     })
   }
 
+  if (cutoverFull && !activeToken) {
+    results.push({
+      name: 'Cutover Full CRUD Prerequisites',
+      status: 'FAIL',
+      durationMs: 0,
+      detail:
+        'Modo --cutover-full requer SMOKE_TEST_TOKEN ou SMOKE_TEST_EMAIL + SMOKE_TEST_PASSWORD.',
+    })
+    console.error(
+      '  ❌ [FAIL] Cutover Full CRUD Prerequisites: informe credenciais ou token para validar criação de aula e PDFs.'
+    )
+  }
+
   if (activeToken) {
-    const authHeaders = { Authorization: `Bearer ${activeToken}` }
+    const authHeaders = {
+      'Authorization': `Bearer ${activeToken}`,
+      'Content-Type': 'application/json',
+    }
 
     await runCheck('GET /api/v1/dashboard (Authenticated Dashboard)', async () => {
       const res = await fetch(`${targetUrl}/api/v1/dashboard`, { headers: authHeaders })
@@ -166,6 +189,143 @@ async function main() {
         throw new Error('Arquivo retornado não possui assinatura PDF válida (%PDF-)')
       }
     })
+
+    if (cutoverFull) {
+      let createdStudentId: number | null = null
+      let createdPlanId: number | null = null
+      let createdLessonId: number | null = null
+      let packageSlug = 'single'
+
+      try {
+        await runCheck('GET /api/v1/packages (Resolve Catalog Package)', async () => {
+          const res = await fetch(`${targetUrl}/api/v1/packages`, { headers: authHeaders })
+          if (res.status !== 200) {
+            throw new Error(`Esperado 200, recebido ${res.status}`)
+          }
+          const body = (await res.json()) as {
+            data?: { packages?: Array<{ value: string }> }
+          }
+          const first = body?.data?.packages?.[0]?.value
+          if (!first) {
+            throw new Error('Nenhum pacote disponível no catálogo do professor')
+          }
+          packageSlug = first
+        })
+
+        await runCheck('POST /api/v1/students (Create Diagnostic Student)', async () => {
+          const res = await fetch(`${targetUrl}/api/v1/students`, {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({
+              name: '[SMOKE-CUTOVER] Aluno Verificação',
+              instrument: 'Piano',
+            }),
+          })
+          if (res.status !== 201) {
+            throw new Error(`Esperado 201, recebido ${res.status}`)
+          }
+          const body = (await res.json()) as { data?: { id?: number } }
+          if (!body?.data?.id) {
+            throw new Error('Resposta de criação de aluno sem data.id')
+          }
+          createdStudentId = body.data.id
+        })
+
+        if (createdStudentId) {
+          await runCheck('POST /api/v1/plans (Create Diagnostic Plan)', async () => {
+            const res = await fetch(`${targetUrl}/api/v1/plans`, {
+              method: 'POST',
+              headers: authHeaders,
+              body: JSON.stringify({
+                studentId: createdStudentId,
+                package: packageSlug,
+                status: 'pending',
+                notes: 'Verificação automática de cutover',
+              }),
+            })
+            if (res.status !== 201) {
+              throw new Error(`Esperado 201, recebido ${res.status}`)
+            }
+            const body = (await res.json()) as { data?: { id?: number } }
+            if (!body?.data?.id) {
+              throw new Error('Resposta de criação de pacote sem data.id')
+            }
+            createdPlanId = body.data.id
+          })
+        }
+
+        if (createdStudentId && createdPlanId) {
+          await runCheck('POST /api/v1/lessons (Create Diagnostic Lesson)', async () => {
+            const res = await fetch(`${targetUrl}/api/v1/lessons`, {
+              method: 'POST',
+              headers: authHeaders,
+              body: JSON.stringify({
+                studentId: createdStudentId,
+                planId: createdPlanId,
+                scheduledAt: '2099-01-15T14:00:00.000Z',
+                status: 'scheduled',
+                description: 'Smoke test pós-cutover',
+              }),
+            })
+            if (res.status !== 201) {
+              throw new Error(`Esperado 201, recebido ${res.status}`)
+            }
+            const body = (await res.json()) as { data?: { id?: number } }
+            if (!body?.data?.id) {
+              throw new Error('Resposta de criação de aula sem data.id')
+            }
+            createdLessonId = body.data.id
+          })
+
+          await runCheck(
+            `GET /api/v1/plans/${createdPlanId}/billing.pdf (Plan Billing PDF)`,
+            async () => {
+              const res = await fetch(
+                `${targetUrl}/api/v1/plans/${createdPlanId}/billing.pdf?month=2099-01`,
+                { headers: authHeaders }
+              )
+              if (res.status !== 200) {
+                throw new Error(`Esperado 200, recebido ${res.status}`)
+              }
+              const buffer = Buffer.from(await res.arrayBuffer())
+              if (!buffer.subarray(0, 5).toString('ascii').startsWith('%PDF-')) {
+                throw new Error('Recibo PDF não possui assinatura %PDF- válida')
+              }
+            }
+          )
+        }
+      } finally {
+        await runCheck('Cleanup Diagnostic Entities (Lesson -> Plan -> Student)', async () => {
+          if (createdLessonId) {
+            const res = await fetch(`${targetUrl}/api/v1/lessons/${createdLessonId}`, {
+              method: 'DELETE',
+              headers: authHeaders,
+            })
+            if (res.status !== 204) {
+              throw new Error(`Falha ao remover aula temporária (${res.status})`)
+            }
+          }
+          if (createdPlanId) {
+            const res = await fetch(`${targetUrl}/api/v1/plans/${createdPlanId}`, {
+              method: 'DELETE',
+              headers: authHeaders,
+            })
+            if (res.status !== 204) {
+              throw new Error(`Falha ao remover plano temporário (${res.status})`)
+            }
+          }
+          if (createdStudentId) {
+            const res = await fetch(`${targetUrl}/api/v1/students/${createdStudentId}`, {
+              method: 'DELETE',
+              headers: authHeaders,
+            })
+            if (res.status !== 204) {
+              throw new Error(`Falha ao remover aluno temporário (${res.status})`)
+            }
+          }
+        })
+      }
+    }
   }
 
   console.log('\n--- Resumo do Smoke Test ---')
