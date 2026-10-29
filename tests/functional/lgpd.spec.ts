@@ -24,7 +24,9 @@ test.group('LGPD Export and Anonymization', (group) => {
     assert.isNull(dossier)
   })
 
-  test('buildStudentDossier compiles complete personal, plan and lesson history', async ({ assert }) => {
+  test('buildStudentDossier compiles complete personal, plan and lesson history', async ({
+    assert,
+  }) => {
     const teacher = await createTeacher()
 
     const student = await Student.create({
@@ -77,7 +79,9 @@ test.group('LGPD Export and Anonymization', (group) => {
     assert.equal(dossier?.lessons[0].description, 'Aula 1: Fraseado e Dinâmica')
   })
 
-  test('anonymizeStudent removes personal identifiers while preserving financial records', async ({ assert }) => {
+  test('anonymizeStudent removes personal identifiers while preserving financial records', async ({
+    assert,
+  }) => {
     const teacher = await createTeacher()
 
     const student = await Student.create({

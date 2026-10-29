@@ -9,6 +9,7 @@ Este documento formaliza as políticas de privacidade, governança e conformidad
 O Music Class trata dados de professores (usuários titulares da conta) e alunos estritamente para viabilizar a prestação de serviços educacionais de música, gestão de agendamentos e faturamento.
 
 As operações de tratamento baseiam-se nos seguintes artigos da LGPD:
+
 1. **Execução de Contrato ou Procedimentos Preliminares (Art. 7º, V):**
    - Gestão de matrículas, agendamento de aulas, emissão de faturas/recibos e histórico pedagógico.
 2. **Legítimo Interesse do Controlador (Art. 7º, IX):**
@@ -20,17 +21,18 @@ As operações de tratamento baseiam-se nos seguintes artigos da LGPD:
 
 ## 2. Inventário de Dados Pessoais
 
-| Categoria | Dados Coletados | Finalidade | Tempo de Retenção |
-| :--- | :--- | :--- | :--- |
-| **Professor (Usuário)** | Nome completo, e-mail, telefone, estúdio, cidade, senha (hash Argon2/Scrypt) | Autenticação, controle de acesso e comunicação com a plataforma | Durante a vigência da conta + 5 anos para obrigações legais |
-| **Aluno** | Nome, telefone, data de nascimento, instrumento, nível musical, dia/horário preferido, notas pedagógicas | Gestão da agenda de aulas, plano contratado e acompanhamento pedagógico | Durante a vigência da matrícula ou até solicitação de anonimização |
-| **Financeiro / Aulas** | Valor de planos, descontos, datas de pagamento, data e status das aulas | Cumprimento de obrigações contratuais e fiscais | 5 anos após encerramento do contrato |
+| Categoria               | Dados Coletados                                                                                          | Finalidade                                                              | Tempo de Retenção                                                  |
+| :---------------------- | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| **Professor (Usuário)** | Nome completo, e-mail, telefone, estúdio, cidade, senha (hash Argon2/Scrypt)                             | Autenticação, controle de acesso e comunicação com a plataforma         | Durante a vigência da conta + 5 anos para obrigações legais        |
+| **Aluno**               | Nome, telefone, data de nascimento, instrumento, nível musical, dia/horário preferido, notas pedagógicas | Gestão da agenda de aulas, plano contratado e acompanhamento pedagógico | Durante a vigência da matrícula ou até solicitação de anonimização |
+| **Financeiro / Aulas**  | Valor de planos, descontos, datas de pagamento, data e status das aulas                                  | Cumprimento de obrigações contratuais e fiscais                         | 5 anos após encerramento do contrato                               |
 
 ---
 
 ## 3. Direitos dos Titulares (Art. 18)
 
 Os alunos ou responsáveis legais possuem os seguintes direitos:
+
 1. **Confirmação e Acesso (Art. 18, I e II):** Obter confirmação e acesso aos dados pessoais mantidos na plataforma.
 2. **Correção (Art. 18, III):** Solicitar correção de dados incompletos, inexatos ou desatualizados via interface do professor.
 3. **Portabilidade dos Dados (Art. 18, V):** Obter dossiê integral e interoperável em formato JSON de todo o seu histórico.
@@ -58,6 +60,7 @@ node ace lgpd:student 42 --output=./dossie_aluno_42.json
 ```
 
 O arquivo gerado inclui:
+
 - Metadados de emissão e base jurídica.
 - Cadastro do aluno (nome, telefone, nível, tags, preferências de horário).
 - Histórico de todos os planos contratados (valores, datas de pagamento, validade).
@@ -74,6 +77,7 @@ node ace lgpd:student 42 --anonymize
 ```
 
 **Efeitos da anonimização:**
+
 - O nome do aluno é substituído por `Aluno Anonimizado #42`.
 - Telefone, data de nascimento, tags e observações pedagógicas são limpos (`NULL`).
 - O instrumento é marcado como `Anonimizado`.

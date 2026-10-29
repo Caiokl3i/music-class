@@ -17,14 +17,14 @@ jobs:
         run: |
           URL="${TARGET_URL%/}/health"
           echo "🌐 Sending keep-alive request to: $URL"
-          
+
           RESPONSE=$(curl -fsSL --max-time 30 "$URL") || {
             echo "❌ Error: Keep-alive request failed to connect to $URL." >&2
             exit 1
           }
-          
+
           echo "Response payload: $RESPONSE"
-          
+
           if echo "$RESPONSE" | grep -q '"database":"connected"'; then
             echo "✅ Keep-alive successful: Database connected and query executed."
           else

@@ -114,10 +114,7 @@ export async function anonymizeStudent(studentId: number): Promise<boolean> {
     await student.save()
 
     // Clear personal descriptions from past lessons
-    await trx
-      .from('lessons')
-      .where('student_id', student.id)
-      .update({ description: null })
+    await trx.from('lessons').where('student_id', student.id).update({ description: null })
   })
 
   return true

@@ -34,7 +34,7 @@ test.group('Shared rate limit stores', () => {
     // Mock global fetch for testing Upstash pipeline
     const originalFetch = globalThis.fetch
     let capturedBody: unknown = null
-    let capturedHeaders: HeadersInit | undefined = undefined
+    let capturedHeaders: HeadersInit | undefined
 
     globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
       capturedHeaders = init?.headers

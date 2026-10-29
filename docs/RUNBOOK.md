@@ -39,12 +39,14 @@ O deploy em produção é executado em etapas sequenciais para garantir zero que
 
 1. **Backup Preventivo:**
    Antes de aplicar qualquer migração estrutural, garanta que um backup recente foi concluído ou execute manualmente:
+
    ```bash
    ./scripts/backup_postgres.sh
    ```
 
 2. **Execução de Migrações de Banco:**
    Execute as migrações utilizando a conexão **direta** (porta 5432) do Supabase:
+
    ```bash
    DATABASE_URL="$DATABASE_DIRECT_URL" npm run db:migrate:prod
    ```
@@ -71,6 +73,7 @@ O deploy em produção é executado em etapas sequenciais para garantir zero que
 ### 3.2 Rollback de Migrações de Banco
 
 Caso a migração precise ser revertida:
+
 ```bash
 DATABASE_URL="$DATABASE_DIRECT_URL" node ace migration:rollback --batch=N
 ```
@@ -115,7 +118,9 @@ O script baixa o arquivo compactado, executa `psql` para aplicar o dump e valida
 ## 5. Rotação de Chaves e Credenciais
 
 ### 5.1 APP_KEY (Adonis Core)
+
 A `APP_KEY` é usada para assinar cookies e criptografar dados sensíveis em repouso.
+
 1. Gere uma nova chave criptográfica de 32 bytes:
    ```bash
    node ace generate:key --show
@@ -124,11 +129,13 @@ A `APP_KEY` é usada para assinar cookies e criptografar dados sensíveis em rep
 3. Sessões ativas de usuários serão invalidadas (eles precisarão fazer login novamente).
 
 ### 5.2 Senha do Banco de Dados (Supabase)
+
 1. Acesse o Supabase Dashboard -> **Project Settings** -> **Database** -> **Reset Database Password**.
 2. Copie a nova senha gerada.
 3. Atualize tanto `DATABASE_URL` (pooler porta 6543) quanto `DATABASE_DIRECT_URL` (porta 5432) nas variáveis de ambiente da Vercel, Render e GitHub Secrets (`PROD_DATABASE_URL`, `DB_RESTORE_TARGET_URL`).
 
 ### 5.3 Tokens do Cloudflare R2 / AWS S3
+
 1. Crie uma nova Access Key no painel Cloudflare R2 / AWS IAM.
 2. Atualize os segredos do GitHub Actions: `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`.
 3. Revogue a Access Key antiga após o próximo ciclo de backup ser concluído com sucesso.
@@ -140,10 +147,13 @@ A `APP_KEY` é usada para assinar cookies e criptografar dados sensíveis em rep
 Na camada gratuita do Supabase, projetos sem requisições por 7 dias entram em estado de **PAUSED**.
 
 ### 6.1 Prevenção Proativa
+
 O workflow `.github/workflows/keep_alive.yml` executa diariamente às 12:00 UTC chamando a rota `/health`, que executa `SELECT 1` no banco de dados e reseta o contador de inatividade.
 
 ### 6.2 Reativação Manual (Se pausado)
+
 Se o endpoint `/health` passar a retornar timeout ou erro de conexão de banco:
+
 1. Acesse https://supabase.com/dashboard.
 2. Localize o projeto do Music Class com a tag amarela `PAUSED`.
 3. Clique em **Restore Project** (ou **Resume Project**).
@@ -160,6 +170,7 @@ Se o endpoint `/health` passar a retornar timeout ou erro de conexão de banco:
 Recomenda-se a configuração de um monitor externo gratuito para detectar quedas imediatamente:
 
 ### 7.1 Configuração no UptimeRobot
+
 1. Crie uma conta gratuita em [uptimerobot.com](https://uptimerobot.com).
 2. Adicione um novo monitor:
    - **Monitor Type:** `HTTP(s)`
@@ -170,6 +181,7 @@ Recomenda-se a configuração de um monitor externo gratuito para detectar queda
 4. Em **HTTP Method**, selecione `GET`. A resposta esperada é HTTP 200 contendo `{"status":"ok","database":"connected"}`.
 
 ### 7.2 Alertas do Sentry
+
 1. Acesse [sentry.io](https://sentry.io) -> **Alerts**.
 2. Garanta que a regra padrão "Send a notification when an issue is created" esteja vinculada ao canal de e-mail dos administradores.
 3. Limite de alerta: Qualquer erro não tratado (HTTP 500) ou falha de conectividade com o banco notificará a equipe em tempo real.
