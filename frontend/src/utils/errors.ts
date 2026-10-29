@@ -31,6 +31,8 @@ const DOMAIN_MESSAGES: Record<string, string> = {
     'Com PostgreSQL o banco já fica em nuvem. O envio do arquivo SQLite não se aplica.',
   E_BACKUP_DISABLED:
     'Backups manuais de arquivo SQLite estão desativados em ambiente de nuvem. Os dados são protegidos por backups automáticos gerenciados.',
+  E_MAINTENANCE_READ_ONLY:
+    'Sistema em manutenção rápida (modo somente leitura). Suas consultas continuam disponíveis; tente salvar novamente em alguns minutos.',
   E_TOO_MANY_REQUESTS: 'Muitas tentativas. Espere um pouco e tente de novo.',
   E_ROW_NOT_FOUND: 'Registro não encontrado.',
   E_UNAUTHORIZED: 'Sessão expirada. Faça login novamente.',
