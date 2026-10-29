@@ -8,6 +8,32 @@ import env from '#start/env'
  *
  * https://docs.adonisjs.com/guides/security/cors
  */
+function resolveCorsOrigin(origin: string): boolean {
+  if (app.inDev) {
+    return true
+  }
+
+  const allowedOrigins = env
+    .get('CORS_ORIGIN', '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+
+  if (allowedOrigins.includes(origin)) {
+    return true
+  }
+
+  // Allow preview deployments on Vercel when enabled
+  if (
+    env.get('ALLOW_VERCEL_PREVIEW') === 'true' &&
+    /^https:\/\/[a-z0-9-]+.*\.vercel\.app$/.test(origin)
+  ) {
+    return true
+  }
+
+  return false
+}
+
 const corsConfig = defineConfig({
   /**
    * Enable or disable CORS handling globally.
@@ -15,16 +41,9 @@ const corsConfig = defineConfig({
   enabled: true,
 
   /**
-   * In development, allow every origin to simplify local front/backend setup.
-   * In production, use CORS_ORIGIN (comma-separated allowlist).
+   * Dynamically resolves allowed origins based on CORS_ORIGIN and Vercel preview settings.
    */
-  origin: app.inDev
-    ? true
-    : env
-        .get('CORS_ORIGIN', '')
-        .split(',')
-        .map((origin) => origin.trim())
-        .filter(Boolean),
+  origin: resolveCorsOrigin,
 
   /**
    * HTTP methods accepted for cross-origin requests.

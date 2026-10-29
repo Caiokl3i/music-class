@@ -33,6 +33,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Script automatizado de smoke test pós-deploy com validação de health check e latência em `scripts/smoke_test.ts` (`A-10`).
   - Relatório técnico do Spike consolidado em `docs/SPIKE_REPORT.md` detalhando métricas de cold start, pooling (Supavisor port 6543), migração de rate limit (`A-05`) e comportamento do PDFKit.
   - Registro de Decisão Arquitetural formalizado em `docs/adr/0003-decisao-arquitetura-v2.md` com aprovação do Gate B e decisão formal GO para arquitetura Serverless.
+- **Fase 4 (Adaptação Serverless da API)**:
+  - Boot estrito em produção (`A-11`): falha imediata se `DATABASE_URL` estiver ausente, impedindo fallback silencioso para SQLite em disco efêmero.
+  - Conexão com pool reduzido (`min: 0, max: 2`) para lambdas e `DATABASE_DIRECT_URL` para execução isolada de migrations (`A-09`, `A-12`).
+  - Desacoplamento definitivo de migrations no boot do container Docker (`docker/api-entrypoint.sh`), tornando migrações um passo explícito de release (`A-01`).
+  - Rate limit compartilhado com arquitetura de stores desacoplados: `UpstashRateLimitStore` (REST via fetch), `DatabaseRateLimitStore` (tabela `rate_limit_buckets` com UPSERT atômico) e `MemoryRateLimitStore` (`A-05`).
+  - Restrição de backup SQLite e envio de e-mail ao ambiente de arquivo local, com resposta informativa 404 (`E_BACKUP_DISABLED`) em produção/PostgreSQL (`A-11`).
+  - Endpoint `GET /health` com ping real no banco via `SELECT 1` e validação integrada ao smoke test (`A-08`).
+  - Migration habilitando Row Level Security (RLS) em todas as 8 tabelas do banco no PostgreSQL, blindando a Data API pública do Supabase contra acessos com a chave `anon` (`A-13`).
+  - Middleware global de logging estruturado com `x-request-id`, correlação de eventos e higienização estrita de PII (`A-10`).
+  - Resolução dinâmica de CORS para ambientes de Preview na Vercel (`ALLOW_VERCEL_PREVIEW=true`) e documentação detalhada de segredos por ambiente.
 
 ---
 

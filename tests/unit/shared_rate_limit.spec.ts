@@ -58,7 +58,8 @@ test.group('Shared rate limit stores', () => {
         ['EXPIRE', 'ratelimit:ip-123', 600, 'NX'],
         ['TTL', 'ratelimit:ip-123'],
       ])
-      assert.equal((capturedHeaders as Record<string, string>)['Authorization'], 'Bearer fake-token')
+      const headers = capturedHeaders as unknown as Record<string, string>
+      assert.equal(headers['Authorization'], 'Bearer fake-token')
     } finally {
       globalThis.fetch = originalFetch
     }

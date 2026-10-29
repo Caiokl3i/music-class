@@ -42,4 +42,3 @@ export function resolveDbConnection(): DbConnectionName {
 export function isPostgres() {
   return resolveDbConnection() === 'pg'
 }
-
