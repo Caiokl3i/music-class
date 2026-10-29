@@ -14,14 +14,14 @@ import {
 export default class RateLimitMiddleware {
   async handle(ctx: HttpContext, next: NextFn, options: RateLimitRule = RATE_LIMITS.login) {
     const ip = ctx.request.ip()
-    this.assertAllowed(ctx, consumeRateLimit(`${options.name}:ip:${ip}`, options), options)
+    this.assertAllowed(ctx, await consumeRateLimit(`${options.name}:ip:${ip}`, options), options)
 
     if (options.name === RATE_LIMITS.login.name) {
       const email = ctx.request.input('email')
       if (typeof email === 'string' && email.includes('@')) {
         this.assertAllowed(
           ctx,
-          consumeRateLimit(
+          await consumeRateLimit(
             `${RATE_LIMITS.loginEmail.name}:${email.trim().toLowerCase()}`,
             RATE_LIMITS.loginEmail
           ),
@@ -32,7 +32,11 @@ export default class RateLimitMiddleware {
 
     const user = ctx.auth.user
     if (user) {
-      this.assertAllowed(ctx, consumeRateLimit(`${options.name}:user:${user.id}`, options), options)
+      this.assertAllowed(
+        ctx,
+        await consumeRateLimit(`${options.name}:user:${user.id}`, options),
+        options
+      )
     }
 
     return next()
