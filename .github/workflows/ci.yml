@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - 'release/**'
+  pull_request:
+    branches:
+      - master
+      - develop
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (SQLite: Lint, Typecheck & Tests)
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      TEST_DB: sqlite
+      PORT: 3333
+      HOST: localhost
+      LOG_LEVEL: silent
+      APP_NAME: music-class
+      APP_KEY: testkeytestkeytestkeytestkeytestk
+      APP_URL: http://localhost:3333
+      SESSION_DRIVER: memory
+      SIGNUP_INVITE_CODE: test-invite
+      RATE_LIMIT_ENABLED: '0'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Run linter (ESLint)
+        run: npm run lint
+
+      - name: Run typecheck (TypeScript)
+        run: npm run typecheck
+
+      - name: Run tests (Japa - SQLite)
+        run: npm test
+
+  backend-postgres:
+    name: Backend (PostgreSQL: Tests & Migrations)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: musicclass_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      TEST_DB: pg
+      PORT: 3333
+      HOST: localhost
+      LOG_LEVEL: silent
+      APP_NAME: music-class
+      APP_KEY: testkeytestkeytestkeytestkeytestk
+      APP_URL: http://localhost:3333
+      SESSION_DRIVER: memory
+      SIGNUP_INVITE_CODE: test-invite
+      RATE_LIMIT_ENABLED: '0'
+      DATABASE_URL: postgres://postgres:password@localhost:5432/musicclass_test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Run tests on PostgreSQL (Japa)
+        run: npm test
+
+
+  frontend:
+    name: Frontend (Lint & Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run linter (oxlint)
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+  docker:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend container image
+        run: docker build -t music-class-api:ci .
