@@ -45,6 +45,10 @@ export default await Env.create(new URL('../', import.meta.url), {
   UPSTASH_REDIS_REST_URL: Env.schema.string.optional(),
   UPSTASH_REDIS_REST_TOKEN: Env.schema.string.optional(),
 
+  // Sentry Error Monitoring (optional)
+  SENTRY_DSN: Env.schema.string.optional(),
+  SENTRY_ENVIRONMENT: Env.schema.string.optional(),
+
   // CORS — comma-separated origins for production (optional in development)
   CORS_ORIGIN: Env.schema.string.optional(),
   ALLOW_VERCEL_PREVIEW: Env.schema.string.optional(),
