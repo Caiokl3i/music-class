@@ -139,17 +139,17 @@ flowchart LR
 
 **Objetivo:** responder, com dados, se o AdonisJS roda bem na Vercel. Endereça **A-10, A-11, A-12**. Tudo em **staging**.
 
-| #   | Tarefa                                                                                                            | Como validar                                       | Status |
-| --- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --- |
-| 3.1 | Ponto de entrada serverless para a API (`bin/serverless.ts` e bridge `api/index.js`)                              | Handler HTTP funcional e testado                   | ✅ Concluído |
-| 3.2 | `node ace build` + aliases `#…` + ESM funcionando no bundle da função                                             | Build compila `build/bin/serverless.js` limpo      | ✅ Concluído |
-| 3.3 | Conectar ao Supabase de staging via **pooler** (runtime) e **conexão direta** (migrations)                        | Pooler porta 6543 e conexão direta porta 5432      | ✅ Mapeado & Validado |
-| 3.4 | Validar _prepared statements_/Knex em modo transaction do pooler                                                  | Knex configurado sem session statements nomeados   | ✅ Mapeado |
-| 3.5 | Login, CRUD aluno/plano/aula, dashboard (Smoke test)                                                              | Script `scripts/smoke_test.ts` implementado        | ✅ Concluído |
-| 3.6 | PDF (cobrança) e CSV/PDF mensal                                                                                   | Buffers em memória (< 250ms) validados             | ✅ Aprovado |
-| 3.7 | Remover `better-sqlite3` do bundle de produção                                                                    | Build de produção opera estritamente com `pg`      | ✅ Documentado |
-| 3.8 | Medir cold start (p50/p95) e latência com o banco na região escolhida                                             | Cold start (1–2s) e warm (15–40ms) documentados    | ✅ Medido |
-| 3.9 | Cookies/CORS entre frontend e API (domínios)                                                                      | Bearer token stateless preservado via ADR 0001     | ✅ Concluído |
+| #   | Tarefa                                                                                     | Como validar                                     | Status                |
+| --- | ------------------------------------------------------------------------------------------ | ------------------------------------------------ | --------------------- |
+| 3.1 | Ponto de entrada serverless para a API (`bin/serverless.ts` e bridge `api/index.js`)       | Handler HTTP funcional e testado                 | ✅ Concluído          |
+| 3.2 | `node ace build` + aliases `#…` + ESM funcionando no bundle da função                      | Build compila `build/bin/serverless.js` limpo    | ✅ Concluído          |
+| 3.3 | Conectar ao Supabase de staging via **pooler** (runtime) e **conexão direta** (migrations) | Pooler porta 6543 e conexão direta porta 5432    | ✅ Mapeado & Validado |
+| 3.4 | Validar _prepared statements_/Knex em modo transaction do pooler                           | Knex configurado sem session statements nomeados | ✅ Mapeado            |
+| 3.5 | Login, CRUD aluno/plano/aula, dashboard (Smoke test)                                       | Script `scripts/smoke_test.ts` implementado      | ✅ Concluído          |
+| 3.6 | PDF (cobrança) e CSV/PDF mensal                                                            | Buffers em memória (< 250ms) validados           | ✅ Aprovado           |
+| 3.7 | Remover `better-sqlite3` do bundle de produção                                             | Build de produção opera estritamente com `pg`    | ✅ Documentado        |
+| 3.8 | Medir cold start (p50/p95) e latência com o banco na região escolhida                      | Cold start (1–2s) e warm (15–40ms) documentados  | ✅ Medido             |
+| 3.9 | Cookies/CORS entre frontend e API (domínios)                                               | Bearer token stateless preservado via ADR 0001   | ✅ Concluído          |
 
 **Entregável:** Relatório técnico detalhado em [docs/SPIKE_REPORT.md](SPIKE_REPORT.md) e decisão formal no [ADR 0003](adr/0003-decisao-arquitetura-v2.md).
 

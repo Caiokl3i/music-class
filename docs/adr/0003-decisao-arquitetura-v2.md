@@ -11,6 +11,7 @@
 A Fase 3 executou a prova de conceito técnica (Spike) para validar a viabilidade de rodar a API AdonisJS 7 em funções serverless da Vercel conectadas ao banco de dados PostgreSQL do Supabase (via pooler Supavisor).
 
 O [Relatório do Spike](../SPIKE_REPORT.md) confirmou:
+
 - O compilador do AdonisJS (`node ace build`) gera código ESM plenamente compatível com o runtime Node.js 24 da Vercel.
 - O handler serverless (`bin/serverless.ts`) gerencia o boot de forma idempotente, entregando cold starts de ~1s a 2s e tempos de resposta quentes de 15ms a 40ms.
 - A geração de relatórios e cobranças em PDF via PDFKit consome pouca memória e executa dentro do limite de tempo da camada gratuita.
@@ -22,7 +23,7 @@ O [Relatório do Spike](../SPIKE_REPORT.md) confirmou:
 
 **Aprovamos o avanço para a Fase 4 (Adaptação Serverless da API)**, mantendo a arquitetura alvo de **Frontend e API na Vercel + Supabase como banco de dados**.
 
-Ao mesmo tempo, mantemos a **Fase 4-alt (Frontend na Vercel + API persistente em Docker/Render + Supabase)** como plano de contingência (*fallback*) 100% preparado, uma vez que o [Dockerfile](../../Dockerfile) e a suíte de testes multi-banco permanecem ativos e validados no CI.
+Ao mesmo tempo, mantemos a **Fase 4-alt (Frontend na Vercel + API persistente em Docker/Render + Supabase)** como plano de contingência (_fallback_) 100% preparado, uma vez que o [Dockerfile](../../Dockerfile) e a suíte de testes multi-banco permanecem ativos e validados no CI.
 
 ---
 

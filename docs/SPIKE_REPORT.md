@@ -17,23 +17,25 @@ Entretanto, essa abordagem impõe concessões operacionais e trade-offs importan
 
 ## 2. Checklist Técnico do Spike (Seção 12.2)
 
-| Item de Validação | Status | Resultado & Observações |
-|---|---|---|
-| **Ponto de entrada serverless** | ✅ Aprovado | `bin/serverless.ts` implementado utilizando `Ignitor` e `app.container.make('server')`. |
-| **Build ESM & Aliases `#...`** | ✅ Aprovado | `node ace build` compila perfeitamente; subpath imports nativos do `package.json` resolvem sem conflito. |
-| **Cold Start (p50 / p95)** | ⚠️ Atenção | Boot inicial frio medido entre **950ms e 2.1s**. Requisições quentes respondem em **15ms a 40ms**. |
-| **PDFKit (Cobrança e Relatórios)** | ✅ Aprovado | Geração de PDFs em memória (buffer) consome ~120ms a 250ms, bem abaixo do timeout de 10s da Vercel. |
-| **Supabase Pooler vs Direto** | ✅ Aprovado | Pooler Supavisor (porta 6543) em modo transaction para runtime; porta direta 5432 para migrations explícitas (`db:migrate:prod`). |
-| **Dependência de Disco** | ✅ Aprovado | Endpoints de negócio operam sem gravar em disco local (`tmp/`); backups de SQLite isolados pelo helper `isPostgres()`. |
-| **Rate Limiting (`A-05`)** | 🔴 Requer Ajuste | O `Map` em memória atual reseta entre lambdas efêmeras. Obriga migração para Upstash Redis ou Supabase na Fase 4. |
-| **Bundle & Binários Nativos** | ✅ Aprovado | Produção com Postgres dispensa compilação de `better-sqlite3`, permitindo deploy com `npm ci --omit=dev`. |
+| Item de Validação                  | Status           | Resultado & Observações                                                                                                           |
+| ---------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Ponto de entrada serverless**    | ✅ Aprovado      | `bin/serverless.ts` implementado utilizando `Ignitor` e `app.container.make('server')`.                                           |
+| **Build ESM & Aliases `#...`**     | ✅ Aprovado      | `node ace build` compila perfeitamente; subpath imports nativos do `package.json` resolvem sem conflito.                          |
+| **Cold Start (p50 / p95)**         | ⚠️ Atenção       | Boot inicial frio medido entre **950ms e 2.1s**. Requisições quentes respondem em **15ms a 40ms**.                                |
+| **PDFKit (Cobrança e Relatórios)** | ✅ Aprovado      | Geração de PDFs em memória (buffer) consome ~120ms a 250ms, bem abaixo do timeout de 10s da Vercel.                               |
+| **Supabase Pooler vs Direto**      | ✅ Aprovado      | Pooler Supavisor (porta 6543) em modo transaction para runtime; porta direta 5432 para migrations explícitas (`db:migrate:prod`). |
+| **Dependência de Disco**           | ✅ Aprovado      | Endpoints de negócio operam sem gravar em disco local (`tmp/`); backups de SQLite isolados pelo helper `isPostgres()`.            |
+| **Rate Limiting (`A-05`)**         | 🔴 Requer Ajuste | O `Map` em memória atual reseta entre lambdas efêmeras. Obriga migração para Upstash Redis ou Supabase na Fase 4.                 |
+| **Bundle & Binários Nativos**      | ✅ Aprovado      | Produção com Postgres dispensa compilação de `better-sqlite3`, permitindo deploy com `npm ci --omit=dev`.                         |
 
 ---
 
 ## 3. Análise Detalhada dos Pontos Críticos
 
 ### 3.1 Ponto de Entrada Serverless (`bin/serverless.ts`)
+
 O AdonisJS 7 gerencia o ciclo de vida via `Ignitor`. Em vez de abrir uma porta TCP via `.httpServer().start()`, o entrypoint serverless inicializa a aplicação e captura o handler HTTP do framework:
+
 ```typescript
 const app = ignitor.createApp('web')
 await app.init()
@@ -44,9 +46,11 @@ app.start(async () => {
   cachedHandler = server.handle.bind(server)
 })
 ```
+
 O cache em memória global garante que apenas a **primeira requisição** (cold start) arque com o tempo de boot dos providers. Requisições subsequentes no mesmo container reutilizam o `cachedHandler` instantaneamente.
 
 ### 3.2 Conexão com Supabase (Pooler vs Migrations)
+
 1. **Runtime Serverless (Porta 6543 - Transaction Mode):**
    - O Supavisor gerencia o pool de conexões para milhares de lambdas concorrentes.
    - Deve ser configurado com pool pequeno por função (`pool: { min: 0, max: 2 }`).
@@ -57,10 +61,13 @@ O cache em memória global garante que apenas a **primeira requisição** (cold 
    - Variável: `DATABASE_DIRECT_URL`.
 
 ### 3.3 Aritmética e PDFKit
+
 A suíte de testes de caracterização criada na Fase 2 comprovou que a biblioteca PDFKit opera exclusivamente em memória (usando streams e buffers), sem necessidade de diretórios temporários em disco. A geração de mensagens de cobrança e recibos PDF de alunos executa em menos de 250ms, consumindo cerca de 35MB de RAM.
 
 ### 3.4 Rate Limit em Memória (O Ponto Frágil)
+
 Como instâncias serverless morrem após minutos de inatividade e novas instâncias podem ser provisionadas para requisições concorrentes:
+
 - O contador em memória `app/services/rate_limit.ts` **não persiste**.
 - Um atacante pode realizar múltiplas tentativas de login ou signup atingindo instâncias serverless distintas.
 - **Conclusão:** Para seguir com serverless na Fase 4, é indispensável adotar um store compartilhado (Upstash Redis gratuito ou tabela dedicada no Supabase).

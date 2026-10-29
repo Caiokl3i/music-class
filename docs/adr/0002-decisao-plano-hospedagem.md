@@ -10,7 +10,7 @@
 
 O Music Class é um sistema de gestão de estúdio de aulas de música com controle financeiro, controle de créditos de pacotes e geração de cobranças para professores.
 
-Na transição para a infraestrutura V2 (Vercel + Supabase), é necessário analisar os termos de serviço e as limitações técnicas dos planos gratuitos (*free tiers*):
+Na transição para a infraestrutura V2 (Vercel + Supabase), é necessário analisar os termos de serviço e as limitações técnicas dos planos gratuitos (_free tiers_):
 
 1. **Termos da Vercel (Hobby vs Pro):**
    - O plano **Vercel Hobby** é restrito a projetos pessoais e não-comerciais.
@@ -37,12 +37,12 @@ Na transição para a infraestrutura V2 (Vercel + Supabase), é necessário anal
 
 Para operar a V2 de forma segura em planos gratuitos, foram estabelecidas as seguintes salvaguardas:
 
-| Limitação | Consequência | Mitigação Implementada |
-|---|---|---|
-| **Pausa de 7 dias do Supabase** | Banco inacessível após período sem aulas | Job de keep-alive diário (GitHub Actions chamando `/health`) |
+| Limitação                            | Consequência                                          | Mitigação Implementada                                                                                          |
+| ------------------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Pausa de 7 dias do Supabase**      | Banco inacessível após período sem aulas              | Job de keep-alive diário (GitHub Actions chamando `/health`)                                                    |
 | **Falta de Backup no Supabase Free** | Risco de perda irreversível de dados de alunos/planos | Script automatizado de `pg_dump` agendado para storage externo gratuito (R2/B2/GitHub) com teste de restauração |
-| **Timeout de funções serverless** | Geração de PDFs de mensalidade truncada | Otimização do PDFKit mantendo buffers enxutos em memória |
-| **Rate Limit em memória efêmera** | Ineficácia do limitador de força bruta em serverless | Migração para store externo compartilhado (Upstash Redis ou Supabase) na Fase 4 |
+| **Timeout de funções serverless**    | Geração de PDFs de mensalidade truncada               | Otimização do PDFKit mantendo buffers enxutos em memória                                                        |
+| **Rate Limit em memória efêmera**    | Ineficácia do limitador de força bruta em serverless  | Migração para store externo compartilhado (Upstash Redis ou Supabase) na Fase 4                                 |
 
 ---
 

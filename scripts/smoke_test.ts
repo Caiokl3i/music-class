@@ -11,10 +11,11 @@
 |
 */
 
-const targetUrl = (process.env.TARGET_URL || process.env.APP_URL || 'http://localhost:3333').replace(
-  /\/$/,
-  ''
-)
+const targetUrl = (
+  process.env.TARGET_URL ||
+  process.env.APP_URL ||
+  'http://localhost:3333'
+).replace(/\/$/, '')
 
 console.log(`\n🔍 Iniciando Smoke Test contra: ${targetUrl}\n`)
 
