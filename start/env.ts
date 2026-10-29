@@ -29,18 +29,25 @@ export default await Env.create(new URL('../', import.meta.url), {
   // Session
   SESSION_DRIVER: Env.schema.enum(['cookie', 'memory', 'database'] as const),
 
-  // Database — unset = SQLite in tmp/. Set DATABASE_URL (Render Postgres) to persist.
+  // Database — unset = SQLite in tmp/. Set DATABASE_URL (Render/Supabase Postgres) to persist.
   DB_CONNECTION: Env.schema.enum.optional(['sqlite', 'pg'] as const),
   TEST_DB: Env.schema.enum.optional(['sqlite', 'pg'] as const),
   DATABASE_URL: Env.schema.string.optional(),
+  DATABASE_DIRECT_URL: Env.schema.string.optional(),
+  DB_POOL_MAX: Env.schema.number.optional(),
   DB_HOST: Env.schema.string.optional({ format: 'host' }),
   DB_PORT: Env.schema.number.optional(),
   DB_USER: Env.schema.string.optional(),
   DB_PASSWORD: Env.schema.string.optional(),
   DB_DATABASE: Env.schema.string.optional(),
 
+  // Upstash Redis for distributed rate limit (optional; fallback to Supabase table)
+  UPSTASH_REDIS_REST_URL: Env.schema.string.optional(),
+  UPSTASH_REDIS_REST_TOKEN: Env.schema.string.optional(),
+
   // CORS — comma-separated origins for production (optional in development)
   CORS_ORIGIN: Env.schema.string.optional(),
+  ALLOW_VERCEL_PREVIEW: Env.schema.string.optional(),
 
   // Empty = signup closed. Set a phrase to accept that invite code only.
   SIGNUP_INVITE_CODE: Env.schema.string.optional(),

@@ -4,7 +4,8 @@ import { defineConfig } from '@adonisjs/lucid'
 import { resolveDbConnection } from '#database/connection'
 
 function postgresConnection() {
-  const url = env.get('DATABASE_URL')
+  const isMigration = process.argv.some((arg) => arg.includes('migration'))
+  const url = (isMigration && env.get('DATABASE_DIRECT_URL')) || env.get('DATABASE_URL')
   if (url) {
     const local = /localhost|127\.0\.0\.1/.test(url)
     return {
@@ -49,6 +50,11 @@ const dbConfig = defineConfig({
     pg: {
       client: 'pg',
       connection: postgresConnection(),
+      pool: {
+        min: 0,
+        max: env.get('DB_POOL_MAX') || 2,
+        idleTimeoutMillis: 30000,
+      },
       migrations: {
         naturalSort: true,
         paths: ['database/migrations'],
