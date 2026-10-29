@@ -31,16 +31,16 @@ Status da validação: ✅ **100% APROVADO COM PARIDADE TOTAL**
 
 ## 3. Comparação de Registros (Neon vs Banco Restaurado)
 
-| Tabela | Origem (Neon) | Restaurado (Teste) | Status |
-|---|---|---|---|
-| `users` | 1 | 1 | ✅ Idêntico |
-| `students` | 2 | 2 | ✅ Idêntico |
-| `plans` | 5 | 5 | ✅ Idêntico |
-| `lessons` | 22 | 22 | ✅ Idêntico |
-| `plan_types` | 3 | 3 | ✅ Idêntico |
-| `plan_discounts` | 2 | 2 | ✅ Idêntico |
-| `auth_access_tokens` | 23 | 23 | ✅ Idêntico |
-| `adonis_schema` | 18 | 18 | ✅ Idêntico |
+| Tabela               | Origem (Neon) | Restaurado (Teste) | Status      |
+| -------------------- | ------------- | ------------------ | ----------- |
+| `users`              | 1             | 1                  | ✅ Idêntico |
+| `students`           | 2             | 2                  | ✅ Idêntico |
+| `plans`              | 5             | 5                  | ✅ Idêntico |
+| `lessons`            | 22            | 22                 | ✅ Idêntico |
+| `plan_types`         | 3             | 3                  | ✅ Idêntico |
+| `plan_discounts`     | 2             | 2                  | ✅ Idêntico |
+| `auth_access_tokens` | 23            | 23                 | ✅ Idêntico |
+| `adonis_schema`      | 18            | 18                 | ✅ Idêntico |
 
 ---
 

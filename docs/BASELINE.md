@@ -51,6 +51,7 @@ Branch de desenvolvimento da V2: `develop` (trabalho livre via PR para `master`)
 ## 5. Estratégia de Branches Simplificada (Decisão do Desenvolvedor)
 
 Conforme alinhado para o fluxo solo:
+
 - `master` = código em produção (estável, só recebe merge de PR aprovado).
 - `release/v1` = código congelado da V1 (para eventual hotfix emergencial).
 - `develop` = **branch principal de trabalho da V2**. Todas as melhorias serão feitas nela e, quando estiver pronto, será aberto um PR de `develop` para `master`.
