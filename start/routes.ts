@@ -1,10 +1,31 @@
 import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
+import db from '@adonisjs/lucid/services/db'
 import { controllers } from '#generated/controllers'
 import { RATE_LIMITS } from '#services/rate_limit'
 
 router.get('/', () => {
   return { ok: true }
+})
+
+router.get('health', async ({ response }) => {
+  try {
+    await db.rawQuery('SELECT 1')
+    return response.ok({
+      status: 'ok',
+      healthy: true,
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+    })
+  } catch (error) {
+    return response.status(503).json({
+      status: 'error',
+      healthy: false,
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Database ping failed',
+    })
+  }
 })
 
 router

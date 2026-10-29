@@ -55,6 +55,17 @@ async function main() {
     }
   })
 
+  await runCheck('GET /health (Database Ping)', async () => {
+    const res = await fetch(`${targetUrl}/health`)
+    if (res.status !== 200) {
+      throw new Error(`Esperado status 200, recebido ${res.status}`)
+    }
+    const body = (await res.json()) as { healthy?: boolean; database?: string }
+    if (!body?.healthy || body.database !== 'connected') {
+      throw new Error(`Health check falhou: ${JSON.stringify(body)}`)
+    }
+  })
+
   await runCheck('GET /api/v1/catalog (Public Catalog)', async () => {
     const res = await fetch(`${targetUrl}/api/v1/catalog`)
     if (res.status !== 200) {
