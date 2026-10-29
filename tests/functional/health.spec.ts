@@ -16,4 +16,11 @@ test.group('Health', () => {
       database: 'connected',
     })
   })
+
+  test('includes x-request-id header in HTTP responses', async ({ assert, client }) => {
+    const response = await client.get('/health')
+    const requestId = response.header('x-request-id')
+    assert.isDefined(requestId)
+    assert.isString(requestId)
+  })
 })
