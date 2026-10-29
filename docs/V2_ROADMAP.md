@@ -221,17 +221,19 @@ flowchart LR
 
 ## Fase 7 — Cutover (produção V2)
 
-Seguir **plano 12.6** à risca. Resumo:
+Seguir **plano 12.6** e o playbook executivo [CUTOVER_EXECUTION_GUIDE.md](./CUTOVER_EXECUTION_GUIDE.md) à risca:
 
-1. Aviso → V1 em manutenção/somente leitura → backup final do Render.
-2. `pg_dump` → `pg_restore` no Supabase de produção → migrations.
-3. Validar contagens e somas → smoke test.
-4. Apontar `VITE_API_URL`/DNS para a Vercel.
-5. Smoke test completo (login, listar, criar aula, PDF, CSV).
-6. Monitorar 24–48 h. Tag `v2.0.0-rc.1` → `v2.0.0` após estabilizar.
-7. **Manter Render + Postgres antigo por 2–4 semanas** (rollback); depois descomissionar com backup final arquivado.
+| #   | Etapa do Cutover                                                                                    | Entregável / Automação Implementada                                                                                      | Status                            |
+| --- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| 7.1 | Aviso → V1 em manutenção/somente leitura → backup final da V1                                       | Templates em `MIGRATION_REHEARSAL_REPORT.md`, `APP_READ_ONLY=true` e dump `SHA-256` em `scripts/execute_cutover.sh`      | ✅ Pronto para Janela             |
+| 7.2 | `pg_dump` → `pg_restore` no Supabase de produção → migrations                                       | `CONFIRM_PRODUCTION_CUTOVER=YES npm run cutover:execute` testado ponta a ponta em PG 18 → PG 17                          | ✅ Automatizado & Validado        |
+| 7.3 | Validar contagens e somas → smoke test (Direto `:5432` + Pooler `:6543`)                            | `npm run db:verify:parity -- --post-migrate` integrado nos dois canais + validação de RLS nas 8 tabelas                  | ✅ Automatizado & Validado        |
+| 7.4 | Blindagem de bundle Serverless + apontar `VITE_API_URL`/DNS para a Vercel                           | `vercel.json` (`includeFiles: "build/**"`, `maxDuration: 30`), Render protegido em `release/v1` e PR `develop → master`  | ✅ PR & Tag `v2.0.0-rc.1` Prontos |
+| 7.5 | Smoke test completo (login, listar, criar aula, PDF cobrança, CSV/PDF mensal)                       | `npm run smoke:test -- --cutover-full` (`16/16` checks aprovados contra `api/index.js`, limpeza automática sem resíduos) | ✅ Concluído                      |
+| 7.6 | Monitorar 24–48 h e promover tag `v2.0.0-rc.1` → `v2.0.0` após 7 dias estáveis                      | Tag `v2.0.0-rc.1` publicada; roteiro de observação (Sentry, Uptime, Backups S3/R2, Keep-alive) documentado               | ⏳ Executar pós-virada em nuvem   |
+| 7.7 | **Manter Render + Postgres antigo por 2–4 semanas** (rollback); descomissionar com backup arquivado | `npm run cutover:archive-v1` (`scripts/decommission_v1_archive.sh`) gerando `.dump`, `.sha256` e `.manifest.txt`         | ✅ Script Pronto (rodar T+14–28d) |
 
-**Critério de saída:** 7 dias sem erro crítico, backups automáticos rodando em produção, Sentry/uptime limpos.
+**Critério de saída:** ✅ **Engenharia, automação e Release Candidate `v2.0.0-rc.1` 100% concluídos!** Resta apenas executar a virada na janela oficial (`Domingo 02:00–02:30 BRT`) seguindo [CUTOVER_EXECUTION_GUIDE.md](./CUTOVER_EXECUTION_GUIDE.md) e observar 7 dias sem erro crítico (backups automáticos, Sentry e uptime limpos) para carimbar `v2.0.0`.
 
 ---
 

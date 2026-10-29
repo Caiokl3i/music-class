@@ -9,6 +9,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+---
+
+## [2.0.0-rc.1] - 2026-10-29
+
+Release Candidate oficial de transição para a infraestrutura **Music Class V2** (Vercel Serverless + Supabase PostgreSQL), preservando 100% de compatibilidade com o contrato `/api/v1`.
+
 ### Adicionado
 
 - **Fase 1 (Fundação)**:
@@ -61,6 +67,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Orquestrador cronometrado de migração e cutover (`scripts/rehearse_cutover.sh`) com suporte automático cross-version PostgreSQL 18 → PostgreSQL 15/17 (`6.2`, `6.4`, `6.5`).
   - Evolução do `scripts/smoke_test.ts` para validar persistência de tokens Bearer pré-cutover (`APP_KEY` / `auth_access_tokens`), login `scrypt` e exportações CSV/PDF (`6.6`).
   - Relatório completo dos dois ensaios cronometrados, validação de rollback, janela recomendada, comunicados aos usuários e gatilhos objetivos Go/No-Go em `docs/MIGRATION_REHEARSAL_REPORT.md` (`6.2`–`6.8`).
+- **Fase 7 (Pacote de Cutover e Release Candidate `v2.0.0-rc.1`)**:
+  - Configuração explícita de empacotamento da função serverless em `vercel.json` (`includeFiles: "build/**"`, `maxDuration: 30`) e validação de `npm run build` no pipeline de CI.
+  - Modo `--cutover-full` em `scripts/smoke_test.ts` validando ciclo completo pós-virada (login, listagem, criação e limpeza transacional sem resíduos de aluno/pacote/aula, recibo PDF de cobrança e exportação mensal CSV/PDF).
+  - Orquestrador oficial de produção `scripts/execute_cutover.sh` (`npm run cutover:execute`) com trava `CONFIRM_PRODUCTION_CUTOVER=YES`, backup pré-cutover assinado com `SHA-256`, validação dupla (conexão direta `:5432` e Supavisor Pooler `:6543`) e log de auditoria.
+  - Utilitário de descomissionamento `scripts/decommission_v1_archive.sh` (`npm run cutover:archive-v1`) gerando dump histórico final, hash `SHA-256` e manifesto contábil `.manifest.txt` antes do desligamento da V1 após 2 a 4 semanas.
+  - Atualização completa do `README.md` para a arquitetura V2 e criação do playbook executivo `docs/CUTOVER_EXECUTION_GUIDE.md`.
 
 ---
 
