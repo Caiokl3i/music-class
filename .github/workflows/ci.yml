@@ -50,6 +50,9 @@ jobs:
       - name: Run typecheck (TypeScript)
         run: npm run typecheck
 
+      - name: Run production build (Serverless & Server bundles)
+        run: npm run build
+
       - name: Run tests (Japa - SQLite)
         run: npm test
 
