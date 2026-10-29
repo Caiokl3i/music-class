@@ -1,21 +1,31 @@
 /*
 |--------------------------------------------------------------------------
-| Deployment Smoke Test
+| Deployment & Cutover Smoke Test
 |--------------------------------------------------------------------------
 |
 | Validates essential HTTP endpoints against a running target instance
-| (e.g. local dev, staging preview, or production).
+| (local dev, staging preview, or production). Supports optional bearer
+| token persistence check (APP_KEY / auth_access_tokens) and authenticated
+| E2E checks (login, dashboard, students, CSV & PDF exports).
 |
 | Usage:
-|   TARGET_URL=https://music-class-staging.vercel.app npm run smoke:test
+|   TARGET_URL=https://music-class.vercel.app npm run smoke:test
+|   SMOKE_TEST_TOKEN="oat_..." SMOKE_TEST_EMAIL="..." SMOKE_TEST_PASSWORD="..." \
+|     TARGET_URL=http://localhost:3333 npm run smoke:test
 |
 */
 
 const targetUrl = (
   process.env.TARGET_URL ||
+  process.env.TEST_API_URL ||
   process.env.APP_URL ||
   'http://localhost:3333'
 ).replace(/\/$/, '')
+
+const existingToken = process.env.SMOKE_TEST_TOKEN
+const smokeEmail = process.env.SMOKE_TEST_EMAIL
+const smokePassword = process.env.SMOKE_TEST_PASSWORD
+const currentMonth = new Date().toISOString().slice(0, 7)
 
 console.log(`\n🔍 Iniciando Smoke Test contra: ${targetUrl}\n`)
 
@@ -66,14 +76,10 @@ async function main() {
     }
   })
 
-  await runCheck('GET /api/v1/catalog (Public Catalog)', async () => {
-    const res = await fetch(`${targetUrl}/api/v1/catalog`)
-    if (res.status !== 200) {
-      throw new Error(`Esperado status 200, recebido ${res.status}`)
-    }
-    const body = (await res.json()) as { packages?: unknown[] }
-    if (!body?.packages || !Array.isArray(body.packages)) {
-      throw new Error('Catálogo não retornou lista de pacotes válida')
+  await runCheck('GET /api/v1/packages (Auth Protection)', async () => {
+    const res = await fetch(`${targetUrl}/api/v1/packages`)
+    if (res.status !== 401) {
+      throw new Error(`Esperado status 401 (Não autorizado), recebido ${res.status}`)
     }
   })
 
@@ -83,6 +89,84 @@ async function main() {
       throw new Error(`Esperado status 401 (Não autorizado), recebido ${res.status}`)
     }
   })
+
+  let activeToken = existingToken || ''
+
+  if (existingToken) {
+    await runCheck('GET /api/v1/account/profile (Pre-cutover Bearer Token Validity)', async () => {
+      const res = await fetch(`${targetUrl}/api/v1/account/profile`, {
+        headers: { Authorization: `Bearer ${existingToken}` },
+      })
+      if (res.status !== 200) {
+        throw new Error(`Token pré-existente falhou: esperado 200, recebido ${res.status}`)
+      }
+    })
+  }
+
+  if (smokeEmail && smokePassword) {
+    await runCheck('POST /api/v1/auth/login (Test Account Login)', async () => {
+      const res = await fetch(`${targetUrl}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: smokeEmail, password: smokePassword }),
+      })
+      if (res.status !== 200) {
+        throw new Error(`Login falhou: esperado 200, recebido ${res.status}`)
+      }
+      const body = (await res.json()) as { data?: { token?: string } }
+      const token = body?.data?.token
+      if (!token) {
+        throw new Error('Resposta de login não retornou data.token')
+      }
+      if (!activeToken) {
+        activeToken = token
+      }
+    })
+  }
+
+  if (activeToken) {
+    const authHeaders = { Authorization: `Bearer ${activeToken}` }
+
+    await runCheck('GET /api/v1/dashboard (Authenticated Dashboard)', async () => {
+      const res = await fetch(`${targetUrl}/api/v1/dashboard`, { headers: authHeaders })
+      if (res.status !== 200) {
+        throw new Error(`Esperado 200, recebido ${res.status}`)
+      }
+    })
+
+    await runCheck('GET /api/v1/students (Authenticated Students List)', async () => {
+      const res = await fetch(`${targetUrl}/api/v1/students`, { headers: authHeaders })
+      if (res.status !== 200) {
+        throw new Error(`Esperado 200, recebido ${res.status}`)
+      }
+    })
+
+    await runCheck(`GET /api/v1/export?month=${currentMonth} (CSV Export)`, async () => {
+      const res = await fetch(`${targetUrl}/api/v1/export?month=${currentMonth}`, {
+        headers: authHeaders,
+      })
+      if (res.status !== 200) {
+        throw new Error(`Esperado 200, recebido ${res.status}`)
+      }
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('text/csv')) {
+        throw new Error(`Content-Type inesperado para CSV: ${contentType}`)
+      }
+    })
+
+    await runCheck(`GET /api/v1/export.pdf?month=${currentMonth} (PDFKit Export)`, async () => {
+      const res = await fetch(`${targetUrl}/api/v1/export.pdf?month=${currentMonth}`, {
+        headers: authHeaders,
+      })
+      if (res.status !== 200) {
+        throw new Error(`Esperado 200, recebido ${res.status}`)
+      }
+      const buffer = Buffer.from(await res.arrayBuffer())
+      if (!buffer.subarray(0, 5).toString('ascii').startsWith('%PDF-')) {
+        throw new Error('Arquivo retornado não possui assinatura PDF válida (%PDF-)')
+      }
+    })
+  }
 
   console.log('\n--- Resumo do Smoke Test ---')
   const passed = results.filter((r) => r.status === 'PASS').length
