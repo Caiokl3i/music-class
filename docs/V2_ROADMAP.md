@@ -239,59 +239,60 @@ Seguir **plano 12.6** e o playbook executivo [CUTOVER_EXECUTION_GUIDE.md](./CUTO
 
 ## Fase 8 — Desenvolvimento Livre da V2 🎯
 
-**Aqui você pode alterar o produto livremente.** Tudo que foi preparado nas fases anteriores existe para tornar esta fase segura e rápida.
+**Status:** ✅ **Fundação, guard-rails automatizados e ambiente local V2 prontos!**
+
+**Aqui você pode alterar o produto livremente.** Tudo que foi preparado nas fases anteriores — mais os _guard-rails_ automáticos desta fase — existe para tornar suas alterações seguras e rápidas.
+
+Guias operacionais diretos desta fase:
+
+- **[PENDENCIAS_MANUAIS_V2.md](./PENDENCIAS_MANUAIS_V2.md)** — checklist único do que depende de configuração manual nos painéis externos antes e depois do cutover.
+- **[GUIA_DESENVOLVIMENTO_LOCAL_V2.md](./GUIA_DESENVOLVIMENTO_LOCAL_V2.md)** — passo a passo completo para ligar tudo local (SQLite, Postgres 17 + HMR ou Docker completo), testar e publicar na `master`.
 
 ### 8.1 Como trabalhar nesta fase
 
-```
-feat/minha-ideia  →  PR para develop-v2  →  CI verde  →  staging (preview)  →  validar
-                                                           ↓
-                              develop-v2 → main (release)  →  produção
+```text
+feat/minha-ideia  →  PR para develop  →  CI verde  →  staging (preview)  →  validar
+                                                        ↓
+                             develop → master (release)  →  produção
 ```
 
-- Cada ideia em uma branch `feat/*` pequena; PR para `develop-v2`.
+- Cada ideia em uma branch `feat/*` pequena a partir de `develop`; PR para `develop`.
+- Validação local em 2 comandos antes do push: `npm run check` e `npm run test:pg`.
 - CI precisa estar verde; testes novos para regra de negócio nova.
-- Teste no **preview/staging** (Supabase de staging) antes de ir para `main`.
-- Release frequente e pequeno; tag SemVer (`2.1.0`, `2.2.0`...).
+- Teste no **preview/staging** (Supabase de staging) antes de ir para `master`.
+- Release frequente e pequeno; tag SemVer (`v2.1.0`, `v2.2.0`...).
 
-### 8.2 Regras que continuam valendo (guard-rails)
+### 8.2 Regras que continuam valendo (guard-rails automatizados)
 
-| Quero…                            | Faça assim                                                                                   |
-| --------------------------------- | -------------------------------------------------------------------------------------------- |
-| Mudar o banco (coluna/tabela)     | Nova migration, **expand → migrate → contract**; nunca editar migration antiga; backup antes |
-| Remover coluna/endpoint           | Só depois de uma release inteira sem uso (contract)                                          |
-| Mudar a API de forma incompatível | `/api/v2` ao lado de `/api/v1`, ou campo opcional compatível                                 |
-| Testar ideia arriscada            | Feature flag por variável de ambiente                                                        |
-| Mexer em dinheiro/créditos/datas  | Teste de caracterização primeiro                                                             |
-| Rodar migrations                  | `db:migrate:prod` explícito, nunca no boot                                                   |
-| Qualquer segredo novo             | Variável por ambiente na Vercel; nunca no repo/`VITE_*`                                      |
+| Quero…                            | Faça assim                                                                                                     | Proteção Automática Implementada                                        |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Mudar o banco (coluna/tabela)     | Nova migration, **expand → migrate → contract**; nunca editar migration antiga; habilitar RLS em tabelas novas | ✅ `tests/unit/migration_guardrails.spec.ts` + `rls_migration.spec.ts`  |
+| Remover coluna/endpoint           | Só depois de uma release inteira sem uso (`// @allow-contract-migration` dedicado)                             | ✅ Bloqueio automático de `dropColumn`/`dropTable` em `up()`            |
+| Mudar a API de forma incompatível | `/api/v2` ao lado de `/api/v1`, ou campo opcional compatível                                                   | ✅ Smoke test e suíte funcional `/api/v1`                               |
+| Testar ideia arriscada            | Feature flag por variável de ambiente (`FEATURE_X=true` / `VITE_FEATURE_X=true`)                               | ✅ `app/services/feature_flags.ts` + `GET /api/v1/features` + helper UI |
+| Mexer em dinheiro/créditos/datas  | Teste de caracterização primeiro                                                                               | ✅ Suítes `money_arithmetic`, `plan_characterization`, `timezone`       |
+| Rodar migrations                  | `npm run db:migrate:prod` explícito na porta `:5432`, nunca no boot serverless                                 | ✅ Entrypoint desacoplado + conexão direta isolada                      |
+| Qualquer segredo novo             | Variável por ambiente na Vercel; nunca no repo/`VITE_*`                                                        | ✅ Validação `start/env.ts` + redaction nos logs                        |
 
 ### 8.3 Checklist por release (resumo da seção 9 do plano)
 
-- [ ] CI verde (SQLite + Postgres, lint, typecheck, build)
+- [ ] Local & CI verdes (`npm run check` + `npm run test:pg` + GitHub Actions)
 - [ ] Testado em staging com dados anonimizados
-- [ ] Migration revisada (expand-only?) e backup recente
+- [ ] Migration revisada (expand-only + RLS em tabelas novas) e backup recente
 - [ ] Variáveis novas cadastradas **antes** do deploy
 - [ ] Plano de rollback conhecido
-- [ ] Smoke test pós-deploy + CHANGELOG + tag
+- [ ] Smoke test pós-deploy (`npm run smoke:test`) + `CHANGELOG.md` + tag SemVer
 
-### 8.4 Backlog de ideias (preencha à vontade)
+### 8.4 Backlog estruturado de evolução da V2 (preencha e priorize à vontade)
 
-Reserve um espaço para suas alterações. Sugestão de formato:
-
-| ID     | Ideia             | Impacto (U/M/B) | Mexe no banco? | Mexe na API v1? | Flag? | Status |
-| ------ | ----------------- | --------------- | -------------- | --------------- | ----- | ------ |
-| V2-001 | _(sua alteração)_ |                 |                |                 |       | Ideia  |
-| V2-002 |                   |                 |                |                 |       |        |
-
-Candidatos já levantados pela auditoria, para quando fizer sentido:
-
-- Cookie HttpOnly em vez de token em storage (A-06)
-- Política de senha e recuperação de senha
-- Exportar/excluir dados de aluno (LGPD)
-- Revisão de UX mobile (professores usam o celular)
-- Tags/instrumentos normalizados (hoje texto)
-- Notificações/lembretes (se for adicionar e-mail, reavaliar limites do Resend free)
+| ID     | Ideia / Melhoria                                                       | Impacto (A/M/B) | Mexe no banco?   | Mexe na API v1?    | Flag sugerida                | Status  |
+| ------ | ---------------------------------------------------------------------- | --------------- | ---------------- | ------------------ | ---------------------------- | ------- |
+| V2-001 | Autenticação via Cookie `HttpOnly` em vez de `localStorage` (`A-06`)   | Alto            | Não              | Compatível / `/v2` | `FEATURE_HTTP_ONLY_AUTH`     | Backlog |
+| V2-002 | Recuperação de senha por e-mail + política de força de senha           | Alto            | Sim (expand)     | Novo endpoint      | `FEATURE_PASSWORD_RESET`     | Backlog |
+| V2-003 | Botão no painel para exportar dossiê / anonimizar aluno (UI LGPD)      | Médio           | Não (CLI pronta) | Novo endpoint      | `FEATURE_LGPD_PANEL`         | Backlog |
+| V2-004 | Revisão de UX mobile (agenda rápida e marcação de presença no celular) | Alto            | Não              | Não                | `VITE_FEATURE_MOBILE_AGENDA` | Backlog |
+| V2-005 | Catálogo normalizado de instrumentos e tags                            | Baixo           | Sim (expand)     | Campo opcional     | `FEATURE_INSTRUMENT_CATALOG` | Backlog |
+| V2-006 | Lembretes automáticos de aula/cobrança (avaliar cota Resend/WhatsApp)  | Médio           | Sim (expand)     | Novo endpoint      | `FEATURE_LESSON_REMINDERS`   | Backlog |
 
 ---
 

@@ -64,17 +64,20 @@ Conta de demonstração (`npm run db:seed`, apenas em `development`): `demo@musi
 
 ## Scripts principais
 
-| Comando                       | Descrição                                                                                 |
-| ----------------------------- | ----------------------------------------------------------------------------------------- |
-| `npm test`                    | Executa a suíte de testes unitários e funcionais (Japa — SQLite ou `TEST_DB=pg`)          |
-| `npm run lint` / `typecheck`  | Validação estática ESLint e TypeScript (`tsc --noEmit`)                                   |
-| `npm run build`               | Compila o servidor e o handler serverless (`build/bin/serverless.js`)                     |
-| `npm run db:migrate:prod`     | Executa migrations de produção explicitamente via `DATABASE_DIRECT_URL` (`:5432`)         |
-| `npm run db:verify:parity`    | Compara contagens, `SUM(price)`, constraints e RLS entre dois bancos PostgreSQL           |
-| `npm run smoke:test`          | Valida saúde (`/health`), proteção auth, login, CSV e PDF (`-- --cutover-full` para CRUD) |
-| `npm run lgpd:export -- <id>` | Exporta dossiê JSON de um aluno (ou anonimiza com `--anonymize`)                          |
-| `npm run cutover:execute`     | Orquestrador oficial de migração V1 -> V2 com backup `SHA-256` e validação de paridade    |
-| `npm run cutover:archive-v1`  | Gera arquivo histórico final `.dump` + manifesto contábil antes de desligar a infra V1    |
+| Comando                       | Descrição                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `npm run check`               | Validação completa pré-PR (ESLint + Typecheck + Testes SQLite + Lint/Build do Frontend)                 |
+| `npm run dev:db`              | Sobe o PostgreSQL 17 local via Docker para desenvolvimento V2 com Hot Reload (`dev:db:stop` para parar) |
+| `npm run test:pg`             | Garante o Postgres 17 local ativo e executa toda a suíte Japa contra PostgreSQL + RLS                   |
+| `npm test`                    | Executa a suíte de testes unitários e funcionais (Japa — SQLite ou `TEST_DB=pg`)                        |
+| `npm run lint` / `typecheck`  | Validação estática ESLint e TypeScript (`tsc --noEmit`)                                                 |
+| `npm run build`               | Compila o servidor e o handler serverless (`build/bin/serverless.js`)                                   |
+| `npm run db:migrate:prod`     | Executa migrations de produção explicitamente via `DATABASE_DIRECT_URL` (`:5432`)                       |
+| `npm run db:verify:parity`    | Compara contagens, `SUM(price)`, constraints e RLS entre dois bancos PostgreSQL                         |
+| `npm run smoke:test`          | Valida saúde (`/health`), proteção auth, login, CSV e PDF (`-- --cutover-full` para CRUD)               |
+| `npm run lgpd:export -- <id>` | Exporta dossiê JSON de um aluno (ou anonimiza com `--anonymize`)                                        |
+| `npm run cutover:execute`     | Orquestrador oficial de migração V1 -> V2 com backup `SHA-256` e validação de paridade                  |
+| `npm run cutover:archive-v1`  | Gera arquivo histórico final `.dump` + manifesto contábil antes de desligar a infra V1                  |
 
 ---
 
@@ -86,6 +89,7 @@ Conta de demonstração (`npm run db:seed`, apenas em `development`): `demo@musi
 
 ### Documentação operacional (`docs/`)
 
+- **[Checklist do Que Ficou Pendente Manualmente](docs/PENDENCIAS_MANUAIS_V2.md)** & **[Guia de Desenvolvimento Local até a `master`](docs/GUIA_DESENVOLVIMENTO_LOCAL_V2.md)**
 - [Plano de Transição V1 -> V2](docs/V2_PLANO_DE_TRANSICAO.md) & [Roadmap V2](docs/V2_ROADMAP.md)
 - [Guia de Setup de Staging](docs/STAGING_SETUP.md) & [Guia de Setup de Produção](docs/PRODUCTION_SETUP.md)
 - [Guia Executivo de Cutover (Fase 7)](docs/CUTOVER_EXECUTION_GUIDE.md) & [Relatório dos Ensaios (Fase 6)](docs/MIGRATION_REHEARSAL_REPORT.md)

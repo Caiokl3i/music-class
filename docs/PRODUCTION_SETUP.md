@@ -86,14 +86,15 @@ No painel da Vercel (**Settings -> Environment Variables**), cadastre as variáv
 
 Para que as rotinas de resiliência da Fase 5 passem a proteger o banco `music-class-prod` imediatamente após o cutover, confira em **GitHub -> Settings -> Secrets and variables -> Actions**:
 
-| Secret                  | Finalidade                                                       | Workflow consumidor                     |
-| ----------------------- | ---------------------------------------------------------------- | --------------------------------------- |
-| `PROD_DATABASE_URL`     | URL direta (`:5432`) do `music-class-prod` para `pg_dump` diário | `.github/workflows/db_backup.yml`       |
-| `BACKUP_S3_BUCKET`      | Nome do bucket S3 / Cloudflare R2 (retenção de 14 dias)          | `.github/workflows/db_backup.yml`       |
-| `BACKUP_S3_ENDPOINT`    | Endpoint S3 compatível (ex.: R2)                                 | `.github/workflows/db_backup.yml`       |
-| `AWS_ACCESS_KEY_ID`     | Credencial de escrita/leitura no bucket de backups               | `db_backup.yml` / `db_restore_test.yml` |
-| `AWS_SECRET_ACCESS_KEY` | Segredo correspondente à Access Key                              | `db_backup.yml` / `db_restore_test.yml` |
-| `HEALTHCHECK_URL`       | `https://<dominio-producao>/health`                              | `.github/workflows/keep_alive.yml`      |
+| Secret                        | Finalidade                                                       | Workflow consumidor                |
+| ----------------------------- | ---------------------------------------------------------------- | ---------------------------------- |
+| `DATABASE_DIRECT_URL`         | URL direta (`:5432`) do `music-class-prod` para `pg_dump` diário | `.github/workflows/db_backup.yml`  |
+| `BACKUP_S3_BUCKET`            | Nome do bucket S3 / Cloudflare R2 (retenção de 14 dias)          | `.github/workflows/db_backup.yml`  |
+| `BACKUP_S3_ENDPOINT`          | Endpoint S3 compatível (ex.: R2)                                 | `.github/workflows/db_backup.yml`  |
+| `BACKUP_S3_ACCESS_KEY_ID`     | Credencial de escrita/leitura no bucket de backups               | `db_backup.yml`                    |
+| `BACKUP_S3_SECRET_ACCESS_KEY` | Segredo correspondente à Access Key                              | `db_backup.yml`                    |
+| `BACKUP_S3_REGION`            | Região do bucket (`auto` no Cloudflare R2)                       | `db_backup.yml`                    |
+| `API_URL`                     | URL base pública da API V2 (`https://<api-producao>.vercel.app`) | `.github/workflows/keep_alive.yml` |
 
 ---
 

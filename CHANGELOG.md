@@ -11,6 +11,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [2.0.0-rc.2] - 2026-10-29
+
+Fundação completa da **Fase 8 (Desenvolvimento Livre da V2)**, _guard-rails_ automatizados de banco/RLS, infraestrutura de Feature Flags e ambiente de desenvolvimento local PostgreSQL 17 pronto para uso.
+
+### Adicionado
+
+- **Fase 8 (Fundação de Desenvolvimento Livre & Guard-rails)**:
+  - Serviço leve de Feature Flags por variável de ambiente no backend (`app/services/feature_flags.ts` + endpoint autenticado `GET /api/v1/features`) e utilitário no frontend (`frontend/src/utils/features.ts`) para ligar/desligar funcionalidades novas sem novo deploy.
+  - Guard-rail automatizado de migrations (`tests/unit/migration_guardrails.spec.ts`) preservando as 21 migrations históricas e bloqueando operações destrutivas (`dropTable`/`dropColumn`) no `up()` de novas migrations sem diretiva explícita `@allow-contract-migration`.
+  - Guard-rail dinâmico de Row Level Security no PostgreSQL (`tests/unit/rls_migration.spec.ts`) consultando `pg_tables` em tempo real e falhando automaticamente caso qualquer tabela nova criada na Fase 8 esqueça `ENABLE ROW LEVEL SECURITY`.
+  - Scripts de produtividade local em `package.json`: `npm run dev:db`, `npm run dev:db:stop`, `npm run test:pg` (`scripts/test_postgres_local.sh`) e `npm run check`.
+  - Documentação executiva consolidada em `docs/PENDENCIAS_MANUAIS_V2.md` e manual passo a passo em `docs/GUIA_DESENVOLVIMENTO_LOCAL_V2.md` (cobrindo os 3 modos de execução local até o deploy em `master`).
+
+### Corrigido
+
+- **Ambiente Local Docker (`docker-compose.yml` & `config/database.ts`)**: adicionado serviço `postgres:17-alpine` com healthcheck, suporte à flag `DB_SSL` para conexões locais/Docker sem handshake TLS e configuração de `DATABASE_URL` + `AUTO_MIGRATE=true` para compatibilidade com o boot estrito da V2.
+- **Workflows Operacionais (`db_backup.yml` & `keep_alive.yml`)**: adicionados aliases de fallback para nomes de secrets e padronizada a tabela de configuração em `docs/PRODUCTION_SETUP.md`.
+
+---
+
 ## [2.0.0-rc.1] - 2026-10-29
 
 Release Candidate oficial de transição para a infraestrutura **Music Class V2** (Vercel Serverless + Supabase PostgreSQL), preservando 100% de compatibilidade com o contrato `/api/v1`.
