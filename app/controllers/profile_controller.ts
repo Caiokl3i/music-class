@@ -1,3 +1,5 @@
+import app from '@adonisjs/core/services/app'
+import { isPostgres } from '#database/connection'
 import UserTransformer from '#transformers/user_transformer'
 import { updatePasswordValidator, updateProfileValidator } from '#validators/user'
 import { revokeOtherAccessTokens } from '#services/access_tokens'
@@ -49,8 +51,18 @@ export default class ProfileController {
     return { message: 'Password updated successfully' }
   }
 
-  async emailBackup({ auth, logger }: HttpContext) {
+  async emailBackup({ auth, response, logger }: HttpContext) {
     const user = auth.getUserOrFail()
+
+    if (isPostgres() || app.inProduction) {
+      logSecurityEvent(logger, 'info', 'backup.email.disabled', { userId: user.id })
+      return response.status(404).json({
+        code: 'E_BACKUP_DISABLED',
+        message:
+          'Manual SQLite backup is disabled in production. Database backups are managed automatically in cloud storage.',
+      })
+    }
+
     const result = await emailSqliteBackup()
     logSecurityEvent(logger, 'info', 'backup.email.sent', { userId: user.id })
     return { message: 'Backup sent', to: result.to, filename: result.filename }

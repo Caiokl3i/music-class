@@ -65,11 +65,22 @@ test.group('Backup email', (group) => {
   })
 
   test('returns 503 when Resend is not configured', async ({ client }) => {
+    if (isPostgres()) return
+
     setBackupEmailTestHooks({})
     const teacher = await createTeacher()
     const response = await client.post('/api/v1/account/backup-email').loginAs(teacher)
     response.assertStatus(503)
     response.assertBodyContains({ code: 'E_BACKUP_EMAIL_NOT_CONFIGURED' })
+  })
+
+  test('returns 404 with E_BACKUP_DISABLED when run on postgres', async ({ client }) => {
+    if (!isPostgres()) return
+
+    const teacher = await createTeacher()
+    const response = await client.post('/api/v1/account/backup-email').loginAs(teacher)
+    response.assertStatus(404)
+    response.assertBodyContains({ code: 'E_BACKUP_DISABLED' })
   })
 
   test('emails a sqlite copy', async ({ assert, client }) => {
@@ -95,8 +106,8 @@ test.group('Backup email', (group) => {
       const teacher = await createTeacher()
       const response = await client.post('/api/v1/account/backup-email').loginAs(teacher)
       if (isPostgres()) {
-        response.assertStatus(503)
-        response.assertBodyContains({ code: 'E_BACKUP_SQLITE_ONLY' })
+        response.assertStatus(404)
+        response.assertBodyContains({ code: 'E_BACKUP_DISABLED' })
         return
       }
       response.assertStatus(200)

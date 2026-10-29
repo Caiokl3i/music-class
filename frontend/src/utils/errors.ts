@@ -28,7 +28,9 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   E_BACKUP_EMAIL_NOT_CONFIGURED: 'Backup por e-mail ainda não está configurado.',
   E_BACKUP_EMAIL_FAILED: 'Não foi possível enviar o backup. Tente de novo em instantes.',
   E_BACKUP_SQLITE_ONLY:
-    'Com PostgreSQL o banco já fica no Render. O envio do arquivo SQLite não se aplica.',
+    'Com PostgreSQL o banco já fica em nuvem. O envio do arquivo SQLite não se aplica.',
+  E_BACKUP_DISABLED:
+    'Backups manuais de arquivo SQLite estão desativados em ambiente de nuvem. Os dados são protegidos por backups automáticos gerenciados.',
   E_TOO_MANY_REQUESTS: 'Muitas tentativas. Espere um pouco e tente de novo.',
   E_ROW_NOT_FOUND: 'Registro não encontrado.',
   E_UNAUTHORIZED: 'Sessão expirada. Faça login novamente.',
