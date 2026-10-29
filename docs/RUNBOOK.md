@@ -37,28 +37,37 @@ O deploy em produção é executado em etapas sequenciais para garantir zero que
 
 ### 2.1 Passo a Passo
 
-1. **Backup Preventivo:**
+1. **Modo Somente Leitura (Apenas em Cutover ou Manutenção Crítica de Banco):**
+   Quando for necessário impedir mutações durante uma cópia/migração crítica (como no Cutover V1 -> V2), ative `APP_READ_ONLY=true` no ambiente da API. Rotas `GET` e `/health` continuam respondendo `200 OK`, enquanto `POST`, `PUT`, `PATCH` e `DELETE` retornam `503 E_MAINTENANCE_READ_ONLY` (`Retry-After: 300`). Lembre-se de voltar `APP_READ_ONLY=false` após validar o deploy.
+
+2. **Backup Preventivo:**
    Antes de aplicar qualquer migração estrutural, garanta que um backup recente foi concluído ou execute manualmente:
 
    ```bash
    ./scripts/backup_postgres.sh
    ```
 
-2. **Execução de Migrações de Banco:**
+3. **Execução de Migrações de Banco (ou Pipeline Completo de Cutover):**
    Execute as migrações utilizando a conexão **direta** (porta 5432) do Supabase:
 
    ```bash
    DATABASE_URL="$DATABASE_DIRECT_URL" npm run db:migrate:prod
    ```
 
-3. **Deploy de Aplicação:**
-   - Se Vercel: faça o push na branch `main` ou trigger via Vercel CLI (`vercel --prod`).
-   - Se Docker/Render (fallback Fase 4-alt): acione o webhook de build ou `git push render main`.
+   _Para ensaios de migração ou cutover V1 -> V2 com verificação automática de contagens, `SUM(price)` e RLS:_
 
-4. **Smoke Test Pós-Deploy:**
-   Execute a validação automatizada de rotas e integridade do banco:
    ```bash
-   TEST_API_URL="https://api.musicclass.com.br" npm run smoke:test
+   SOURCE_DATABASE_URL="$NEON_V1_URL" TARGET_DIRECT_URL="$DATABASE_DIRECT_URL" ./scripts/rehearse_cutover.sh
+   ```
+
+4. **Deploy de Aplicação:**
+   - Se Vercel: faça o push na branch `master` ou trigger via Vercel CLI (`vercel --prod`).
+   - Se Docker/Render (fallback Fase 4-alt): acione o webhook de build ou `git push render master`.
+
+5. **Smoke Test Pós-Deploy:**
+   Execute a validação automatizada de rotas e integridade do banco (incluindo login, token prévio, CSV e PDF quando credenciais de teste forem informadas):
+   ```bash
+   TARGET_URL="https://api.musicclass.com.br" npm run smoke:test
    ```
 
 ---
