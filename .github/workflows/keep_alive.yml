@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Ping API /health endpoint
         env:
-          TARGET_URL: ${{ secrets.API_URL || secrets.APP_URL || 'https://music-class-api.vercel.app' }}
+          TARGET_URL: ${{ secrets.API_URL || secrets.HEALTHCHECK_URL || secrets.APP_URL || 'https://music-class-api.vercel.app' }}
         run: |
           URL="${TARGET_URL%/}/health"
           echo "🌐 Sending keep-alive request to: $URL"

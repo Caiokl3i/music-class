@@ -68,6 +68,7 @@ router
           .get('export.pdf', [controllers.Dashboard, 'exportMonthPdf'])
           .use(middleware.throttle(RATE_LIMITS.export))
         router.get('packages', [controllers.Catalog, 'packages'])
+        router.get('features', [controllers.Catalog, 'features'])
         router.get('students/:studentId/lessons', [controllers.Lessons, 'indexForStudent'])
         router.post('students/:studentId/lessons', [controllers.Lessons, 'storeForStudent'])
         router.resource('students', controllers.Students).apiOnly()

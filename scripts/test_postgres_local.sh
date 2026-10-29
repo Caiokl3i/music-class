@@ -12,7 +12,7 @@ if [ -z "${DATABASE_URL:-}" ]; then
 
   echo "⏳ Aguardando PostgreSQL ficar pronto na porta ${PG_PORT}..."
   for i in $(seq 1 30); do
-    if docker compose exec -T postgres pg_isready -U "${PG_USER}" >/dev/null 2>&1; then
+    if docker compose exec -e PGPASSWORD="${PG_PASSWORD}" -T postgres psql -h 127.0.0.1 -U "${PG_USER}" -d postgres -tAc "SELECT 1" >/dev/null 2>&1; then
       break
     fi
     if [ "${i}" -eq 30 ]; then
@@ -22,10 +22,10 @@ if [ -z "${DATABASE_URL:-}" ]; then
     sleep 1
   done
 
-  DB_EXISTS="$(docker compose exec -T postgres psql -U "${PG_USER}" -tAc "SELECT 1 FROM pg_database WHERE datname = '${PG_TEST_DB}'" | tr -d '[:space:]')"
+  DB_EXISTS="$(docker compose exec -e PGPASSWORD="${PG_PASSWORD}" -T postgres psql -h 127.0.0.1 -U "${PG_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '${PG_TEST_DB}'" | tr -d '[:space:]')"
   if [ "${DB_EXISTS}" != "1" ]; then
     echo "🆕 Criando banco de testes '${PG_TEST_DB}'..."
-    docker compose exec -T postgres psql -U "${PG_USER}" -c "CREATE DATABASE ${PG_TEST_DB};" >/dev/null
+    docker compose exec -e PGPASSWORD="${PG_PASSWORD}" -T postgres psql -h 127.0.0.1 -U "${PG_USER}" -d postgres -c "CREATE DATABASE ${PG_TEST_DB};" >/dev/null
   fi
 
   export DATABASE_URL="postgres://${PG_USER}:${PG_PASSWORD}@127.0.0.1:${PG_PORT}/${PG_TEST_DB}"
