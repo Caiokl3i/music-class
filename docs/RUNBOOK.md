@@ -65,10 +65,13 @@ O deploy em produção é executado em etapas sequenciais para garantir zero que
    - Se Docker/Render (fallback Fase 4-alt): acione o webhook de build ou `git push render master`.
 
 5. **Smoke Test Pós-Deploy:**
-   Execute a validação automatizada de rotas e integridade do banco (incluindo login, token prévio, CSV e PDF quando credenciais de teste forem informadas):
+   Execute a validação automatizada de rotas e integridade do banco (adicione `-- --cutover-full` com credenciais de teste para validar também criação/limpeza de aula e geração de recibo PDF):
    ```bash
    TARGET_URL="https://api.musicclass.com.br" npm run smoke:test
    ```
+
+> [!TIP]
+> Para a virada inicial V1 -> V2 (Fase 7), siga o roteiro dedicado em [CUTOVER_EXECUTION_GUIDE.md](./CUTOVER_EXECUTION_GUIDE.md) (`npm run cutover:execute` e `npm run cutover:archive-v1`).
 
 ---
 

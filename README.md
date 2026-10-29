@@ -2,74 +2,96 @@
 
 Gestão para professores particulares de música: alunos, pacotes, agenda, créditos e o que tem a receber no mês.
 
-Cada conta é um estúdio. Um professor não vê os dados do outro.
+Cada conta é um estúdio isolado (`user_id` + RLS no PostgreSQL). Um professor não vê os dados do outro.
 
-**Interface** React · **API** AdonisJS 7 (`/api/v1`) · **Banco** SQLite (local) / PostgreSQL (produção)
+**Interface** React 19 + Vite · **API** AdonisJS 7 (`/api/v1`) · **Banco** SQLite (local) / Supabase PostgreSQL (produção)
 
 ---
 
 ## O que o professor faz
 
-- Cadastra alunos (instrumento, horário usual, nível, tags) e arquiva quem parou
-- Vende pacotes (avulsa, mensal 4, mensal 8 — ou tipos que ele mesmo cria)
-- Agenda aulas, marca falta, conclui, gera a semana de uma vez
-- Vê no painel o dia de hoje, atrasadas, a receber, crédito acabando e aniversários
-- Cobra por WhatsApp ou PDF e exporta o mês em CSV/PDF
-- Manda uma cópia do banco por e-mail (botão no painel)
+- Cadastra alunos (instrumento, horário usual, nível, tags, cor na agenda) e arquiva quem parou
+- Vende pacotes (avulsa, mensal 4, mensal 8 — ou tipos personalizados) e aplica descontos
+- Agenda aulas, marca falta, faz reposição explícita, conclui e gera a semana de uma vez
+- Vê no painel o dia de hoje, atrasadas, a receber, créditos acabando e aniversários
+- Cobra por WhatsApp ou recibo em PDF e exporta o fechamento mensal em CSV/PDF
+- Exporta dossiê de aluno ou anonimiza dados pessoais em conformidade com a LGPD
 
-Aula padrão: **1 hora**. Crédito válido por **60 dias** depois do pagamento. Só a aula feita conta no progresso; cancelar devolve o crédito.
+Aula padrão: **1 hora**. Crédito válido por **60 dias** após o pagamento. Só a aula concluída conta no progresso; cancelar devolve o crédito.
 
 ---
 
-## Stack
+## Arquitetura V2
 
 ```text
-React (Vite)  ── token ──►  AdonisJS  ──►  SQLite local  ou  Postgres no Render
- :5173                       :3333          tmp/db.sqlite3
+React 19 + Vite (Vercel)  ── Bearer Token ──►  AdonisJS 7 Serverless (Vercel)
+                                                       │
+                                                       ├──► Supabase PostgreSQL (Supavisor Pooler :6543 + RLS)
+                                                       ├──► Rate Limit Compartilhado (Upstash Redis / Postgres)
+                                                       ├──► Sentry Lightweight (Erros Front & Back + x-request-id)
+                                                       └──► Backups Diários Automatizados (GitHub Actions ──► S3/R2)
 ```
 
-Um processo Node, sem fila e sem Redis. E-mail só no backup SQLite (Resend).
+> Em desenvolvimento local, o sistema roda sem dependências externas usando SQLite (`tmp/db.sqlite3`) ou via `docker compose up --build`.
 
 ---
 
-## Rodar local
+## Rodar localmente
 
-Node **24**. Dois terminais:
+Requer **Node.js >= 24**. Em dois terminais:
 
 ```bash
-# API
+# 1. API (http://localhost:3333)
 cp .env.example .env
-node ace generate:key          # cole em APP_KEY
-# SIGNUP_INVITE_CODE=uma-frase  # sem isso o cadastro fica fechado
+node ace generate:key          # cole o valor gerado em APP_KEY no .env
+# SIGNUP_INVITE_CODE=uma-frase # vazio mantém o cadastro fechado
 npm install
 node ace migration:run
-npm run dev                    # http://localhost:3333
+npm run dev
 ```
 
 ```bash
-# Interface
+# 2. Interface (http://localhost:5173)
 cd frontend
 cp .env.example .env
 npm install
-npm run dev                    # http://localhost:5173
+npm run dev
 ```
 
-Conta de demonstração (`npm run db:seed`, só em development): `demo@musicclass.test` / `password123`.
-
-Ou os dois de uma vez: `export APP_KEY='…'` e `docker compose up --build` → app em http://localhost:8080.
-
-Variáveis: [`.env.example`](.env.example) e [`frontend/.env.example`](frontend/.env.example).
+Conta de demonstração (`npm run db:seed`, apenas em `development`): `demo@musicclass.test` / `password123`.
 
 ---
 
-## Produção
+## Scripts principais
 
-Site na **Vercel** (pasta `frontend`, `VITE_API_URL` = URL da API).  
-API no **Render** (Docker da raiz, `CORS_ORIGIN` = URL da Vercel, `DATABASE_URL` do Postgres).
+| Comando                       | Descrição                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| `npm test`                    | Executa a suíte de testes unitários e funcionais (Japa — SQLite ou `TEST_DB=pg`)          |
+| `npm run lint` / `typecheck`  | Validação estática ESLint e TypeScript (`tsc --noEmit`)                                   |
+| `npm run build`               | Compila o servidor e o handler serverless (`build/bin/serverless.js`)                     |
+| `npm run db:migrate:prod`     | Executa migrations de produção explicitamente via `DATABASE_DIRECT_URL` (`:5432`)         |
+| `npm run db:verify:parity`    | Compara contagens, `SUM(price)`, constraints e RLS entre dois bancos PostgreSQL           |
+| `npm run smoke:test`          | Valida saúde (`/health`), proteção auth, login, CSV e PDF (`-- --cutover-full` para CRUD) |
+| `npm run lgpd:export -- <id>` | Exporta dossiê JSON de um aluno (ou anonimiza com `--anonymize`)                          |
+| `npm run cutover:execute`     | Orquestrador oficial de migração V1 -> V2 com backup `SHA-256` e validação de paridade    |
+| `npm run cutover:archive-v1`  | Gera arquivo histórico final `.dump` + manifesto contábil antes de desligar a infra V1    |
 
-Suba o banco e a API primeiro. Depois o site.
+---
 
-No plano grátis, o disco do web service some quando a instância dorme ou redeploya. Contas e aulas no SQLite (`tmp/db.sqlite3`) desaparecem. O outro projeto “mantém” seed porque o seed roda de novo no boot — não porque o disco sobrevive. Crie um **PostgreSQL** no Render, ligue `DATABASE_URL` e `DB_CONNECTION=pg` (o `render.yaml` já faz isso no Blueprint).
+## Produção e Operação
+
+- **Frontend:** Vercel (`Root Directory: frontend`, variável `VITE_API_URL` apontando para a API).
+- **API:** Vercel Serverless Functions ([`vercel.json`](vercel.json) + [`api/index.js`](api/index.js)) — com [`Dockerfile`](Dockerfile) mantido funcional como contingência em container persistente.
+- **Banco de Dados:** Supabase PostgreSQL (`DATABASE_URL` no Supavisor Pooler `:6543?pgbouncer=true` em runtime e `DATABASE_DIRECT_URL` na porta `:5432` exclusivamente para migrations e backups).
+
+### Documentação operacional (`docs/`)
+
+- [Plano de Transição V1 -> V2](docs/V2_PLANO_DE_TRANSICAO.md) & [Roadmap V2](docs/V2_ROADMAP.md)
+- [Guia de Setup de Staging](docs/STAGING_SETUP.md) & [Guia de Setup de Produção](docs/PRODUCTION_SETUP.md)
+- [Guia Executivo de Cutover (Fase 7)](docs/CUTOVER_EXECUTION_GUIDE.md) & [Relatório dos Ensaios (Fase 6)](docs/MIGRATION_REHEARSAL_REPORT.md)
+- [Runbook Operacional (Deploy, Rollback, Restore e Chaves)](docs/RUNBOOK.md)
+- [Governança e Privacidade LGPD](docs/LGPD.md)
+- [Architecture Decision Records (`docs/adr/`)](docs/adr/)
 
 ---
 
