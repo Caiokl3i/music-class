@@ -1,0 +1,76 @@
+name: Database Restore Test
+
+on:
+  schedule:
+    # Runs weekly on Sundays at 05:00 UTC (02:00 BRT)
+    - cron: '0 5 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: db-restore-test
+  cancel-in-progress: true
+
+jobs:
+  test-restore:
+    name: End-to-End Backup & Restore Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install backend dependencies & PostgreSQL client
+        run: |
+          npm ci
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Create Source and Target Databases
+        run: |
+          export PGPASSWORD=password
+          psql -h localhost -U postgres -c "CREATE DATABASE musicclass_source;"
+          psql -h localhost -U postgres -c "CREATE DATABASE musicclass_target;"
+
+      - name: Run Migrations and Seeds on Source Database
+        env:
+          NODE_ENV: test
+          TEST_DB: pg
+          APP_KEY: testkeytestkeytestkeytestkeytestk
+          APP_URL: http://localhost:3333
+          DATABASE_URL: postgres://postgres:password@localhost:5432/musicclass_source
+          SESSION_DRIVER: memory
+        run: |
+          node ace migration:run --force
+          node ace db:seed
+
+      - name: Generate Backup from Source Database
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/musicclass_source
+        run: |
+          chmod +x scripts/backup_postgres.sh
+          ./scripts/backup_postgres.sh
+
+      - name: Restore Backup into Empty Target Database
+        env:
+          TARGET_DATABASE_URL: postgres://postgres:password@localhost:5432/musicclass_target
+        run: |
+          chmod +x scripts/restore_postgres.sh
+          ./scripts/restore_postgres.sh
