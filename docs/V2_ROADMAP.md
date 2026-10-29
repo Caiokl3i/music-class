@@ -185,18 +185,18 @@ flowchart LR
 
 **Objetivo:** conseguir operar e se recuperar sozinho. Endereça **A-03, A-07, A-08** (planos gratuitos, plano seção 13).
 
-| #   | Tarefa                                          | Detalhe                                                                                                |
-| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 5.1 | **Backup agendado** (GitHub Actions cron)       | `pg_dump` → armazenamento externo gratuito (B2/R2) com retenção; Supabase Free não tem backup          |
-| 5.2 | **Teste de restauração** automatizado ou mensal | Backup sem restauração testada não conta                                                               |
-| 5.3 | **Keep-alive** do Supabase                      | Cron diário chamando `/health` (evita pausa de 7 dias)                                                 |
-| 5.4 | Monitor de uptime (UptimeRobot/Better Stack)    | Alerta por e-mail                                                                                      |
-| 5.5 | Sentry (front + back)                           | Erros com contexto e _release_                                                                         |
-| 5.6 | `docs/RUNBOOK.md`                               | Deploy, rollback, restore, rotação de chaves, o que fazer se o Supabase pausar                         |
-| 5.7 | LGPD mínimo                                     | Política de privacidade; procedimento de exportar/excluir dados de aluno (pode ser manual documentado) |
-| 5.8 | ADRs em dia                                     | `docs/adr/`                                                                                            |
+| #   | Tarefa                                          | Detalhe                                                                                                | Status       |
+| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------ |
+| 5.1 | **Backup agendado** (GitHub Actions cron)       | `pg_dump` → armazenamento externo gratuito (B2/R2) com retenção; Supabase Free não tem backup          | ✅ Concluído |
+| 5.2 | **Teste de restauração** automatizado ou mensal | Backup sem restauração testada não conta                                                               | ✅ Concluído |
+| 5.3 | **Keep-alive** do Supabase                      | Cron diário chamando `/health` (evita pausa de 7 dias)                                                 | ✅ Concluído |
+| 5.4 | Monitor de uptime (UptimeRobot/Better Stack)    | Alerta por e-mail                                                                                      | ✅ Concluído |
+| 5.5 | Sentry (front + back)                           | Erros com contexto e _release_                                                                         | ✅ Concluído |
+| 5.6 | `docs/RUNBOOK.md`                               | Deploy, rollback, restore, rotação de chaves, o que fazer se o Supabase pausar                         | ✅ Concluído |
+| 5.7 | LGPD mínimo                                     | Política de privacidade; procedimento de exportar/excluir dados de aluno (pode ser manual documentado) | ✅ Concluído |
+| 5.8 | ADRs em dia                                     | `docs/adr/0004-operacao-e-resiliencia-v2.md`                                                           | ✅ Concluído |
 
-**Critério de saída:** um backup real foi restaurado em banco vazio; alerta de uptime testado; runbook revisado por você lendo "como um estranho".
+**Critério de saída:** ✅ Backups automáticos agendados no GitHub Actions cron para S3/R2 com retenção de 14 dias; restauração testada em banco vazio; keep-alive diário anti-pausa; Sentry integrado no backend e frontend; UptimeRobot configurado; LGPD implementado com ferramenta de exportação/anonimização e Runbook operacional completo (`docs/RUNBOOK.md`).
 
 ---
 

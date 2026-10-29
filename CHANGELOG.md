@@ -43,6 +43,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Migration habilitando Row Level Security (RLS) em todas as 8 tabelas do banco no PostgreSQL, blindando a Data API pública do Supabase contra acessos com a chave `anon` (`A-13`).
   - Middleware global de logging estruturado com `x-request-id`, correlação de eventos e higienização estrita de PII (`A-10`).
   - Resolução dinâmica de CORS para ambientes de Preview na Vercel (`ALLOW_VERCEL_PREVIEW=true`) e documentação detalhada de segredos por ambiente.
+- **Fase 5 (Operação, Backups, Monitoramento, Runbook e Resiliência)**:
+  - Script automatizado de backup do PostgreSQL (`scripts/backup_postgres.sh`) com compactação gzip e envio para S3/Cloudflare R2 com retenção estrita de 14 dias (`5.1`).
+  - Workflow agendado via GitHub Actions cron (`.github/workflows/db_backup.yml`) executando diariamente às 03:00 UTC (`5.1`).
+  - Script de restauração e validação de integridade (`scripts/restore_postgres.sh`) e workflow automatizado (`.github/workflows/db_restore_test.yml`) para validação periódica de dados em banco efêmero (`5.2`).
+  - Workflow de keep-alive diário (`.github/workflows/keep_alive.yml`) chamando `GET /health` (`SELECT 1`) para prevenção proativa da pausa de 7 dias de inatividade no Supabase Free Tier (`5.3`).
+  - Monitoramento de uptime documentado com UptimeRobot / Better Stack apontando para `/health` (`5.4`).
+  - Integração lightweight com Sentry no backend (`app/services/error_monitoring.ts`) e frontend (`frontend/src/services/monitoring.ts`) capturando pilha de erros, release e contexto de requisição sem overhead de SDK externo (`5.5`).
+  - Manual de Operação e Resiliência formalizado em `docs/RUNBOOK.md` cobrindo deploy, rollback, restauração com `pg_restore`, rotação de chaves e reativação manual do Supabase (`5.6`).
+  - Diretrizes e governança de privacidade LGPD em `docs/LGPD.md` com ferramenta CLI integrada (`commands/lgpd_export.ts` e `npm run lgpd:export`) para exportação de dossiê em JSON (Art. 18, V) e anonimização de alunos (Art. 18, VI) mantendo integridade financeira (`5.7`).
+  - Registro de Decisão Arquitetural formalizado em `docs/adr/0004-operacao-e-resiliencia-v2.md` documentando a estratégia de resiliência e operação contínua (`5.8`).
 
 ---
 
