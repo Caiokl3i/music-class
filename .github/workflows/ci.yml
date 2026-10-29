@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (SQLite: Lint, Typecheck & Tests)
+    name: 'Backend (SQLite: Lint, Typecheck & Tests)'
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
@@ -54,7 +54,7 @@ jobs:
         run: npm test
 
   backend-postgres:
-    name: Backend (PostgreSQL: Tests & Migrations)
+    name: 'Backend (PostgreSQL: Tests & Migrations)'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -98,7 +98,6 @@ jobs:
 
       - name: Run tests on PostgreSQL (Japa)
         run: npm test
-
 
   frontend:
     name: Frontend (Lint & Build)
