@@ -5,6 +5,10 @@ export type DbConnectionName = 'sqlite' | 'pg'
 
 export function resolveDbConnection(): DbConnectionName {
   if (app.inTest) {
+    const testDb = env.get('TEST_DB') || env.get('DB_CONNECTION')
+    if (testDb === 'pg' || testDb === 'sqlite') {
+      return testDb
+    }
     return 'sqlite'
   }
 

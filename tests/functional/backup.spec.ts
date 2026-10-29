@@ -6,12 +6,20 @@ import testUtils from '@adonisjs/core/services/test_utils'
 import { emailSqliteBackup, setBackupEmailTestHooks } from '#services/backup_email'
 import { RATE_LIMITS, resetRateLimits, setRateLimitEnabled } from '#services/rate_limit'
 import { backupSqlite } from '#services/sqlite_backup'
+import { isPostgres } from '#database/connection'
 import { createTeacher } from '#tests/helpers'
 
 test.group('SQLite backup', (group) => {
   group.each.setup(() => testUtils.db().truncate())
 
   test('copies the database to a folder outside tmp', async ({ assert }) => {
+    if (isPostgres()) {
+      await assert.rejects(async () => {
+        await backupSqlite()
+      }, /File backup is only available with SQLite/)
+      return
+    }
+
     const directory = await mkdtemp(join(tmpdir(), 'music-class-backup-'))
     try {
       await createTeacher()
@@ -27,6 +35,10 @@ test.group('SQLite backup', (group) => {
   })
 
   test('keeps only the newest backups', async ({ assert }) => {
+    if (isPostgres()) {
+      return
+    }
+
     const directory = await mkdtemp(join(tmpdir(), 'music-class-backup-'))
     try {
       await createTeacher()
@@ -82,6 +94,11 @@ test.group('Backup email', (group) => {
     try {
       const teacher = await createTeacher()
       const response = await client.post('/api/v1/account/backup-email').loginAs(teacher)
+      if (isPostgres()) {
+        response.assertStatus(503)
+        response.assertBodyContains({ code: 'E_BACKUP_SQLITE_ONLY' })
+        return
+      }
       response.assertStatus(200)
       response.assertBodyContains({
         message: 'Backup sent',
@@ -97,6 +114,8 @@ test.group('Backup email', (group) => {
   })
 
   test('returns 502 when the mail provider fails', async ({ client }) => {
+    if (isPostgres()) return
+
     const directory = await mkdtemp(join(tmpdir(), 'music-class-backup-fail-'))
     setBackupEmailTestHooks({
       apiKey: 're_test',
@@ -116,6 +135,8 @@ test.group('Backup email', (group) => {
   })
 
   test('throttles repeated backup emails', async ({ client }) => {
+    if (isPostgres()) return
+
     const directory = await mkdtemp(join(tmpdir(), 'music-class-backup-limit-'))
     setRateLimitEnabled(true)
     resetRateLimits()
@@ -153,6 +174,13 @@ test.group('Backup email', (group) => {
 
     try {
       await createTeacher()
+      if (isPostgres()) {
+        await assert.rejects(async () => {
+          await emailSqliteBackup({ directory, keep: 2 })
+        }, /File backup is only available with SQLite/)
+        return
+      }
+
       const result = await emailSqliteBackup({ directory, keep: 2 })
       const info = await stat(join(directory, result.filename))
       assert.equal(result.to, 'backup@example.com')

@@ -31,6 +31,7 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   // Database — unset = SQLite in tmp/. Set DATABASE_URL (Render Postgres) to persist.
   DB_CONNECTION: Env.schema.enum.optional(['sqlite', 'pg'] as const),
+  TEST_DB: Env.schema.enum.optional(['sqlite', 'pg'] as const),
   DATABASE_URL: Env.schema.string.optional(),
   DB_HOST: Env.schema.string.optional({ format: 'host' }),
   DB_PORT: Env.schema.number.optional(),
