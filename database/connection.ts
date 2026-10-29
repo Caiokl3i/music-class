@@ -42,3 +42,19 @@ export function resolveDbConnection(): DbConnectionName {
 export function isPostgres() {
   return resolveDbConnection() === 'pg'
 }
+
+export function resolvePostgresSsl(
+  url: string,
+  explicitSsl?: string
+): false | { rejectUnauthorized: false } {
+  const normalized = explicitSsl?.trim().toLowerCase()
+  if (normalized === 'false' || normalized === '0' || normalized === 'off') {
+    return false
+  }
+  if (normalized === 'true' || normalized === '1' || normalized === 'on') {
+    return { rejectUnauthorized: false }
+  }
+
+  const isLocalHost = /@(localhost|127\.0\.0\.1|postgres)(:|\/|$)/i.test(url)
+  return isLocalHost ? false : { rejectUnauthorized: false }
+}

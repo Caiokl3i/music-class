@@ -41,7 +41,7 @@ RUN apt-get update \
 COPY --from=build /app/build ./
 COPY docker/api-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh \
-  && mkdir -p /app/tmp \
+  && mkdir -p /app/tmp /app/backups \
   && chown -R adonis:adonis /app
 
 USER adonis

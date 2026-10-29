@@ -1,16 +1,15 @@
 import app from '@adonisjs/core/services/app'
 import env from '#start/env'
 import { defineConfig } from '@adonisjs/lucid'
-import { resolveDbConnection } from '#database/connection'
+import { resolveDbConnection, resolvePostgresSsl } from '#database/connection'
 
 function postgresConnection() {
   const isMigration = process.argv.some((arg) => arg.includes('migration'))
   const url = (isMigration && env.get('DATABASE_DIRECT_URL')) || env.get('DATABASE_URL')
   if (url) {
-    const local = /localhost|127\.0\.0\.1/.test(url)
     return {
       connectionString: url,
-      ssl: local ? false : { rejectUnauthorized: false },
+      ssl: resolvePostgresSsl(url, env.get('DB_SSL')),
     }
   }
 
