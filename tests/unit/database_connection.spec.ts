@@ -1,3 +1,4 @@
+/// <reference types="@japa/assert" />
 import { test } from '@japa/runner'
 import { resolveDbConnection, isPostgres } from '#database/connection'
 

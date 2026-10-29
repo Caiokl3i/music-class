@@ -22,6 +22,7 @@ RUN printf '%s\n' \
   'APP_KEY=dockerbuildkeydockerbuildkeydocke' \
   'APP_URL=http://localhost:3333' \
   'SESSION_DRIVER=cookie' \
+  'DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy' \
   > .env \
   && node ace build
 WORKDIR /app/build
