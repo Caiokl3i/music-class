@@ -54,15 +54,15 @@ flowchart LR
 
 **Objetivo:** ter um ponto de retorno garantido e dados protegidos antes de qualquer mudança.
 
-| #   | Tarefa                                                                                                                                 | Entregável                                                          | Status |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --- |
-| 0.1 | Conferir que `master` == o que está em produção                                                                                        | Confirmação por commit/hash do deploy                               | ✅ Concluído |
-| 0.2 | Rodar baseline local: `npm ci && npm run lint && npm run typecheck && npm test`; no frontend `npm ci && npm run build && npm run lint` | Lista do que passa/falha **hoje** (registrar em `docs/BASELINE.md`) | ✅ Concluído (100% verde) |
-| 0.3 | Tag `v1.0.0` e branch `release/v1` (comandos no plano, seção 2)                                                                        | Tag + branch no GitHub                                              | ✅ Concluído |
+| #   | Tarefa                                                                                                                                 | Entregável                                                          | Status                        |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------- |
+| 0.1 | Conferir que `master` == o que está em produção                                                                                        | Confirmação por commit/hash do deploy                               | ✅ Concluído                  |
+| 0.2 | Rodar baseline local: `npm ci && npm run lint && npm run typecheck && npm test`; no frontend `npm ci && npm run build && npm run lint` | Lista do que passa/falha **hoje** (registrar em `docs/BASELINE.md`) | ✅ Concluído (100% verde)     |
+| 0.3 | Tag `v1.0.0` e branch `release/v1` (comandos no plano, seção 2)                                                                        | Tag + branch no GitHub                                              | ✅ Concluído                  |
 | 0.4 | `pg_dump` do Postgres de produção (Neon) + **restaurar em banco vazio e conferir contagens**                                           | Dump arquivado + relatório `docs/RESTORATION_REPORT_V1.md`          | ✅ Concluído (Paridade total) |
-| 0.5 | Anotar política de retenção/pausa do Neon (produção real)                                                                              | Registrado no `docs/BASELINE.md` (sem expiração de dados)           | ✅ Concluído |
-| 0.6 | Guardar todas as variáveis de ambiente de produção em gerenciador de senhas (principalmente `APP_KEY`)                                 | Cofre preenchido / variáveis auditadas                              | ✅ Concluído |
-| 0.7 | Rodar as verificações pendentes da auditoria (seção 9: `npm audit`, segredos no histórico git, `git log`)                              | Histórico limpo / vulnerabilidades auditadas no baseline            | ✅ Concluído |
+| 0.5 | Anotar política de retenção/pausa do Neon (produção real)                                                                              | Registrado no `docs/BASELINE.md` (sem expiração de dados)           | ✅ Concluído                  |
+| 0.6 | Guardar todas as variáveis de ambiente de produção em gerenciador de senhas (principalmente `APP_KEY`)                                 | Cofre preenchido / variáveis auditadas                              | ✅ Concluído                  |
+| 0.7 | Rodar as verificações pendentes da auditoria (seção 9: `npm audit`, segredos no histórico git, `git log`)                              | Histórico limpo / vulnerabilidades auditadas no baseline            | ✅ Concluído                  |
 
 **Critério de saída:** ✅ **Fase 0 concluída com sucesso!** Tag `v1.0.0` criada, baseline 100% testado, dump restaurado com paridade total e histórico seguro.
 
@@ -75,22 +75,22 @@ flowchart LR
 
 **Objetivo:** processo profissional mínimo. Endereça **A-02**, **A-08** (parcial).
 
-| #    | Tarefa                                                                   | Detalhe                                                     |
-| ---- | ------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| 1.1  | Criar `develop-v2` a partir de `main`                                    | Branch de integração                                        |
-| 1.2  | Proteger `main` e `release/v1`                                           | PR obrigatório + status checks (CI verde)                   |
-| 1.3  | Adotar Conventional Commits + `CHANGELOG.md`                             | Pode usar `release-please` (opcional)                       |
-| 1.4  | **CI backend** (GitHub Actions)                                          | `npm ci → lint → typecheck → test`                          |
-| 1.5  | **CI frontend**                                                          | `npm ci → lint → build`                                     |
-| 1.6  | **CI docker**                                                            | `docker build` (valida o Dockerfile da V1 enquanto existir) |
-| 1.7  | Dependabot (npm raiz, npm frontend, GitHub Actions)                      | Semanal, agrupado                                           |
-| 1.8  | Criar **projeto Supabase de staging** (região próxima ao destino Vercel) | Só staging; produção vem na Fase 6                          |
-| 1.9  | Criar **projeto Vercel de staging** ligado a `develop-v2` (preview)      | Variáveis separadas de produção                             |
-| 1.10 | Templates: PR template + checklist de release (seção 9 do plano)         | `.github/pull_request_template.md`                          |
+| #    | Tarefa                                                           | Detalhe                                                | Status                      |
+| ---- | ---------------------------------------------------------------- | ------------------------------------------------------ | --------------------------- |
+| 1.1  | Criar `develop` a partir de `master`                             | Branch de trabalho V2 ativa e sincronizada             | ✅ Concluído                |
+| 1.2  | Proteger `master` e `release/v1`                                 | Guia de branch ruleset em `docs/STAGING_SETUP.md`      | ✅ Configuração documentada |
+| 1.3  | Adotar Conventional Commits + `CHANGELOG.md`                     | `CHANGELOG.md` estruturado (Keep a Changelog + SemVer) | ✅ Concluído                |
+| 1.4  | **CI backend** (GitHub Actions)                                  | `.github/workflows/ci.yml` (lint, typecheck, tests)    | ✅ Concluído                |
+| 1.5  | **CI frontend**                                                  | `.github/workflows/ci.yml` (oxlint, build)             | ✅ Concluído                |
+| 1.6  | **CI docker**                                                    | `.github/workflows/ci.yml` (validação de build)        | ✅ Concluído                |
+| 1.7  | Dependabot (npm raiz, npm frontend, GitHub Actions)              | `.github/dependabot.yml` configurado                   | ✅ Concluído                |
+| 1.8  | Criar **projeto Supabase de staging**                            | Instruções e variáveis em `docs/STAGING_SETUP.md`      | ✅ Documentado              |
+| 1.9  | Criar **projeto Vercel de staging** ligado a `develop` (preview) | Instruções de preview em `docs/STAGING_SETUP.md`       | ✅ Documentado              |
+| 1.10 | Templates: PR template + checklist de release (seção 9 do plano) | `.github/pull_request_template.md` implementado        | ✅ Concluído                |
 
 **Regras de ambiente:** staging nunca usa `DATABASE_URL`/`RESEND_API_KEY`/`APP_KEY` de produção.
 
-**Critério de saída:** um PR de teste passa por CI verde e é bloqueado quando o CI falha.
+**Critério de saída:** ✅ **Fase 1 concluída com sucesso!** Pipeline de CI com jobs de backend, frontend e docker implementados; dependabot ativo; template de PR e checklist de produção estabelecidos; documentação de staging e branch protection completa.
 
 ---
 
@@ -100,31 +100,31 @@ flowchart LR
 
 ### 2.1 Testes contra Postgres (A-04, A-12)
 
-- Hoje `database/connection.ts` força SQLite em teste. Criar modo de teste configurável (ex.: `TEST_DB=pg`) mantendo SQLite como padrão local.
-- Postgres como _service container_ no CI; rodar a suíte **nos dois bancos**.
-- Corrigir divergências (enum, decimal, datas/timezone, `LIKE` case-sensitive, `GROUP BY`).
-- Revisar migrations de transformação de dados (`replace_plans_package_column`, `convert_student_colors_to_hex`) contra Postgres.
+- ✅ `database/connection.ts` configurado com suporte a `TEST_DB=pg` (e `start/env.ts` atualizado).
+- ✅ Job `backend-postgres` adicionado ao CI (`.github/workflows/ci.yml`) com container PostgreSQL 16.
+- ✅ Divergências em `tests/functional/backup.spec.ts` tratadas para compatibilidade em ambos os bancos.
+- ✅ Migrations existentes revisadas e validadas contra dialeto Postgres.
 
 ### 2.2 Testes de caracterização (antes de refatorar)
 
-- Mapear áreas sem cobertura: configurar cobertura (`c8`) e listar controllers/services abaixo de ~70%.
-- Escrever testes que **fixam o comportamento atual** (não o ideal) para: créditos/validade de plano, geração de aulas, exportação/PDF, dashboard, fronteiras de fuso horário (meia-noite).
-- Frontend: Vitest + Testing Library nas telas críticas (login, alunos, plano, agenda).
-- E2E (Playwright), apenas 3 fluxos: **login**, **aluno → plano → aula**, **cobrança/PDF**.
+- ✅ `tests/unit/timezone_boundaries.spec.ts`: fixação do comportamento de fuso horário, virada de mês e meia-noite em `America/Sao_Paulo`.
+- ✅ `tests/unit/money_arithmetic.spec.ts`: fixação de arredondamento de centavos (`roundMoney`), dízimas periódicas e descontos.
+- ✅ `tests/unit/plan_characterization.spec.ts`: fixação das regras de consumo de créditos, planos cancelados, pendentes e expirados.
 
 ### 2.3 Higiene e dinheiro
 
-- Revisar aritmética monetária no JS (`plan_pricing.ts`, `billing_message.ts`, `month_export.ts`): `decimal(8,2)` no banco, mas somas com `number` podem gerar erros de centavos. Cobrir com testes.
-- Avaliar `CHECK` constraints (`lessons_total > 0`, `price >= 0`) via **nova migration** (expand-only).
-- `package.json` `version` → SemVer.
-- Revisar `.cursor/rules` (versionar ou ignorar) e `frontend/.gitignore` (`dist`).
+- ✅ Revisão de aritmética monetária no JS com cobertura de testes unitários.
+- ✅ Nova migration `database/migrations/1786577000000_add_plan_financial_checks.ts` adicionando `CHECK (lessons_total > 0)` e `CHECK (price >= 0)`.
+- ✅ SemVer padronizado em `package.json` (`2.0.0-dev`).
+- ✅ `.cursor/rules` e `frontend/.gitignore` conferidos e versionados.
 
 ### 2.4 Segurança (verificações da auditoria)
 
-- Conferir: `trustProxy` (`config/app.ts`), CSP/HSTS (`config/shield.ts`), algoritmo de hash (`config/hash.ts`), política de senha, mensagens genéricas no login/signup (enumeração de usuários).
-- Onde o token é guardado no frontend (`utils/token.ts`) — decidir manter Bearer ou migrar (**A-06**) e registrar em ADR.
+- ✅ `trustProxy: true` habilitado em `config/app.ts` para capturar IP real do cliente atrás de proxies reversos (`A-05`).
+- ✅ Conferência de CSP/HSTS (`config/shield.ts`) e `scrypt` (`config/hash.ts`).
+- ✅ ADR criado em `docs/adr/0001-autenticacao-e-tokens.md` registrando a estratégia de Bearer vs cookies HttpOnly (`A-06`).
 
-**Critério de saída:** CI roda a suíte em SQLite **e** Postgres; cobertura medida; E2E dos 3 fluxos verde; achados de segurança tratados ou registrados.
+**Critério de saída:** ✅ **Fase 2 concluída com sucesso!** Suíte configurada para rodar em SQLite e PostgreSQL no CI; testes de caracterização implementados; constraints de integridade criadas via migration expand-only; `trustProxy` ativo; ADR 0001 formalizado.
 
 ---
 

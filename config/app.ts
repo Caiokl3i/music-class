@@ -27,6 +27,12 @@ export const http = defineConfig({
   allowMethodSpoofing: false,
 
   /**
+   * Trust reverse proxies (Render, Vercel, Cloudflare) so request.ip()
+   * reflects the client's actual IP address rather than the proxy.
+   */
+  trustProxy: true,
+
+  /**
    * Enabling async local storage will let you access HTTP context
    * from anywhere inside your application.
    */
