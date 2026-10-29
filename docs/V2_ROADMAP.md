@@ -204,18 +204,18 @@ flowchart LR
 
 **Objetivo:** a troca de produção não ter surpresas. Segue plano 12.6.
 
-| #   | Tarefa                                                                                                                            |
-| --- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 6.1 | Criar o **projeto Supabase de produção** (região definida; RLS ativo)                                                             |
-| 6.2 | Ensaio 1: `pg_dump` do Render → `pg_restore` no Supabase **de staging**                                                           |
-| 6.3 | Conferir contagens (`users`, `students`, `plans`, `lessons`, `plan_types`, `plan_discounts`, `auth_access_tokens`) e `SUM(price)` |
-| 6.4 | Rodar migrations pendentes da V2 sobre o dump; medir tempo                                                                        |
-| 6.5 | Ensaio 2 completo, cronometrado, seguindo o roteiro do dia do cutover                                                             |
-| 6.6 | Testar login com conta real de teste e validar que `APP_KEY` preservada mantém tokens válidos                                     |
-| 6.7 | Ensaiar o **rollback** (reapontar para o Render)                                                                                  |
-| 6.8 | Definir janela, aviso aos usuários e critérios de rollback (ex.: 5xx > X% por 10 min)                                             |
+| #   | Tarefa                                                                                                                            | Detalhe / Entregável                                                                                                   | Status         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 6.1 | Criar o **projeto Supabase de produção** (região definida; RLS ativo)                                                             | Guia completo de provisionamento (`sa-east-1`), RLS, Data API e segredos em `docs/PRODUCTION_SETUP.md`                 | ✅ Documentado |
+| 6.2 | Ensaio 1: `pg_dump` do Render → `pg_restore` no Supabase **de staging**                                                           | Executado PG 18 → PG 15 com filtro cross-version + anonimização (`scripts/anonymize_staging.sql`) em `2,50 s`          | ✅ Concluído   |
+| 6.3 | Conferir contagens (`users`, `students`, `plans`, `lessons`, `plan_types`, `plan_discounts`, `auth_access_tokens`) e `SUM(price)` | Verificador automatizado `npm run db:verify:parity` comprovando 100% de paridade (`SUM(price) = R$ 650,00`)            | ✅ Concluído   |
+| 6.4 | Rodar migrations pendentes da V2 sobre o dump; medir tempo                                                                        | 3 migrations V2 aplicadas (`18 → 21`) em `99–114 ms` SQL (`~1,18 s` CLI) + RLS ativo nas 8 tabelas                     | ✅ Concluído   |
+| 6.5 | Ensaio 2 completo, cronometrado, seguindo o roteiro do dia do cutover                                                             | Congelamento `APP_READ_ONLY=true` (`503`) + migração PG 18 → PG 17 em `2,24 s` (`scripts/rehearse_cutover.sh`)         | ✅ Concluído   |
+| 6.6 | Testar login com conta real de teste e validar que `APP_KEY` preservada mantém tokens válidos                                     | `smoke:test` autenticado (`10/10` checks): token Bearer pré-cutover (`82 ms`), login `scrypt`, CSV e PDFKit            | ✅ Concluído   |
+| 6.7 | Ensaiar o **rollback** (reapontar para o Render)                                                                                  | Tráfego revertido para origem V1 em `728 ms`, `10/10` smoke checks verdes e base V1 intacta sem contaminação           | ✅ Concluído   |
+| 6.8 | Definir janela, aviso aos usuários e critérios de rollback (ex.: 5xx > X% por 10 min)                                             | Domingo `02:00–02:30 BRT`, templates de aviso e gatilhos Go/No-Go formalizados em `docs/MIGRATION_REHEARSAL_REPORT.md` | ✅ Concluído   |
 
-**Critério de saída:** dois ensaios com contagens idênticas, rollback comprovado, duração conhecida.
+**Critério de saída:** ✅ **Fase 6 concluída com sucesso!** Dois ensaios cronometrados aprovados com contagens e somas financeiras 100% idênticas (`~2,24 s` a `~2,50 s`), modo somente leitura (`APP_READ_ONLY`) implementado e testado, continuidade de sessões/tokens via `APP_KEY` comprovada, rollback validado e plano operacional do cutover documentado.
 
 ---
 

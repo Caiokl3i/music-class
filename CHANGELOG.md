@@ -53,6 +53,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Manual de Operação e Resiliência formalizado em `docs/RUNBOOK.md` cobrindo deploy, rollback, restauração com `pg_restore`, rotação de chaves e reativação manual do Supabase (`5.6`).
   - Diretrizes e governança de privacidade LGPD em `docs/LGPD.md` com ferramenta CLI integrada (`commands/lgpd_export.ts` e `npm run lgpd:export`) para exportação de dossiê em JSON (Art. 18, V) e anonimização de alunos (Art. 18, VI) mantendo integridade financeira (`5.7`).
   - Registro de Decisão Arquitetural formalizado em `docs/adr/0004-operacao-e-resiliencia-v2.md` documentando a estratégia de resiliência e operação contínua (`5.8`).
+- **Fase 6 (Ensaio de Migração de Dados e Prontidão de Cutover)**:
+  - Guia de provisionamento e blindagem de segurança do ambiente de produção no Supabase (`sa-east-1`, RLS, bloqueio de Data API) e Vercel em `docs/PRODUCTION_SETUP.md` (`6.1`).
+  - Middleware opcional de congelamento de escritas `APP_READ_ONLY` (`app/middleware/read_only_middleware.ts`) com resposta amigável `503 E_MAINTENANCE_READ_ONLY` no backend e frontend para janelas de cutover (`6.5`).
+  - Serviço e CLI de verificação automática de paridade de migração (`app/services/migration_parity.ts`, `scripts/verify_migration_parity.ts` e `npm run db:verify:parity`) validando contagens das 7 tabelas de domínio, somas financeiras (`SUM(price)`), constraints `CHECK` e ativação de RLS nas 8 tabelas (`6.3`, `6.4`).
+  - Script SQL transacional de anonimização de PII para ambientes de Staging (`scripts/anonymize_staging.sql`) preservando chaves estrangeiras e somas contábeis (`6.2`).
+  - Orquestrador cronometrado de migração e cutover (`scripts/rehearse_cutover.sh`) com suporte automático cross-version PostgreSQL 18 → PostgreSQL 15/17 (`6.2`, `6.4`, `6.5`).
+  - Evolução do `scripts/smoke_test.ts` para validar persistência de tokens Bearer pré-cutover (`APP_KEY` / `auth_access_tokens`), login `scrypt` e exportações CSV/PDF (`6.6`).
+  - Relatório completo dos dois ensaios cronometrados, validação de rollback, janela recomendada, comunicados aos usuários e gatilhos objetivos Go/No-Go em `docs/MIGRATION_REHEARSAL_REPORT.md` (`6.2`–`6.8`).
 
 ---
 
