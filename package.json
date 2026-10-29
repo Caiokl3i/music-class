@@ -21,7 +21,9 @@
     "typecheck": "tsc --noEmit",
     "rebuild:native": "npm rebuild better-sqlite3",
     "db:backup": "node --import=@poppinss/ts-exec bin/db_backup.ts",
-    "db:seed": "node ace db:seed"
+    "db:seed": "node ace db:seed",
+    "db:migrate:prod": "node ace migration:run --force",
+    "smoke:test": "node --import=@poppinss/ts-exec scripts/smoke_test.ts"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",
